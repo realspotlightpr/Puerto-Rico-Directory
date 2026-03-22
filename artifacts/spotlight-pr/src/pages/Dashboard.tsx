@@ -1,14 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useListMyBusinesses } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import {
   PlusCircle, Store, Clock, CheckCircle2, XCircle, Settings,
-  Eye, Star, MessageSquare, ChevronRight, TrendingUp, AlertCircle,
+  Eye, Star, MessageSquare, ChevronRight, TrendingUp, AlertCircle, Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AIAssistant } from "@/components/dashboard/AIAssistant";
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "approved") return <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1 text-xs"><CheckCircle2 className="w-3 h-3" />Live</Badge>;
@@ -19,6 +22,9 @@ function StatusBadge({ status }: { status: string }) {
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiBusinessId, setAiBusinessId] = useState<number | null>(null);
+  const [aiBusinessName, setAiBusinessName] = useState<string>("");
 
   const { data, isLoading } = useListMyBusinesses({
     query: { enabled: isAuthenticated }
@@ -41,6 +47,14 @@ export default function Dashboard() {
   const pending = businesses.filter(b => b.status === "pending").length;
   const rejected = businesses.filter(b => b.status === "rejected").length;
   const totalReviews = businesses.reduce((sum, b) => sum + (b.reviewCount ?? 0), 0);
+
+  function openAI(biz?: { id: number; name: string }) {
+    const target = biz ?? businesses[0];
+    if (!target) return;
+    setAiBusinessId(target.id);
+    setAiBusinessName(target.name);
+    setAiOpen(true);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -101,6 +115,16 @@ export default function Dashboard() {
           <h2 className="text-lg font-bold font-display flex items-center gap-2">
             <Store className="w-5 h-5 text-primary" /> My Listings
           </h2>
+          {businesses.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openAI()}
+              className="rounded-xl gap-2 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40"
+            >
+              <Bot className="w-4 h-4" /> Ask AI
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -205,6 +229,48 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* ── AI Assistant Dialog ── */}
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent className="max-w-5xl w-full p-0 gap-0 overflow-hidden rounded-2xl">
+          <DialogHeader className="px-5 py-4 border-b border-border flex-row items-center gap-3 space-y-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center shrink-0">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base font-bold leading-none">AI Business Assistant</DialogTitle>
+              {aiBusinessName && (
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{aiBusinessName}</p>
+              )}
+            </div>
+            {businesses.length > 1 && (
+              <Select
+                value={aiBusinessId?.toString() ?? ""}
+                onValueChange={val => {
+                  const biz = businesses.find(b => b.id === parseInt(val));
+                  if (biz) { setAiBusinessId(biz.id); setAiBusinessName(biz.name); }
+                }}
+              >
+                <SelectTrigger className="w-44 h-8 text-xs rounded-xl">
+                  <SelectValue placeholder="Switch business" />
+                </SelectTrigger>
+                <SelectContent>
+                  {businesses.map(b => (
+                    <SelectItem key={b.id} value={b.id.toString()} className="text-xs">
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </DialogHeader>
+          <div className="p-4 bg-gray-50">
+            {aiBusinessId && aiBusinessName && (
+              <AIAssistant businessId={aiBusinessId} businessName={aiBusinessName} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
