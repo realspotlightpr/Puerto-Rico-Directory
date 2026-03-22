@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { MapPin, Search, Menu, X, User as UserIcon, PlusCircle, LayoutDashboard, Shield, LogOut } from "lucide-react";
+import { Menu, X, User as UserIcon, PlusCircle, LayoutDashboard, Shield, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,13 +24,13 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-border/40">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-            <MapPin className="w-6 h-6" />
-          </div>
-          <span className="font-display font-bold text-xl tracking-tight hidden sm:block">
-            Spotlight <span className="text-primary">PR</span> 🇵🇷
-          </span>
+        <Link href="/" className="flex items-center group">
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="Spotlight Puerto Rico"
+            className="h-14 w-auto object-contain group-hover:scale-105 transition-transform"
+            style={{ mixBlendMode: "multiply" }}
+          />
         </Link>
 
         {/* Desktop Nav */}
