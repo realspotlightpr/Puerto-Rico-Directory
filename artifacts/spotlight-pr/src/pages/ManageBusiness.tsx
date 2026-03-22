@@ -6,8 +6,9 @@ import { z } from "zod";
 import {
   Store, MapPin, Phone, Globe, Upload, Star, MessageSquare,
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
-  Facebook, Twitter, ChevronRight, Loader2, User,
+  Facebook, Twitter, ChevronRight, Loader2, User, Bot,
 } from "lucide-react";
+import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -266,6 +267,9 @@ export default function ManageBusiness() {
             </TabsTrigger>
             <TabsTrigger value="media" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Upload className="w-4 h-4" /> Media
+            </TabsTrigger>
+            <TabsTrigger value="ai" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
+              <Bot className="w-4 h-4" /> AI Assistant
             </TabsTrigger>
             <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Globe className="w-4 h-4" /> Social
@@ -546,6 +550,10 @@ export default function ManageBusiness() {
                 </form>
               </Form>
             </div>
+          </TabsContent>
+
+          <TabsContent value="ai">
+            <AIAssistant businessId={business.id} businessName={business.name} />
           </TabsContent>
 
         </Tabs>

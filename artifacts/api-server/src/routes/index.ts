@@ -7,6 +7,7 @@ import reviewsRouter from "./reviews";
 import myRouter from "./my";
 import adminRouter from "./admin";
 import usersRouter from "./users";
+import openaiRouter from "./openai/index";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(reviewsRouter);
 router.use(myRouter);
 router.use(adminRouter);
 router.use(usersRouter);
+router.use(openaiRouter);
 
 export default router;

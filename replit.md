@@ -33,7 +33,8 @@ A full-stack business directory web application for Puerto Rico. Businesses can 
 - Business detail pages with reviews and star ratings
 - Business submission form (requires login)
 - Owner dashboard (`/dashboard`) — stats overview, listing cards with status, link to manage each business
-- Business management page (`/manage/:id`) — tabbed interface: Details (edit all info), Reviews, Hours, Media (logo/cover), Social links
+- Business management page (`/manage/:id`) — tabbed interface: Details (edit all info), Reviews, Hours, Media (logo/cover), Social links, AI Assistant
+- AI Assistant per business — GPT-5.2 chat agent fully aware of each business's data (description, hours, address, reviews, socials). Supports streaming text responses + image generation via gpt-image-1. Conversations are scoped per-business and per-user. Images can be generated inline in chat ("generate image of...") or via the dedicated image panel.
 - `/business` marketing page — "For Business" landing page with features, how-it-works, FAQ, CTAs
 - Admin panel (stats, business approval workflow, user management, review management)
 - 78 Puerto Rico municipalities in dropdowns
