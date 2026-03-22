@@ -1,14 +1,6 @@
-import * as oidc from "openid-client";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { type Request, type Response, type NextFunction } from "express";
-import {
-  clearSession,
-  getOidcConfig,
-  getSessionId,
-  getSession,
-  updateSession,
-  type SessionData,
-} from "../lib/auth";
-
+import { db, usersTable } from "@workspace/db";
 import type { AuthUser } from "../types/auth";
 
 export type { AuthUser };
@@ -19,7 +11,6 @@ declare global {
 
     interface Request {
       isAuthenticated(): this is AuthedRequest;
-
       user?: User | undefined;
     }
 
@@ -29,62 +20,67 @@ declare global {
   }
 }
 
-async function refreshIfExpired(
-  sid: string,
-  session: SessionData,
-): Promise<SessionData | null> {
-  const now = Math.floor(Date.now() / 1000);
-  if (!session.expires_at || now <= session.expires_at) return session;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+if (!SUPABASE_URL) throw new Error("SUPABASE_URL environment variable is required");
 
-  if (!session.refresh_token) return null;
+const JWKS = createRemoteJWKSet(
+  new URL(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
+);
 
-  try {
-    const config = await getOidcConfig();
-    const tokens = await oidc.refreshTokenGrant(
-      config,
-      session.refresh_token,
-    );
-    session.access_token = tokens.access_token;
-    session.refresh_token = tokens.refresh_token ?? session.refresh_token;
-    session.expires_at = tokens.expiresIn()
-      ? now + tokens.expiresIn()!
-      : session.expires_at;
-    await updateSession(sid, session);
-    return session;
-  } catch {
-    return null;
-  }
+async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
+  const id = payload.sub as string;
+  const email = (payload.email as string | undefined) ?? null;
+  const meta = (payload.user_metadata as Record<string, unknown> | undefined) ?? {};
+
+  const firstName = (meta.first_name ?? meta.given_name ?? meta.name?.toString().split(" ")[0]) as string | null ?? null;
+  const lastName = (meta.last_name ?? meta.family_name ?? null) as string | null;
+  const username = (meta.user_name ?? meta.preferred_username ?? meta.username ?? null) as string | null;
+  const profileImageUrl = (meta.avatar_url ?? meta.picture ?? null) as string | null;
+
+  const [user] = await db
+    .insert(usersTable)
+    .values({ id, email, firstName, lastName, username, profileImageUrl, role: "user" })
+    .onConflictDoUpdate({
+      target: usersTable.id,
+      set: {
+        email,
+        firstName,
+        lastName,
+        username,
+        profileImageUrl,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+
+  return user as AuthUser;
 }
 
 export async function authMiddleware(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) {
   req.isAuthenticated = function (this: Request) {
     return this.user != null;
   } as Request["isAuthenticated"];
 
-  const sid = getSessionId(req);
-  if (!sid) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader?.startsWith("Bearer ")) {
     next();
     return;
   }
 
-  const session = await getSession(sid);
-  if (!session?.user?.id) {
-    await clearSession(res, sid);
-    next();
-    return;
+  const token = authHeader.slice(7);
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS, {
+      issuer: `${SUPABASE_URL}/auth/v1`,
+    });
+    req.user = await upsertUserFromJWT(payload);
+  } catch {
+    // Invalid or expired token — treat as unauthenticated
   }
 
-  const refreshed = await refreshIfExpired(sid, session);
-  if (!refreshed) {
-    await clearSession(res, sid);
-    next();
-    return;
-  }
-
-  req.user = refreshed.user;
   next();
 }

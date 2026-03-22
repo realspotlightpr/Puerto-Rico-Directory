@@ -1,69 +1,133 @@
-import { useState, useEffect, useCallback, createContext, useContext, type ReactNode, createElement } from "react";
-import type { User } from "@workspace/api-client-react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  type ReactNode,
+  createElement,
+} from "react";
+import type { SupabaseClient, Session, User as SupabaseUser } from "@supabase/supabase-js";
 
-export type AuthUser = User;
+export interface AuthUser {
+  id: string;
+  email?: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImage?: string;
+  role: "user" | "business_owner" | "admin";
+  createdAt?: string;
+}
 
 interface AuthState {
   user: AuthUser | null;
+  supabaseUser: SupabaseUser | null;
+  session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: () => void;
-  logout: () => void;
+  showAuthModal: boolean;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
+  logout: () => Promise<void>;
+  getToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthState>({
   user: null,
+  supabaseUser: null,
+  session: null,
   isLoading: true,
   isAuthenticated: false,
-  login: () => {},
-  logout: () => {},
+  showAuthModal: false,
+  openAuthModal: () => {},
+  closeAuthModal: () => {},
+  logout: async () => {},
+  getToken: async () => null,
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+async function fetchAppUser(token: string): Promise<AuthUser | null> {
+  try {
+    const res = await fetch("/api/auth/user", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.isAuthenticated ? (data.user as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function AuthProvider({
+  children,
+  supabase,
+}: {
+  children: ReactNode;
+  supabase: SupabaseClient;
+}) {
+  const [appUser, setAppUser] = useState<AuthUser | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const s = data.session ?? null;
+      setSession(s);
+      setSupabaseUser(s?.user ?? null);
+      if (s?.access_token) {
+        const u = await fetchAppUser(s.access_token);
+        setAppUser(u);
+      }
+      setIsLoading(false);
+    });
 
-    fetch("/api/auth/user", { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json() as Promise<{ user: AuthUser | null; isAuthenticated: boolean }>;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setUser(data.isAuthenticated ? (data.user ?? null) : null);
-          setIsLoading(false);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, s) => {
+        setSession(s);
+        setSupabaseUser(s?.user ?? null);
+        if (s?.access_token) {
+          const u = await fetchAppUser(s.access_token);
+          setAppUser(u);
+        } else {
+          setAppUser(null);
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setUser(null);
-          setIsLoading(false);
-        }
-      });
+        setIsLoading(false);
+        if (s) setShowAuthModal(false);
+      },
+    );
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return () => listener.subscription.unsubscribe();
+  }, [supabase]);
 
-  const login = useCallback(() => {
-    const base = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
-    window.location.href = `/api/login?returnTo=${encodeURIComponent(base)}`;
-  }, []);
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setAppUser(null);
+    setSession(null);
+    setSupabaseUser(null);
+  }, [supabase]);
 
-  const logout = useCallback(() => {
-    window.location.href = "/api/logout";
-  }, []);
+  const getToken = useCallback(async (): Promise<string | null> => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }, [supabase]);
+
+  const openAuthModal = useCallback(() => setShowAuthModal(true), []);
+  const closeAuthModal = useCallback(() => setShowAuthModal(false), []);
 
   const value: AuthState = {
-    user,
+    user: appUser,
+    supabaseUser,
+    session,
     isLoading,
-    isAuthenticated: !!user,
-    login,
+    isAuthenticated: !!appUser,
+    showAuthModal,
+    openAuthModal,
+    closeAuthModal,
     logout,
+    getToken,
   };
 
   return createElement(AuthContext.Provider, { value }, children);

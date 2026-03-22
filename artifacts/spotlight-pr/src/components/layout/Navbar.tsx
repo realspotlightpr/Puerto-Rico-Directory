@@ -13,7 +13,7 @@ import {
 
 export function Navbar() {
   const [location] = useLocation();
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -98,7 +98,7 @@ export function Navbar() {
                 </DropdownMenu>
               </>
             ) : (
-              <Button onClick={() => login()} className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+              <Button onClick={() => openAuthModal()} className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all">
                 Log in
               </Button>
             )}
@@ -146,7 +146,7 @@ export function Navbar() {
               </button>
             </>
           ) : (
-            <Button onClick={() => { login(); setMobileMenuOpen(false); }} className="w-full rounded-xl">
+            <Button onClick={() => { openAuthModal(); setMobileMenuOpen(false); }} className="w-full rounded-xl">
               Log in / Sign up
             </Button>
           )}

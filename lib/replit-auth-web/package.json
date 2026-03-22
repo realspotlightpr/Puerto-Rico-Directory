@@ -6,13 +6,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "@workspace/api-client-react": "workspace:*"
-  },
   "peerDependencies": {
+    "@supabase/supabase-js": "^2",
     "react": ">=18"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.49.4",
     "@types/react": "catalog:"
   }
 }

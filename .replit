@@ -27,3 +27,11 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_URL = "https://kfwyvzdeitmidkgkyjwb.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtmd3l2emRlaXRtaWRrZ2t5andiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODQxMjUsImV4cCI6MjA4OTc2MDEyNX0.Al173sjZ2fx6UupVXiw-T7v2iL7iPZp5VBYN3A0nKs0"
+VITE_SUPABASE_URL = "https://kfwyvzdeitmidkgkyjwb.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtmd3l2emRlaXRtaWRrZ2t5andiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxODQxMjUsImV4cCI6MjA4OTc2MDEyNX0.Al173sjZ2fx6UupVXiw-T7v2iL7iPZp5VBYN3A0nKs0"

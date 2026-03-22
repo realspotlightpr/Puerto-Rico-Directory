@@ -31,7 +31,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ListBusiness() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
   const { toast } = useToast();
   
   const { data: categoriesData } = useListCategories();
@@ -54,7 +54,7 @@ export default function ListBusiness() {
           <Store className="w-16 h-16 text-primary mx-auto mb-6" />
           <h2 className="text-2xl font-bold font-display mb-2">Claim Your Spot</h2>
           <p className="text-muted-foreground mb-8">You need to log in to add your business to the Spotlight Puerto Rico directory.</p>
-          <Button onClick={() => login()} size="lg" className="w-full rounded-xl">Log In or Sign Up</Button>
+          <Button onClick={() => openAuthModal()} size="lg" className="w-full rounded-xl">Log In or Sign Up</Button>
         </div>
       </div>
     );
