@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Store, MapPin, Phone, Globe, Upload } from "lucide-react";
+import { Store, MapPin, Phone, Globe, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,7 +15,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  ownerName: z.string().min(2, "Please enter your full name."),
+  ownerPhone: z.string().min(7, "Please enter a valid phone number."),
+  ownerContactEmail: z.string().email("Please enter a valid email address."),
+  name: z.string().min(2, "Business name must be at least 2 characters."),
   description: z.string().min(10, "Please provide a slightly longer description."),
   categoryId: z.coerce.number().min(1, "Please select a category."),
   municipality: z.string().min(1, "Please select a municipality."),
@@ -31,22 +34,38 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ListBusiness() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, openAuthModal, user } = useAuth();
   const { toast } = useToast();
-  
+
   const { data: categoriesData } = useListCategories();
   const { mutateAsync: createBusiness, isPending } = useCreateBusiness();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      ownerName: "",
+      ownerPhone: "",
+      ownerContactEmail: "",
       name: "", description: "", categoryId: 0, municipality: "",
       address: "", phone: "", email: "", website: "", logoUrl: "", coverUrl: ""
     }
   });
 
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"/></div>;
-  
+  // Pre-fill owner fields from the logged-in user's account
+  useEffect(() => {
+    if (user) {
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+      if (fullName) form.setValue("ownerName", fullName, { shouldValidate: false });
+      if (user.email) form.setValue("ownerContactEmail", user.email, { shouldValidate: false });
+    }
+  }, [user, form]);
+
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -62,15 +81,15 @@ export default function ListBusiness() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await createBusiness({ data });
-      toast({ 
-        title: "Success!", 
-        description: "Your business has been submitted and is pending review by our team.",
+      await createBusiness({ data: data as any });
+      toast({
+        title: "Listing submitted!",
+        description: "Your business is pending review. We'll be in touch soon.",
       });
       setLocation("/dashboard");
     } catch (error) {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: "Failed to submit business. Please try again.",
         variant: "destructive"
       });
@@ -88,12 +107,49 @@ export default function ListBusiness() {
         <div className="bg-card rounded-2xl shadow-xl border border-border p-6 md:p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              
-              {/* Basic Info */}
+
+              {/* Owner / Contact Info */}
               <div className="space-y-6">
                 <div className="flex items-center gap-2 border-b border-border pb-2">
+                  <User className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold text-lg font-display">Your Contact Information</h3>
+                </div>
+                <p className="text-sm text-muted-foreground -mt-2">
+                  This information is private and only used so our team can reach you about your listing.
+                </p>
+
+                <FormField control={form.control} name="ownerName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Full Name <span className="text-destructive">*</span></FormLabel>
+                    <FormControl><Input placeholder="Jane Doe" className="rounded-xl" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField control={form.control} name="ownerContactEmail" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Email <span className="text-destructive">*</span></FormLabel>
+                      <FormControl><Input type="email" placeholder="you@example.com" className="rounded-xl" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="ownerPhone" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Phone Number <span className="text-destructive">*</span></FormLabel>
+                      <FormControl><Input placeholder="(787) 555-0100" className="rounded-xl" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </div>
+
+              {/* Basic Info */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 border-b border-border pb-2 pt-4">
                   <Store className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold text-lg font-display">Basic Information</h3>
+                  <h3 className="font-bold text-lg font-display">Business Information</h3>
                 </div>
 
                 <FormField control={form.control} name="name" render={({ field }) => (
@@ -171,17 +227,17 @@ export default function ListBusiness() {
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Business Contact */}
               <div className="space-y-6">
                 <div className="flex items-center gap-2 border-b border-border pb-2 pt-4">
                   <Phone className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold text-lg font-display">Contact & Web</h3>
+                  <h3 className="font-bold text-lg font-display">Business Contact & Web</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="phone" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <FormLabel>Business Phone</FormLabel>
                       <FormControl><Input placeholder="(787) 555-0123" className="rounded-xl" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -189,7 +245,7 @@ export default function ListBusiness() {
 
                   <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel>Business Email</FormLabel>
                       <FormControl><Input type="email" placeholder="hello@yourbusiness.com" className="rounded-xl" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>

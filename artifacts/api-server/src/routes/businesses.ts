@@ -177,7 +177,11 @@ router.post("/businesses", async (req, res) => {
   }
 
   try {
-    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks } = req.body;
+    const {
+      name, description, categoryId, municipality, address, phone, email,
+      website, logoUrl, coverUrl, hours, socialLinks,
+      ownerName, ownerPhone, ownerContactEmail,
+    } = req.body;
 
     if (!name || !description || !categoryId || !municipality) {
       res.status(400).json({ error: "Missing required fields: name, description, categoryId, municipality" });
@@ -202,7 +206,16 @@ router.post("/businesses", async (req, res) => {
       status: "pending",
       featured: false,
       ownerId: req.user.id,
+      ownerName: ownerName ?? null,
+      ownerPhone: ownerPhone ?? null,
+      ownerContactEmail: ownerContactEmail ?? null,
     }).returning();
+
+    // Upgrade the submitting user to business_owner if they are a plain user
+    await db
+      .update(usersTable)
+      .set({ role: "business_owner" })
+      .where(and(eq(usersTable.id, req.user.id), eq(usersTable.role, "user")));
 
     res.status(201).json(buildBusinessResponse(created));
   } catch (err) {

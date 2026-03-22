@@ -88,7 +88,9 @@ router.get("/admin/businesses", async (req, res) => {
       averageRating: r.businesses.averageRating ?? 0,
       reviewCount: r.businesses.reviewCount ?? 0,
       ownerId: r.businesses.ownerId,
-      ownerName: null,
+      ownerName: r.businesses.ownerName ?? null,
+      ownerPhone: r.businesses.ownerPhone ?? null,
+      ownerContactEmail: r.businesses.ownerContactEmail ?? null,
       createdAt: r.businesses.createdAt,
       updatedAt: r.businesses.updatedAt,
     }));

@@ -31,6 +31,9 @@ export const businessesTable = pgTable("businesses", {
   averageRating: real("average_rating").default(0),
   reviewCount: integer("review_count").default(0),
   ownerId: text("owner_id").notNull(),
+  ownerName: text("owner_name"),
+  ownerPhone: text("owner_phone"),
+  ownerContactEmail: text("owner_contact_email"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

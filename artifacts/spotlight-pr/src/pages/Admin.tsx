@@ -170,6 +170,7 @@ export default function Admin() {
                   <thead className="bg-muted/50 text-muted-foreground border-b border-border">
                     <tr>
                       <th className="p-4 font-medium">Business</th>
+                      <th className="p-4 font-medium">Owner / Lead</th>
                       <th className="p-4 font-medium">Location</th>
                       <th className="p-4 font-medium">Status</th>
                       <th className="p-4 font-medium">Date</th>
@@ -182,6 +183,21 @@ export default function Admin() {
                         <td className="p-4">
                           <p className="font-bold text-foreground">{b.name}</p>
                           <p className="text-xs text-muted-foreground">{b.categoryName}</p>
+                        </td>
+                        <td className="p-4">
+                          {(b as any).ownerName ? (
+                            <div className="space-y-0.5">
+                              <p className="text-sm font-medium text-foreground">{(b as any).ownerName}</p>
+                              {(b as any).ownerContactEmail && (
+                                <a href={`mailto:${(b as any).ownerContactEmail}`} className="text-xs text-primary hover:underline block">{(b as any).ownerContactEmail}</a>
+                              )}
+                              {(b as any).ownerPhone && (
+                                <p className="text-xs text-muted-foreground">{(b as any).ownerPhone}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">Not provided</span>
+                          )}
                         </td>
                         <td className="p-4 text-muted-foreground">{b.municipality}</td>
                         <td className="p-4">
