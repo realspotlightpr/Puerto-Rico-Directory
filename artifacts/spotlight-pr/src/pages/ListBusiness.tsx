@@ -86,7 +86,12 @@ export default function ListBusiness() {
         title: "Listing submitted!",
         description: "Your business is pending review. We'll be in touch soon.",
       });
-      setLocation("/dashboard");
+      // Redirect to email verification if user hasn't verified their email yet
+      if (!user?.emailVerified) {
+        setLocation("/verify-email");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (error) {
       toast({
         title: "Error",

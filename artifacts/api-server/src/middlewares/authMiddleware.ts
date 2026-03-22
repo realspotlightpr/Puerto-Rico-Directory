@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { type Request, type Response, type NextFunction } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, businessesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { AuthUser } from "../types/auth";
 
@@ -38,8 +38,11 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
   const username = (meta.user_name ?? meta.preferred_username ?? meta.username ?? null) as string | null;
   const profileImageUrl = (meta.avatar_url ?? meta.picture ?? null) as string | null;
 
+  // Supabase sets email_confirmed_at when the user verifies their email
+  const emailConfirmedAt = payload.email_confirmed_at as string | undefined;
+  const emailVerified = !!emailConfirmedAt;
+
   // Check if a pre-seeded record exists with this email but a different ID
-  // (e.g., an admin pre-registered before their first login)
   if (email) {
     const [existing] = await db
       .select()
@@ -48,20 +51,30 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
       .limit(1);
 
     if (existing && existing.id !== id) {
-      // Migrate: update the placeholder ID to the real Supabase UUID, keep existing role
       const [updated] = await db
         .update(usersTable)
-        .set({ id, firstName, lastName, username, profileImageUrl, updatedAt: new Date() })
+        .set({ id, firstName, lastName, username, profileImageUrl, emailVerified, updatedAt: new Date() })
         .where(eq(usersTable.email, email))
         .returning();
+
+      // If newly verified, claim all their businesses
+      if (emailVerified && !existing.emailVerified) {
+        await claimBusinessesForOwner(id);
+      }
       return updated as AuthUser;
     }
   }
 
   // Normal upsert by Supabase UUID — never overwrite an existing role
+  const [existingById] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .limit(1);
+
   const [user] = await db
     .insert(usersTable)
-    .values({ id, email, firstName, lastName, username, profileImageUrl, role: "user" })
+    .values({ id, email, firstName, lastName, username, profileImageUrl, role: "user", emailVerified })
     .onConflictDoUpdate({
       target: usersTable.id,
       set: {
@@ -70,12 +83,32 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
         lastName,
         username,
         profileImageUrl,
+        emailVerified,
         updatedAt: new Date(),
       },
     })
     .returning();
 
+  // If this is the first time we're seeing them as email-verified, claim their businesses
+  if (emailVerified && existingById && !existingById.emailVerified) {
+    await claimBusinessesForOwner(id);
+  } else if (emailVerified && !existingById) {
+    // Brand new verified user — claim any pre-existing businesses
+    await claimBusinessesForOwner(id);
+  }
+
   return user as AuthUser;
+}
+
+async function claimBusinessesForOwner(ownerId: string): Promise<void> {
+  try {
+    await db
+      .update(businessesTable)
+      .set({ isClaimed: true })
+      .where(eq(businessesTable.ownerId, ownerId));
+  } catch {
+    // Non-critical — don't fail auth if this update fails
+  }
 }
 
 export async function authMiddleware(

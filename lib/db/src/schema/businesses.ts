@@ -34,6 +34,7 @@ export const businessesTable = pgTable("businesses", {
   ownerName: text("owner_name"),
   ownerPhone: text("owner_phone"),
   ownerContactEmail: text("owner_contact_email"),
+  isClaimed: boolean("is_claimed").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

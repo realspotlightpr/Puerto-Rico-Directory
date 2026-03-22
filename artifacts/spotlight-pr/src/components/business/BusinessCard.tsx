@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { MapPin, Navigation, Phone, ExternalLink } from "lucide-react";
+import { MapPin, Phone, ShieldCheck, BadgeCheck } from "lucide-react";
 import { Business } from "@workspace/api-client-react";
 import { StarRating } from "@/components/ui/star-rating";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ interface BusinessCardProps {
 
 export function BusinessCard({ business, featured = false }: BusinessCardProps) {
   const isActuallyFeatured = featured || business.featured;
+  const isVerified = business.status === "approved";
+  const isClaimed = business.isClaimed;
   
   return (
     <Link href={`/businesses/${business.id}`}>
@@ -20,13 +22,23 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
         ${isActuallyFeatured ? 'border-secondary/50 shadow-md shadow-secondary/10' : 'border-border/60 shadow-sm'}
       `}>
         <div className="relative h-48 w-full overflow-hidden bg-muted">
-          {isActuallyFeatured && (
-            <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-4 left-4 z-10 flex gap-1.5 flex-wrap">
+            {isActuallyFeatured && (
               <Badge className="bg-secondary hover:bg-secondary text-white font-semibold shadow-lg">
                 Featured
               </Badge>
-            </div>
-          )}
+            )}
+            {isVerified && (
+              <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white font-semibold shadow-lg flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" /> Verified
+              </Badge>
+            )}
+            {isClaimed && (
+              <Badge className="bg-blue-500 hover:bg-blue-500 text-white font-semibold shadow-lg flex items-center gap-1">
+                <BadgeCheck className="w-3 h-3" /> Claimed
+              </Badge>
+            )}
+          </div>
           <img 
             src={business.coverUrl || `${import.meta.env.BASE_URL}images/hero-bg.png`} 
             alt={business.name}

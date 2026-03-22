@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
-import { MapPin, Phone, Globe, Mail, Clock, Share2, Heart, Flag, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { MapPin, Phone, Globe, Mail, Clock, Share2, Heart, Flag, ShieldCheck, CheckCircle2, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGetBusiness, useListBusinessReviews, useCreateReview } from "@workspace/api-client-react";
@@ -100,6 +100,11 @@ export default function BusinessDetail() {
                     {business.status === 'approved' && (
                       <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white border-transparent gap-1">
                         <CheckCircle2 className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
+                    {(business as any).isClaimed && (
+                      <Badge className="bg-blue-500 hover:bg-blue-500 text-white border-transparent gap-1">
+                        <BadgeCheck className="w-3 h-3" /> Claimed
                       </Badge>
                     )}
                   </div>

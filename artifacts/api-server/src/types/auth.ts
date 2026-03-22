@@ -6,4 +6,5 @@ export interface AuthUser {
   lastName?: string | null;
   profileImageUrl?: string | null;
   role: string;
+  emailVerified: boolean;
 }

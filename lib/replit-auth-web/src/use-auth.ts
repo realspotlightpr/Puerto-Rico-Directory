@@ -17,6 +17,7 @@ export interface AuthUser {
   lastName?: string;
   profileImage?: string;
   role: "user" | "business_owner" | "admin";
+  emailVerified: boolean;
   createdAt?: string;
 }
 

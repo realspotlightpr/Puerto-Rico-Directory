@@ -17,6 +17,7 @@ import Admin from "@/pages/Admin";
 import ForBusiness from "@/pages/ForBusiness";
 import ManageBusiness from "@/pages/ManageBusiness";
 import UserProfile from "@/pages/UserProfile";
+import VerifyEmail from "@/pages/VerifyEmail";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -59,6 +60,7 @@ function Router() {
           <Route path="/manage/:id" component={ManageBusiness} />
           <Route path="/profile" component={UserProfile} />
           <Route path="/profile/:id" component={UserProfile} />
+          <Route path="/verify-email" component={VerifyEmail} />
           <Route component={NotFound} />
         </Switch>
       </main>

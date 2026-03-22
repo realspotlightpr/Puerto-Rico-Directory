@@ -73,6 +73,7 @@ export interface Business {
   coverUrl?: string;
   status: BusinessStatus;
   featured: boolean;
+  isClaimed?: boolean;
   averageRating?: number;
   reviewCount?: number;
   ownerId?: string;

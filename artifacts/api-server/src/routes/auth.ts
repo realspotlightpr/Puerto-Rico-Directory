@@ -16,6 +16,7 @@ router.get("/auth/user", (req: Request, res: Response) => {
           lastName: user.lastName ?? undefined,
           profileImage: user.profileImageUrl ?? undefined,
           role: user.role as "user" | "business_owner" | "admin",
+          emailVerified: user.emailVerified ?? false,
           createdAt: new Date().toISOString(),
         }
       : undefined,
