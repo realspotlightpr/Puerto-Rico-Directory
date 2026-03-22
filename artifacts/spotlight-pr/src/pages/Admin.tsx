@@ -12,7 +12,7 @@ import {
   useAdminListUsers,
   useUpdateUserRole
 } from "@workspace/api-client-react";
-import { Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert } from "lucide-react";
+import { Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
