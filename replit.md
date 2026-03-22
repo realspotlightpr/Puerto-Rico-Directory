@@ -32,7 +32,9 @@ A full-stack business directory web application for Puerto Rico. Businesses can 
 - Directory/search with filters (keyword, category, municipality)
 - Business detail pages with reviews and star ratings
 - Business submission form (requires login)
-- Owner dashboard (view listing status, edit)
+- Owner dashboard (`/dashboard`) — stats overview, listing cards with status, link to manage each business
+- Business management page (`/manage/:id`) — tabbed interface: Details (edit all info), Reviews, Hours, Media (logo/cover), Social links
+- `/business` marketing page — "For Business" landing page with features, how-it-works, FAQ, CTAs
 - Admin panel (stats, business approval workflow, user management, review management)
 - 78 Puerto Rico municipalities in dropdowns
 - 12 pre-seeded business categories

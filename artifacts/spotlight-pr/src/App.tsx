@@ -15,6 +15,7 @@ import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import ForBusiness from "@/pages/ForBusiness";
+import ManageBusiness from "@/pages/ManageBusiness";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -54,6 +55,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
           <Route path="/business" component={ForBusiness} />
+          <Route path="/manage/:id" component={ManageBusiness} />
           <Route component={NotFound} />
         </Switch>
       </main>
