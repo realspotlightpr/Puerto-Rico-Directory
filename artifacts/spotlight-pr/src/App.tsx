@@ -14,6 +14,7 @@ import BusinessDetail from "@/pages/BusinessDetail";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
+import ForBusiness from "@/pages/ForBusiness";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -52,6 +53,7 @@ function Router() {
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
+          <Route path="/business" component={ForBusiness} />
           <Route component={NotFound} />
         </Switch>
       </main>
