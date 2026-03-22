@@ -26,7 +26,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) setLocation("/");
-  }, [authLoading, isAuthenticated, setLocation]);
+    // Regular users have a profile page instead of a business dashboard
+    if (!authLoading && isAuthenticated && user?.role === "user") setLocation("/profile");
+  }, [authLoading, isAuthenticated, user, setLocation]);
 
   if (authLoading || !isAuthenticated) return (
     <div className="min-h-screen flex items-center justify-center">
