@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { type Request, type Response, type NextFunction } from "express";
 import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import type { AuthUser } from "../types/auth";
 
 export type { AuthUser };
@@ -32,11 +33,32 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
   const email = (payload.email as string | undefined) ?? null;
   const meta = (payload.user_metadata as Record<string, unknown> | undefined) ?? {};
 
-  const firstName = (meta.first_name ?? meta.given_name ?? meta.name?.toString().split(" ")[0]) as string | null ?? null;
+  const firstName = ((meta.first_name ?? meta.given_name ?? (typeof meta.name === "string" ? meta.name.split(" ")[0] : null)) as string | null) ?? null;
   const lastName = (meta.last_name ?? meta.family_name ?? null) as string | null;
   const username = (meta.user_name ?? meta.preferred_username ?? meta.username ?? null) as string | null;
   const profileImageUrl = (meta.avatar_url ?? meta.picture ?? null) as string | null;
 
+  // Check if a pre-seeded record exists with this email but a different ID
+  // (e.g., an admin pre-registered before their first login)
+  if (email) {
+    const [existing] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email))
+      .limit(1);
+
+    if (existing && existing.id !== id) {
+      // Migrate: update the placeholder ID to the real Supabase UUID, keep existing role
+      const [updated] = await db
+        .update(usersTable)
+        .set({ id, firstName, lastName, username, profileImageUrl, updatedAt: new Date() })
+        .where(eq(usersTable.email, email))
+        .returning();
+      return updated as AuthUser;
+    }
+  }
+
+  // Normal upsert by Supabase UUID — never overwrite an existing role
   const [user] = await db
     .insert(usersTable)
     .values({ id, email, firstName, lastName, username, profileImageUrl, role: "user" })
