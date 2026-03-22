@@ -1,8 +1,8 @@
-# Workspace
+# Spotlight Puerto Rico
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+A full-stack business directory web application for Puerto Rico. Businesses can list themselves, users can search and review businesses, and admins can manage the platform.
 
 ## Stack
 
@@ -10,87 +10,82 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **Frontend**: React + Vite (artifacts/spotlight-pr)
+- **API framework**: Express 5 (artifacts/api-server)
 - **Database**: PostgreSQL + Drizzle ORM
+- **Auth**: Replit Auth (OpenID Connect with PKCE)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **UI**: Tailwind CSS + shadcn/ui components
+- **Routing**: wouter
+
+## User Roles
+
+- **user**: Regular user, can search and review businesses
+- **business_owner**: Can submit and manage their own business listings
+- **admin**: Full platform management (approve/reject businesses, manage users, delete reviews)
+
+## Key Features
+
+- Home page with hero search, category grid, and featured businesses
+- Directory/search with filters (keyword, category, municipality)
+- Business detail pages with reviews and star ratings
+- Business submission form (requires login)
+- Owner dashboard (view listing status, edit)
+- Admin panel (stats, business approval workflow, user management, review management)
+- 78 Puerto Rico municipalities in dropdowns
+- 12 pre-seeded business categories
 
 ## Structure
 
 ```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
+artifacts/
+  spotlight-pr/         # React+Vite frontend (served at /)
+  api-server/           # Express API server (served at /api)
+lib/
+  api-spec/             # OpenAPI spec + Orval codegen
+  api-client-react/     # Generated React Query hooks
+  api-zod/              # Generated Zod schemas
+  db/                   # Drizzle ORM schema + DB connection
+  replit-auth-web/      # Replit Auth web hook (useAuth, AuthProvider)
 ```
 
-## TypeScript & Composite Projects
+## Database Tables
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+- `users` - Auth users (id, email, username, firstName, lastName, profileImageUrl, role)
+- `sessions` - Session storage for Replit Auth
+- `categories` - Business categories (12 pre-seeded)
+- `businesses` - Business listings (status: pending/approved/rejected, featured flag)
+- `reviews` - User reviews with star ratings
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+## API Routes
 
-## Root Scripts
+All prefixed with `/api`:
+- `GET /healthz` - Health check
+- `GET /auth/user` - Current user
+- `GET /login`, `GET /callback`, `GET /logout` - Auth flow
+- `GET /categories` - List categories
+- `GET /businesses` - Search businesses (query: search, category, municipality, featured)
+- `GET /businesses/:id` - Business detail
+- `POST /businesses` - Create business (auth required)
+- `PUT /businesses/:id` - Update business (owner/admin)
+- `DELETE /businesses/:id` - Delete business (admin)
+- `GET /businesses/:id/reviews` - Get reviews
+- `POST /businesses/:id/reviews` - Create review (auth required)
+- `GET /my/businesses` - My businesses (auth required)
+- `GET/POST /admin/*` - Admin endpoints (admin role required)
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+## Admin Access
 
-## Packages
+To make yourself admin, log in and then update your user role in the database:
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
+```
 
-### `artifacts/api-server` (`@workspace/api-server`)
+## Development
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
-
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
-
-### `lib/db` (`@workspace/db`)
-
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
-
-### `lib/api-spec` (`@workspace/api-spec`)
-
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+- `pnpm --filter @workspace/api-server run dev` - Start API server
+- `pnpm --filter @workspace/spotlight-pr run dev` - Start frontend
+- `pnpm --filter @workspace/db run push` - Push DB schema changes
+- `pnpm --filter @workspace/api-spec run codegen` - Regenerate API client from spec

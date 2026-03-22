@@ -1,0 +1,24 @@
+packages:
+  "framer-motion": "For page transitions and smooth UI interactions"
+  "recharts": "For the admin dashboard statistics charts"
+  "date-fns": "For formatting dates in reviews and business listings"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For integrating Zod validation with forms"
+  "clsx": "Utility for constructing className strings"
+  "tailwind-merge": "Utility to cleanly merge tailwind classes"
+
+images:
+  - path: "artifacts/spotlight-pr/public/images/hero-bg.png"
+    description: "A stunning, highly polished hero background illustration featuring an abstract, modern interpretation of a Puerto Rican tropical beach at sunset, with warm vibrant oranges, deep ocean teals, and soft glowing light. Clean vector art style, suitable for a professional business directory."
+    aspect_ratio: "16:9"
+  - path: "artifacts/spotlight-pr/public/images/tropical-pattern.png"
+    description: "A seamless, subtle, light-colored background pattern featuring abstract tropical leaves and geometric shapes in very pale cream and soft teal tones. Low contrast, elegant, clean."
+    aspect_ratio: "16:9"
+  - path: "artifacts/spotlight-pr/public/images/placeholder-logo.png"
+    description: "A polished, generic modern business logo featuring a geometric palm tree or sun icon in vibrant teal and coral colors on a crisp white background. Minimalist and premium."
+    aspect_ratio: "1:1"
+
+notes:
+  - Using Replit Auth via @workspace/replit-auth-web for authentication.
+  - Relying on @workspace/api-client-react for all generated TanStack Query hooks.
+  - Using wouter for client-side routing.

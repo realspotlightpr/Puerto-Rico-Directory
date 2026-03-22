@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Spotlight Puerto Rico"
+version = "1.0.0"
+id = "artifacts/spotlight-pr"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21246
+
+[services.development]
+run = "pnpm --filter @workspace/spotlight-pr run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spotlight-pr", "run", "build" ]
+publicDir = "artifacts/spotlight-pr/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21246"
+BASE_PATH = "/"
