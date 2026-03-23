@@ -34,10 +34,6 @@ export default function Dashboard() {
     if (!authLoading && !isAuthenticated) setLocation("/");
     // Regular users have a profile page instead of a business dashboard
     if (!authLoading && isAuthenticated && user?.role === "user") setLocation("/profile");
-    // Business owners/admins must verify email before accessing dashboard
-    if (!authLoading && isAuthenticated && user && user.role !== "user" && !user.emailVerified) {
-      setLocation("/verify-email");
-    }
   }, [authLoading, isAuthenticated, user, setLocation]);
 
   if (authLoading || !isAuthenticated) return (

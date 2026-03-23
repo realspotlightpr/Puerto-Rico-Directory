@@ -206,11 +206,7 @@ export default function ListBusiness() {
           title: "Listing submitted!",
           description: "Your business is pending review. We'll be in touch soon.",
         });
-        if (!user?.emailVerified) {
-          setLocation("/verify-email");
-        } else {
-          setLocation("/dashboard");
-        }
+        setLocation("/dashboard");
         return;
       }
 
