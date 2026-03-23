@@ -75,6 +75,8 @@ const businessEditSchema = z.object({
 const userEditSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  phone: z.string().optional(),
   role: z.enum(["user", "business_owner", "admin"]),
   emailVerified: z.boolean().optional(),
 });
@@ -468,7 +470,7 @@ export default function Admin() {
 
   const userForm = useForm<UserEditValues>({
     resolver: zodResolver(userEditSchema),
-    defaultValues: { firstName: "", lastName: "", role: "user" },
+    defaultValues: { firstName: "", lastName: "", email: "", phone: "", role: "user" },
   });
 
   const addLeadForm = useForm<LeadValues>({
@@ -493,7 +495,7 @@ export default function Admin() {
 
   const openUserEdit = (u: any) => {
     setEditingUser(u);
-    userForm.reset({ firstName: u.firstName ?? "", lastName: u.lastName ?? "", role: u.role ?? "user" });
+    userForm.reset({ firstName: u.firstName ?? "", lastName: u.lastName ?? "", email: u.email ?? "", phone: u.phone ?? "", role: u.role ?? "user", emailVerified: (u as any).emailVerified ?? false });
   };
 
   const openLeadEdit = (l: Lead) => {
@@ -1425,15 +1427,12 @@ export default function Admin() {
                 )}
               </div>
 
-              <div className="bg-muted/30 rounded-xl p-3 border border-muted">
-                <p className="text-xs text-muted-foreground mb-1 font-medium">Email Address</p>
-                <p className="text-sm font-medium text-foreground">{(editingUser as any).email || "No email"}</p>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={userForm.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input className="rounded-xl" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={userForm.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input className="rounded-xl" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </div>
+              <FormField control={userForm.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" className="rounded-xl" placeholder="user@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={userForm.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" className="rounded-xl" placeholder="+1 (555) 000-0000" {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={userForm.control} name="role" render={({ field }) => (
                 <FormItem><FormLabel>Role</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>

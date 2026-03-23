@@ -339,12 +339,15 @@ router.patch("/admin/users/:id", async (req, res) => {
 
   try {
     const userId = req.params.id;
-    const { firstName, lastName, role } = req.body;
+    const { firstName, lastName, email, phone, role, emailVerified } = req.body;
 
     const updates: Record<string, any> = {};
     if (firstName !== undefined) updates.firstName = firstName;
     if (lastName !== undefined) updates.lastName = lastName;
+    if (email !== undefined) updates.email = email || null;
+    if (phone !== undefined) updates.phone = phone || null;
     if (role !== undefined && ["user", "business_owner", "admin"].includes(role)) updates.role = role;
+    if (emailVerified !== undefined) updates.emailVerified = emailVerified;
 
     if (Object.keys(updates).length === 0) {
       res.status(400).json({ error: "No fields to update" });
@@ -367,6 +370,7 @@ router.patch("/admin/users/:id", async (req, res) => {
       firstName: updated.firstName,
       lastName: updated.lastName,
       email: updated.email,
+      phone: updated.phone,
       profileImage: updated.profileImageUrl,
       role: updated.role ?? "user",
       createdAt: updated.createdAt,
