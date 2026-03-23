@@ -63,8 +63,10 @@ export function Navbar() {
             ))}
             
             {showAddBusinessNav && (
-              <Link href="/list-your-business" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-                Add Business
+              <Link href="/list-your-business">
+                <Button variant="outline" className="gap-2 rounded-full border-primary/20 text-primary hover:bg-primary/5">
+                  <Store className="w-4 h-4" /> Add Business
+                </Button>
               </Link>
             )}
           </div>
