@@ -4,8 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  Store, MapPin, Phone, Globe, User, Image as ImageIcon,
-  ChevronRight, ChevronLeft, CheckCircle2, Loader2,
+  Store, MapPin, Globe, User, Image as ImageIcon,
+  ChevronRight, ChevronLeft, CheckCircle2, Loader2, Mail, KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +37,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const STEPS = [
-  { id: 1, title: "About You",      icon: User,       fields: ["ownerName", "ownerContactEmail", "ownerPhone"] as const },
-  { id: 2, title: "Business",       icon: Store,      fields: ["name", "categoryId", "description"] as const },
-  { id: 3, title: "Location",       icon: MapPin,     fields: ["municipality", "address", "phone", "email", "website"] as const },
-  { id: 4, title: "Photos",         icon: ImageIcon,  fields: ["logoUrl", "coverUrl"] as const },
+  { id: 1, title: "About You",      icon: User,         fields: ["ownerName", "ownerContactEmail", "ownerPhone"] as const },
+  { id: 2, title: "Business",       icon: Store,        fields: ["name", "categoryId", "description"] as const },
+  { id: 3, title: "Location",       icon: MapPin,       fields: ["municipality", "address", "phone", "email", "website"] as const },
+  { id: 4, title: "Photos",         icon: ImageIcon,    fields: ["logoUrl", "coverUrl"] as const },
   { id: 5, title: "Review",         icon: CheckCircle2, fields: [] as const },
 ];
 
@@ -76,10 +76,81 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
+type SuccessInfo = {
+  businessName: string;
+  ownerEmail: string;
+  accountCreated: boolean;
+};
+
+function SuccessScreen({ info, onGoHome }: { info: SuccessInfo; onGoHome: () => void }) {
+  const { openAuthModal } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-emerald-50/30 py-16 px-4 flex items-center justify-center">
+      <div className="max-w-lg w-full space-y-6 text-center">
+        {/* Big checkmark */}
+        <div className="flex justify-center">
+          <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center shadow-lg shadow-emerald-200">
+            <CheckCircle2 className="w-14 h-14 text-emerald-600" />
+          </div>
+        </div>
+
+        <div>
+          <h1 className="text-3xl font-display font-bold mb-2 text-foreground">You're All Set!</h1>
+          <p className="text-muted-foreground text-base leading-relaxed">
+            <strong className="text-foreground">"{info.businessName}"</strong> has been submitted and is pending review. Our team will approve it shortly.
+          </p>
+        </div>
+
+        {info.accountCreated ? (
+          <div className="bg-white border border-border rounded-2xl p-6 shadow-lg text-left space-y-4">
+            <h2 className="font-bold font-display text-lg text-foreground flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Your Account Was Created
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We created a Spotlight Puerto Rico account for you. Check your inbox at:
+            </p>
+            <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+              <Mail className="w-4 h-4 text-primary shrink-0" />
+              <span className="font-semibold text-primary text-sm">{info.ownerEmail}</span>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1.5">
+              <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Your email contains:</p>
+              <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
+                <li>Your <strong>temporary password</strong> to log in</li>
+                <li>An <strong>email verification link</strong> (from Supabase)</li>
+              </ul>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Please log in and change your temporary password from your account settings. You'll also need to verify your email to unlock full dashboard access.
+            </p>
+            <Button onClick={() => openAuthModal()} className="w-full rounded-xl gap-2">
+              Log In to Your Dashboard
+            </Button>
+          </div>
+        ) : (
+          <div className="bg-white border border-border rounded-2xl p-6 shadow-lg text-left">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We'll notify you at <strong className="text-foreground">{info.ownerEmail}</strong> once your listing is approved and live.
+            </p>
+          </div>
+        )}
+
+        <Button variant="outline" onClick={onGoHome} className="rounded-xl gap-2 px-6">
+          <ChevronLeft className="w-4 h-4" />
+          Back to Home
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function ListBusiness() {
   const [step, setStep] = useState(1);
+  const [successInfo, setSuccessInfo] = useState<SuccessInfo | null>(null);
   const [, setLocation] = useLocation();
-  const { isAuthenticated, isLoading: authLoading, openAuthModal, user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
   const { data: categoriesData } = useListCategories();
@@ -95,6 +166,7 @@ export default function ListBusiness() {
     mode: "onTouched",
   });
 
+  // Pre-fill the owner fields if the user is already logged in
   useEffect(() => {
     if (user) {
       const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
@@ -103,23 +175,8 @@ export default function ListBusiness() {
     }
   }, [user, form]);
 
-  if (authLoading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-    </div>
-  );
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white max-w-md w-full p-8 rounded-2xl shadow-xl text-center">
-          <Store className="w-16 h-16 text-primary mx-auto mb-6" />
-          <h2 className="text-2xl font-bold font-display mb-2">Claim Your Spot</h2>
-          <p className="text-muted-foreground mb-8">You need to log in to add your business to the Spotlight Puerto Rico directory.</p>
-          <Button onClick={() => openAuthModal()} size="lg" className="w-full rounded-xl">Log In or Sign Up</Button>
-        </div>
-      </div>
-    );
+  if (successInfo) {
+    return <SuccessScreen info={successInfo} onGoHome={() => setLocation("/")} />;
   }
 
   const currentStep = STEPS[step - 1];
@@ -141,20 +198,44 @@ export default function ListBusiness() {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await createBusiness({ data: data as any });
-      toast({
-        title: "Listing submitted!",
-        description: "Your business is pending review. We'll be in touch soon.",
-      });
-      if (!user?.emailVerified) {
-        setLocation("/verify-email");
-      } else {
-        setLocation("/dashboard");
+      const result = await createBusiness({ data: data as any });
+
+      // For authenticated users: redirect as before
+      if (isAuthenticated) {
+        toast({
+          title: "Listing submitted!",
+          description: "Your business is pending review. We'll be in touch soon.",
+        });
+        if (!user?.emailVerified) {
+          setLocation("/verify-email");
+        } else {
+          setLocation("/dashboard");
+        }
+        return;
       }
-    } catch {
+
+      // For guest users: show the success screen
+      setSuccessInfo({
+        businessName: data.name,
+        ownerEmail: data.ownerContactEmail,
+        accountCreated: (result as any)?.accountCreated ?? true,
+      });
+    } catch (err: any) {
+      const body = (err?.data ?? null) as any;
+
+      if (body?.code === "ACCOUNT_EXISTS") {
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please log in to submit your business.",
+          variant: "destructive",
+          duration: 8000,
+        });
+        return;
+      }
+
       toast({
-        title: "Error",
-        description: "Failed to submit business. Please try again.",
+        title: "Submission failed",
+        description: body?.error ?? "Something went wrong. Please try again.",
         variant: "destructive",
       });
     }
@@ -187,7 +268,9 @@ export default function ListBusiness() {
                     <User className="w-5 h-5 text-primary" /> Your Contact Information
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    This is private — only used so our team can contact you about your listing.
+                    {isAuthenticated
+                      ? "Your account info has been pre-filled. Update anything that's changed."
+                      : "This is how we'll reach you — and where we'll send your login credentials."}
                   </p>
                 </div>
 
@@ -202,7 +285,20 @@ export default function ListBusiness() {
                 <FormField control={form.control} name="ownerContactEmail" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Your Email <span className="text-destructive">*</span></FormLabel>
-                    <FormControl><Input type="email" placeholder="you@example.com" className="rounded-xl h-11" {...field} /></FormControl>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        className="rounded-xl h-11"
+                        readOnly={isAuthenticated && !!user?.email}
+                        {...field}
+                      />
+                    </FormControl>
+                    {!isAuthenticated && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        An account will be created at this email so you can manage your listing.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -439,10 +535,15 @@ export default function ListBusiness() {
                     </div>
                   )}
 
-                  <div className="mt-6 pt-4 border-t border-border">
+                  <div className="mt-6 pt-4 border-t border-border space-y-2">
                     <p className="text-xs text-muted-foreground">
                       Your listing will be reviewed by our team before going live. We'll notify you via email once it's approved.
                     </p>
+                    {!isAuthenticated && (
+                      <p className="text-xs text-primary font-medium">
+                        A free account will be created at <strong>{values.ownerContactEmail}</strong> — check your inbox for your login credentials.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -470,7 +571,10 @@ export default function ListBusiness() {
                   disabled={isPending}
                   className="rounded-xl px-8 shadow-lg shadow-primary/25 gap-2"
                 >
-                  {isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <><CheckCircle2 className="w-4 h-4" /> Submit Listing</>}
+                  {isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
+                    : <><CheckCircle2 className="w-4 h-4" /> Submit Listing</>
+                  }
                 </Button>
               )}
             </div>

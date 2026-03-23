@@ -2,6 +2,14 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { businessesTable, categoriesTable, usersTable } from "@workspace/db/schema";
 import { eq, and, ilike, sql, desc, or } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
+import { sendWelcomeAndBusinessSubmissionEmail } from "../lib/email.js";
+import crypto from "crypto";
+
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
 
 const router: IRouter = Router();
 
@@ -171,11 +179,6 @@ router.get("/businesses/:id", async (req, res) => {
 });
 
 router.post("/businesses", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
   try {
     const {
       name, description, categoryId, municipality, address, phone, email,
@@ -188,39 +191,145 @@ router.post("/businesses", async (req, res) => {
       return;
     }
 
+    let ownerId: string;
+    let accountCreated = false;
+
+    if (req.isAuthenticated()) {
+      ownerId = req.user.id;
+
+      // Upgrade to business_owner if needed
+      await db
+        .update(usersTable)
+        .set({ role: "business_owner" })
+        .where(and(eq(usersTable.id, req.user.id), eq(usersTable.role, "user")));
+    } else {
+      // Guest submission — email is required
+      if (!ownerContactEmail) {
+        res.status(400).json({ error: "Email is required for guest submissions" });
+        return;
+      }
+
+      // Check if a user with this email already exists locally
+      const [existingUser] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, ownerContactEmail))
+        .limit(1);
+
+      if (existingUser && existingUser.emailVerified) {
+        // Verified account already exists — ask them to log in
+        res.status(409).json({
+          error: "An account with this email already exists. Please log in to submit your business.",
+          code: "ACCOUNT_EXISTS",
+        });
+        return;
+      }
+
+      if (existingUser) {
+        // Pre-seeded but not yet verified — reuse this account
+        ownerId = existingUser.id;
+
+        // Ensure business_owner role
+        await db
+          .update(usersTable)
+          .set({ role: "business_owner" })
+          .where(eq(usersTable.id, ownerId));
+      } else {
+        // Brand-new guest — create a Supabase account and seed locally
+        const tempPassword = generateTempPassword();
+
+        const supabase = createClient(
+          process.env.SUPABASE_URL!,
+          process.env.SUPABASE_ANON_KEY!,
+        );
+
+        const firstName = ownerName ? ownerName.split(" ")[0] : null;
+        const lastName = ownerName ? ownerName.split(" ").slice(1).join(" ") || null : null;
+
+        const { data: supabaseData, error: supabaseError } = await supabase.auth.signUp({
+          email: ownerContactEmail,
+          password: tempPassword,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+            },
+          },
+        });
+
+        if (supabaseError || !supabaseData.user) {
+          req.log.error({ supabaseError }, "Supabase signUp failed");
+          res.status(500).json({ error: "Failed to create account. Please try again." });
+          return;
+        }
+
+        ownerId = supabaseData.user.id;
+
+        // Pre-seed the local user record with the Supabase UUID
+        const username = ownerContactEmail.split("@")[0].replace(/[^a-z0-9_]/gi, "").toLowerCase().slice(0, 30) || `user_${crypto.randomBytes(4).toString("hex")}`;
+
+        await db
+          .insert(usersTable)
+          .values({
+            id: ownerId,
+            email: ownerContactEmail,
+            firstName,
+            lastName,
+            username,
+            role: "business_owner",
+            emailVerified: false,
+          })
+          .onConflictDoNothing();
+
+        // Send the combined welcome + credentials email via Brevo
+        try {
+          await sendWelcomeAndBusinessSubmissionEmail(
+            ownerContactEmail,
+            firstName ?? ownerContactEmail.split("@")[0],
+            name,
+            tempPassword,
+          );
+        } catch (emailErr) {
+          req.log.error({ emailErr }, "Failed to send welcome email (non-fatal)");
+        }
+
+        accountCreated = true;
+      }
+    }
+
     const slug = await uniqueSlug(name);
-    const [created] = await db.insert(businessesTable).values({
-      name,
-      slug,
-      description,
-      categoryId: parseInt(categoryId),
-      municipality,
-      address,
-      phone,
-      email,
-      website,
-      logoUrl,
-      coverUrl,
-      hours,
-      socialLinks,
-      status: "pending",
-      featured: false,
-      ownerId: req.user.id,
-      ownerName: ownerName ?? null,
-      ownerPhone: ownerPhone ?? null,
-      ownerContactEmail: ownerContactEmail ?? null,
-    }).returning();
+    const [created] = await db
+      .insert(businessesTable)
+      .values({
+        name,
+        slug,
+        description,
+        categoryId: parseInt(categoryId),
+        municipality,
+        address,
+        phone,
+        email,
+        website,
+        logoUrl,
+        coverUrl,
+        hours,
+        socialLinks,
+        status: "pending",
+        featured: false,
+        ownerId,
+        ownerName: ownerName ?? null,
+        ownerPhone: ownerPhone ?? null,
+        ownerContactEmail: ownerContactEmail ?? null,
+      })
+      .returning();
 
-    // Upgrade the submitting user to business_owner if they are a plain user
-    await db
-      .update(usersTable)
-      .set({ role: "business_owner" })
-      .where(and(eq(usersTable.id, req.user.id), eq(usersTable.role, "user")));
-
-    res.status(201).json(buildBusinessResponse(created));
+    res.status(201).json({
+      ...buildBusinessResponse(created),
+      accountCreated,
+    });
   } catch (err) {
     req.log.error(err);
-    res.status(500).json({ error: "Failed to create business" });
+    res.status(500).json({ error: "Failed to submit business listing" });
   }
 });
 
