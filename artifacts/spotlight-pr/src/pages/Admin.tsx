@@ -950,6 +950,9 @@ export default function Admin() {
                                 <Button size="icon" variant="outline" title="Edit" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openBusinessEdit(b)}>
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
+                                <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.id}`, "_blank")}>
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
                               </div>
                             </td>
                           </tr>
