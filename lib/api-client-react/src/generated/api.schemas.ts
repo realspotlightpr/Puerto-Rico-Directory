@@ -87,11 +87,17 @@ export type BusinessDetailSocialLinks = {
   facebook?: string;
   instagram?: string;
   twitter?: string;
+  youtube?: string;
 };
 
 export type BusinessDetail = Business & {
   hours?: BusinessDetailHours;
   socialLinks?: BusinessDetailSocialLinks;
+  specialOffer?: string;
+  isClaimed?: boolean;
+  pageViews?: number;
+  websiteClicks?: number;
+  mapsClicks?: number;
 };
 
 export interface BusinessListResponse {
@@ -139,6 +145,7 @@ export type UpdateBusinessBodySocialLinks = {
   facebook?: string;
   instagram?: string;
   twitter?: string;
+  youtube?: string;
 };
 
 export interface UpdateBusinessBody {
@@ -154,6 +161,7 @@ export interface UpdateBusinessBody {
   coverUrl?: string;
   hours?: UpdateBusinessBodyHours;
   socialLinks?: UpdateBusinessBodySocialLinks;
+  specialOffer?: string;
 }
 
 export interface Review {

@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { businessesTable, categoriesTable, usersTable } from "@workspace/db/schema";
-import { eq, and, ilike, sql, desc, or } from "drizzle-orm";
+import { eq, and, ilike, sql, desc, or, ne } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
-import { sendWelcomeAndBusinessSubmissionEmail } from "../lib/email.js";
+import { sendWelcomeAndBusinessSubmissionEmail, sendInquiryEmail } from "../lib/email.js";
 import crypto from "crypto";
 
 function generateTempPassword(): string {
@@ -63,6 +63,10 @@ function buildBusinessResponse(b: any, category?: any, owner?: any) {
     updatedAt: b.updatedAt,
     hours: b.hours,
     socialLinks: b.socialLinks,
+    specialOffer: b.specialOffer ?? null,
+    pageViews: b.pageViews ?? 0,
+    websiteClicks: b.websiteClicks ?? 0,
+    mapsClicks: b.mapsClicks ?? 0,
   };
 }
 
@@ -381,7 +385,7 @@ router.put("/businesses/:id", async (req, res) => {
       return;
     }
 
-    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug } = req.body;
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug, specialOffer } = req.body;
 
     let resolvedSlug = b.slug;
     if (slug !== undefined && slug !== b.slug) {
@@ -414,6 +418,7 @@ router.put("/businesses/:id", async (req, res) => {
         coverUrl: coverUrl ?? b.coverUrl,
         hours: hours ?? b.hours,
         socialLinks: socialLinks ?? b.socialLinks,
+        specialOffer: specialOffer !== undefined ? (specialOffer || null) : b.specialOffer,
         updatedAt: new Date(),
       })
       .where(eq(businessesTable.id, id))
@@ -502,6 +507,104 @@ router.post("/businesses/:id/claim", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to claim business" });
+  }
+});
+
+// Inquiry endpoint — sends a message to the business owner via Brevo
+router.post("/businesses/:id/inquiry", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const { name, email, message } = req.body;
+
+    if (!name || !email || !message) {
+      res.status(400).json({ error: "name, email, and message are required" });
+      return;
+    }
+
+    const [business] = await db
+      .select()
+      .from(businessesTable)
+      .where(eq(businessesTable.id, businessId))
+      .limit(1);
+
+    if (!business || business.status !== "approved") {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+
+    const recipientEmail = business.ownerContactEmail || business.email;
+    if (!recipientEmail) {
+      res.status(422).json({ error: "This business has no contact email configured" });
+      return;
+    }
+
+    await sendInquiryEmail(recipientEmail, business.name, name, email, message);
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to send inquiry" });
+  }
+});
+
+// Similar businesses (same category or municipality)
+router.get("/businesses/:id/similar", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const limit = Math.min(8, parseInt(req.query.limit as string) || 4);
+
+    const [current] = await db
+      .select()
+      .from(businessesTable)
+      .where(eq(businessesTable.id, businessId))
+      .limit(1);
+
+    if (!current) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+
+    // Try same category first
+    let rows: any[] = [];
+    if (current.categoryId) {
+      rows = await db
+        .select()
+        .from(businessesTable)
+        .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
+        .where(
+          and(
+            eq(businessesTable.status, "approved"),
+            eq(businessesTable.categoryId, current.categoryId),
+            ne(businessesTable.id, businessId)
+          )
+        )
+        .orderBy(sql`RANDOM()`)
+        .limit(limit);
+    }
+
+    // Fall back to same municipality
+    if (rows.length < 2) {
+      rows = await db
+        .select()
+        .from(businessesTable)
+        .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
+        .where(
+          and(
+            eq(businessesTable.status, "approved"),
+            eq(businessesTable.municipality, current.municipality),
+            ne(businessesTable.id, businessId)
+          )
+        )
+        .orderBy(sql`RANDOM()`)
+        .limit(limit);
+    }
+
+    res.json({
+      businesses: rows.map(r => buildBusinessResponse(r.businesses, r.categories)),
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch similar businesses" });
   }
 });
 

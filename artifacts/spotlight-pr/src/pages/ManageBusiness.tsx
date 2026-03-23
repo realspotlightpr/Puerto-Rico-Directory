@@ -37,6 +37,7 @@ const detailsSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
+  specialOffer: z.string().max(160, "Special offer must be 160 characters or fewer.").optional().or(z.literal("")),
   slug: z.string()
     .min(2, "URL must be at least 2 characters.")
     .max(100, "URL is too long.")
@@ -58,6 +59,7 @@ const socialSchema = z.object({
   facebook: z.string().url().optional().or(z.literal("")),
   instagram: z.string().url().optional().or(z.literal("")),
   twitter: z.string().url().optional().or(z.literal("")),
+  youtube: z.string().url().optional().or(z.literal("")),
 });
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
