@@ -31,7 +31,7 @@ import {
   LayoutDashboard, Edit2, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
-  ToggleLeft, ToggleRight, Key, Briefcase,
+  ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -350,6 +350,7 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [addingLead, setAddingLead] = useState(false);
+  const [statsBusinessId, setStatsBusinessId] = useState<number | null>(null);
 
   const [addingTeamMember, setAddingTeamMember] = useState(false);
   const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
@@ -1005,6 +1006,9 @@ export default function Admin() {
                                 <Button size="icon" variant="outline" title="Edit" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openBusinessEdit(b)}>
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
+                                <Button size="icon" variant="outline" title="View Stats" className="text-violet-600 border-violet-200 hover:bg-violet-50" onClick={() => setStatsBusinessId(b.id)}>
+                                  <BarChart3 className="w-4 h-4" />
+                                </Button>
                                 <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}>
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
@@ -1530,6 +1534,63 @@ export default function Admin() {
             </form>
           </Form>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── BUSINESS STATS MODAL ── */}
+      <Dialog open={statsBusinessId !== null} onOpenChange={open => !open && setStatsBusinessId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-violet-600" />
+              Business Statistics
+            </DialogTitle>
+            <DialogDescription>
+              {filteredBusinesses.find(b => b.id === statsBusinessId)?.name || "Loading..."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {statsBusinessId && filteredBusinesses.find(b => b.id === statsBusinessId) && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                {/* Page Views Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-blue-900">Page Views</p>
+                    <BarChart3 className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">{filteredBusinesses.find(b => b.id === statsBusinessId)?.pageViews || 0}</p>
+                </div>
+
+                {/* Website Clicks Card */}
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4 border border-emerald-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-emerald-900">Website</p>
+                    <Globe className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-600">{filteredBusinesses.find(b => b.id === statsBusinessId)?.websiteClicks || 0}</p>
+                </div>
+
+                {/* Maps Clicks Card */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-purple-900">Maps</p>
+                    <MapPin className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{filteredBusinesses.find(b => b.id === statsBusinessId)?.mapsClicks || 0}</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
+                <p className="font-semibold mb-1">Metrics explained:</p>
+                <ul className="space-y-1 text-slate-600">
+                  <li>• <strong>Page Views:</strong> Times the business spotlight page was visited</li>
+                  <li>• <strong>Website Clicks:</strong> Clicks on the "Visit Website" link</li>
+                  <li>• <strong>Maps Clicks:</strong> Clicks on map/directions buttons</li>
+                </ul>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
