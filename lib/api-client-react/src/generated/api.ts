@@ -904,6 +904,51 @@ export const useCreateReview = <
 };
 
 /**
+ * @summary Claim a business
+ */
+export const claimBusiness = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Business> => {
+  return customFetch<Business>(`/api/businesses/${id}/claim`, {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const useClaimBusiness = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof claimBusiness>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof claimBusiness>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["claimBusiness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof claimBusiness>>,
+    { id: number }
+  > = (props) => claimBusiness(props.id, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+/**
  * @summary List businesses owned by current user
  */
 export const getListMyBusinessesUrl = () => {

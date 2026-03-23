@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
-import { MapPin, Phone, Globe, Mail, Clock, Share2, Heart, Flag, ShieldCheck, CheckCircle2, BadgeCheck } from "lucide-react";
+import { MapPin, Phone, Globe, Mail, Clock, Share2, Heart, Flag, ShieldCheck, CheckCircle2, BadgeCheck, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useGetBusiness, useListBusinessReviews, useCreateReview } from "@workspace/api-client-react";
+import { useGetBusiness, useListBusinessReviews, useCreateReview, useClaimBusiness } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { StarRating } from "@/components/ui/star-rating";
 import { format } from "date-fns";
@@ -17,15 +17,29 @@ export default function BusinessDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: business, isLoading: loadingBusiness } = useGetBusiness(businessId, { query: { enabled: !!businessId } });
+  const { data: business, isLoading: loadingBusiness, refetch: refetchBusiness } = useGetBusiness(businessId, { query: { enabled: !!businessId } });
   const { data: reviewsData, isLoading: loadingReviews } = useListBusinessReviews(businessId, { query: { enabled: !!businessId } });
 
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "claim">("about");
 
   const { mutateAsync: submitReview } = useCreateReview();
+  const { mutate: claimBiz, isPending: isClaimingBusiness } = useClaimBusiness({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Business claimed!", description: "You can now manage this listing from your dashboard." });
+        setActiveTab("about");
+        refetchBusiness();
+        queryClient.invalidateQueries({ queryKey: [`/api/my/businesses`] });
+      },
+      onError: (error: any) => {
+        toast({ title: "Failed to claim business", description: error.message || "Please try again.", variant: "destructive" });
+      },
+    },
+  });
 
   if (loadingBusiness) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>;
@@ -141,100 +155,191 @@ export default function BusinessDetail() {
           
           {/* Left Column (Main Content) */}
           <div className="lg:col-span-2 space-y-8">
-            <section className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8">
-              <h2 className="text-xl font-bold mb-4 font-display">About</h2>
-              <div className="prose max-w-none text-muted-foreground whitespace-pre-line">
-                {business.description || "No description provided."}
-              </div>
-            </section>
-
-            {/* Reviews Section */}
-            <section className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8" id="reviews">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-bold font-display">Reviews ({business.reviewCount || 0})</h2>
-                {business.averageRating && (
-                  <div className="flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-xl">
-                    <span className="text-2xl font-bold font-display">{business.averageRating.toFixed(1)}</span>
-                    <StarRating rating={business.averageRating} size={20} />
-                  </div>
+            {/* Tabs */}
+            <div className="bg-card rounded-2xl shadow-sm border border-border">
+              <div className="flex border-b border-border">
+                <button
+                  onClick={() => setActiveTab("about")}
+                  className={`flex-1 px-6 py-4 font-semibold transition-colors text-center ${
+                    activeTab === "about"
+                      ? "text-primary border-b-2 border-primary bg-primary/5"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  About
+                </button>
+                <button
+                  onClick={() => setActiveTab("reviews")}
+                  className={`flex-1 px-6 py-4 font-semibold transition-colors text-center ${
+                    activeTab === "reviews"
+                      ? "text-primary border-b-2 border-primary bg-primary/5"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Reviews
+                </button>
+                {!business.isClaimed && isAuthenticated && (
+                  <button
+                    onClick={() => setActiveTab("claim")}
+                    className={`flex-1 px-6 py-4 font-semibold transition-colors text-center ${
+                      activeTab === "claim"
+                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Claim Business
+                  </button>
                 )}
               </div>
 
-              {/* Write Review */}
-              {isAuthenticated ? (
-                <div className="bg-muted/30 rounded-xl p-6 mb-8 border border-border/50">
-                  <h3 className="font-semibold mb-4 text-foreground">Write a Review</h3>
-                  <form onSubmit={handleReviewSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Your Rating</label>
-                      <StarRating rating={rating} onChange={setRating} readonly={false} size={28} />
+              <div className="p-6 md:p-8">
+                {/* About Tab */}
+                {activeTab === "about" && (
+                  <section>
+                    <h2 className="text-xl font-bold mb-4 font-display">About</h2>
+                    <div className="prose max-w-none text-muted-foreground whitespace-pre-line">
+                      {business.description || "No description provided."}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Title (optional)</label>
-                      <input 
-                        type="text" 
-                        value={reviewTitle}
-                        onChange={(e) => setReviewTitle(e.target.value)}
-                        placeholder="Sum up your experience"
-                        className="w-full px-4 py-2 rounded-lg border border-border bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                        maxLength={100}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Review</label>
-                      <textarea 
-                        value={reviewBody}
-                        onChange={(e) => setReviewBody(e.target.value)}
-                        placeholder="Share details of your own experience at this place"
-                        className="w-full px-4 py-3 rounded-lg border border-border bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] resize-y"
-                        required
-                      />
-                    </div>
-                    <Button type="submit" disabled={isSubmittingReview || rating === 0} className="w-full sm:w-auto">
-                      {isSubmittingReview ? "Submitting..." : "Post Review"}
-                    </Button>
-                  </form>
-                </div>
-              ) : (
-                <div className="bg-primary/5 rounded-xl p-6 mb-8 border border-primary/10 text-center">
-                  <h3 className="font-semibold mb-2 text-foreground">Have you visited {business.name}?</h3>
-                  <p className="text-muted-foreground text-sm mb-4">Log in to share your experience with the community.</p>
-                  <Button onClick={() => window.location.href='/api/login'} variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">Log in to Review</Button>
-                </div>
-              )}
+                  </section>
+                )}
 
-              {/* Review List */}
-              {loadingReviews ? (
-                <div className="space-y-4">
-                  {[1,2].map(i => <div key={i} className="h-32 bg-muted rounded-xl animate-pulse" />)}
-                </div>
-              ) : reviewsData?.reviews?.length ? (
-                <div className="space-y-6">
-                  {reviewsData.reviews.map(review => (
-                    <div key={review.id} className="border-b border-border/50 last:border-0 pb-6 last:pb-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold uppercase overflow-hidden">
-                            {review.authorImage ? <img src={review.authorImage} alt="" className="w-full h-full object-cover"/> : review.authorName?.charAt(0) || 'U'}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-sm text-foreground">{review.authorName || 'Anonymous User'}</p>
-                            <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt), 'MMM d, yyyy')}</p>
-                          </div>
+                {/* Claim Business Tab */}
+                {activeTab === "claim" && !business.isClaimed && isAuthenticated && (
+                  <section>
+                    <h2 className="text-xl font-bold mb-4 font-display">Claim This Business</h2>
+                    <div className="space-y-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-blue-900">
+                          <p className="font-semibold mb-1">Own this business?</p>
+                          <p>Click the button below to claim it. You'll be able to manage the listing, update information, and respond to reviews.</p>
                         </div>
                       </div>
-                      <div className="mt-3">
-                        <StarRating rating={review.rating} size={14} className="mb-2" />
-                        {review.title && <h4 className="font-bold text-foreground mb-1">{review.title}</h4>}
-                        <p className="text-muted-foreground text-sm leading-relaxed">{review.body}</p>
+                      
+                      <div className="space-y-4 pt-4">
+                        <div>
+                          <h3 className="font-semibold mb-2">Business Name</h3>
+                          <p className="text-muted-foreground">{business.name}</p>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold mb-2">Your Account</h3>
+                          <p className="text-muted-foreground">{user?.email || user?.username}</p>
+                        </div>
                       </div>
+
+                      <Button
+                        onClick={() => claimBiz({ id: businessId })}
+                        disabled={isClaimingBusiness}
+                        size="lg"
+                        className="w-full"
+                      >
+                        {isClaimingBusiness ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Claiming...
+                          </>
+                        ) : (
+                          "Claim This Business"
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        By claiming, you confirm you are authorized to manage this business.
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground italic text-center py-8">Be the first to review this business!</p>
-              )}
-            </section>
+                  </section>
+                )}
+
+                {/* Reviews Tab */}
+                {activeTab === "reviews" && (
+                  <section id="reviews">
+                    <div className="flex items-center justify-between mb-8">
+                      <h2 className="text-xl font-bold font-display">Reviews ({business.reviewCount || 0})</h2>
+                      {business.averageRating && (
+                        <div className="flex items-center gap-2 bg-accent/10 px-4 py-2 rounded-xl">
+                          <span className="text-2xl font-bold font-display">{business.averageRating.toFixed(1)}</span>
+                          <StarRating rating={business.averageRating} size={20} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Write Review */}
+                    {isAuthenticated ? (
+                      <div className="bg-muted/30 rounded-xl p-6 mb-8 border border-border/50">
+                        <h3 className="font-semibold mb-4 text-foreground">Write a Review</h3>
+                        <form onSubmit={handleReviewSubmit} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Your Rating</label>
+                            <StarRating rating={rating} onChange={setRating} readonly={false} size={28} />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Title (optional)</label>
+                            <input 
+                              type="text" 
+                              value={reviewTitle}
+                              onChange={(e) => setReviewTitle(e.target.value)}
+                              placeholder="Sum up your experience"
+                              className="w-full px-4 py-2 rounded-lg border border-border bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                              maxLength={100}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">Review</label>
+                            <textarea 
+                              value={reviewBody}
+                              onChange={(e) => setReviewBody(e.target.value)}
+                              placeholder="Share details of your own experience at this place"
+                              className="w-full px-4 py-3 rounded-lg border border-border bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[120px] resize-y"
+                              required
+                            />
+                          </div>
+                          <Button type="submit" disabled={isSubmittingReview || rating === 0} className="w-full sm:w-auto">
+                            {isSubmittingReview ? "Submitting..." : "Post Review"}
+                          </Button>
+                        </form>
+                      </div>
+                    ) : (
+                      <div className="bg-primary/5 rounded-xl p-6 mb-8 border border-primary/10 text-center">
+                        <h3 className="font-semibold mb-2 text-foreground">Have you visited {business.name}?</h3>
+                        <p className="text-muted-foreground text-sm mb-4">Log in to share your experience with the community.</p>
+                        <Button onClick={() => window.location.href='/api/login'} variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">Log in to Review</Button>
+                      </div>
+                    )}
+
+                    {/* Review List */}
+                    {loadingReviews ? (
+                      <div className="space-y-4">
+                        {[1,2].map(i => <div key={i} className="h-32 bg-muted rounded-xl animate-pulse" />)}
+                      </div>
+                    ) : reviewsData?.reviews?.length ? (
+                      <div className="space-y-6">
+                        {reviewsData.reviews.map(review => (
+                          <div key={review.id} className="border-b border-border/50 last:border-0 pb-6 last:pb-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold uppercase overflow-hidden">
+                                  {review.authorImage ? <img src={review.authorImage} alt="" className="w-full h-full object-cover"/> : review.authorName?.charAt(0) || 'U'}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-sm text-foreground">{review.authorName || 'Anonymous User'}</p>
+                                  <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt), 'MMM d, yyyy')}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3">
+                              <StarRating rating={review.rating} size={14} className="mb-2" />
+                              {review.title && <h4 className="font-bold text-foreground mb-1">{review.title}</h4>}
+                              <p className="text-muted-foreground text-sm leading-relaxed">{review.body}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground italic text-center py-8">Be the first to review this business!</p>
+                    )}
+                  </section>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Right Column (Sidebar) */}

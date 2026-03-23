@@ -293,4 +293,62 @@ router.delete("/businesses/:id", async (req, res) => {
   }
 });
 
+router.post("/businesses/:id/claim", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const businessId = parseInt(req.params.id);
+
+    const [business] = await db
+      .select()
+      .from(businessesTable)
+      .where(eq(businessesTable.id, businessId))
+      .limit(1);
+
+    if (!business) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+
+    if (business.isClaimed) {
+      res.status(400).json({ error: "This business has already been claimed" });
+      return;
+    }
+
+    // Update the business to be claimed by this user
+    const [updated] = await db
+      .update(businessesTable)
+      .set({ 
+        isClaimed: true, 
+        ownerId: req.user.id,
+        ownerName: req.user.firstName && req.user.lastName 
+          ? `${req.user.firstName} ${req.user.lastName}` 
+          : req.user.username,
+      })
+      .where(eq(businessesTable.id, businessId))
+      .returning();
+
+    // Upgrade user to business_owner role if needed
+    await db
+      .update(usersTable)
+      .set({ role: "business_owner" })
+      .where(and(eq(usersTable.id, req.user.id), eq(usersTable.role, "user")));
+
+    // Build response with category info
+    const [category] = await db
+      .select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, updated.categoryId || 0))
+      .limit(1);
+
+    res.json(buildBusinessResponse(updated, category));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to claim business" });
+  }
+});
+
 export default router;
