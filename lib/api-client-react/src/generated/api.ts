@@ -474,12 +474,12 @@ export const useCreateBusiness = <
 /**
  * @summary Get business by ID
  */
-export const getGetBusinessUrl = (id: number) => {
+export const getGetBusinessUrl = (id: number | string) => {
   return `/api/businesses/${id}`;
 };
 
 export const getBusiness = async (
-  id: number,
+  id: number | string,
   options?: RequestInit,
 ): Promise<BusinessDetail> => {
   return customFetch<BusinessDetail>(getGetBusinessUrl(id), {
@@ -488,7 +488,7 @@ export const getBusiness = async (
   });
 };
 
-export const getGetBusinessQueryKey = (id: number) => {
+export const getGetBusinessQueryKey = (id: number | string) => {
   return [`/api/businesses/${id}`] as const;
 };
 
@@ -496,7 +496,7 @@ export const getGetBusinessQueryOptions = <
   TData = Awaited<ReturnType<typeof getBusiness>>,
   TError = ErrorType<ErrorResponse>,
 >(
-  id: number,
+  id: number | string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getBusiness>>,
@@ -539,7 +539,7 @@ export function useGetBusiness<
   TData = Awaited<ReturnType<typeof getBusiness>>,
   TError = ErrorType<ErrorResponse>,
 >(
-  id: number,
+  id: number | string,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getBusiness>>,

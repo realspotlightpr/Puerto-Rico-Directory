@@ -3,6 +3,10 @@ import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike } from "drizzle-orm";
 
+function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 100;
+}
+
 const router: IRouter = Router();
 
 function requireAdmin(req: any, res: any): boolean {
@@ -293,7 +297,7 @@ router.patch("/admin/businesses/:id", async (req, res) => {
 
   try {
     const id = parseInt(req.params.id);
-    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, status, featured, isClaimed } = req.body;
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, status, featured, isClaimed, slug } = req.body;
 
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = name;
@@ -309,6 +313,20 @@ router.patch("/admin/businesses/:id", async (req, res) => {
     if (status !== undefined && ["pending", "approved", "rejected"].includes(status)) updates.status = status;
     if (featured !== undefined) updates.featured = featured;
     if (isClaimed !== undefined) updates.isClaimed = isClaimed;
+    if (slug !== undefined) {
+      const cleaned = slug.trim().toLowerCase();
+      if (!isValidSlug(cleaned)) {
+        res.status(400).json({ error: "Invalid slug. Use only lowercase letters, numbers, and hyphens." });
+        return;
+      }
+      const conflict = await db.select({ id: businessesTable.id }).from(businessesTable)
+        .where(eq(businessesTable.slug, cleaned)).limit(1);
+      if (conflict.length > 0 && conflict[0].id !== id) {
+        res.status(409).json({ error: "This URL slug is already taken by another business." });
+        return;
+      }
+      updates.slug = cleaned;
+    }
 
     const [updated] = await db.update(businessesTable)
       .set(updates)

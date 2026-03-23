@@ -295,7 +295,7 @@ export default function UserProfile() {
                   <div key={review.id} className="bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-5">
                     {/* Business header */}
                     {review.business && (
-                      <Link href={`/businesses/${review.business.id}`}>
+                      <Link href={`/businesses/${(review.business as any).slug || review.business.id}`}>
                         <div className="flex items-center gap-3 mb-4 group cursor-pointer">
                           <div className="w-10 h-10 rounded-xl bg-muted border border-border overflow-hidden shrink-0">
                             {review.business.logoUrl

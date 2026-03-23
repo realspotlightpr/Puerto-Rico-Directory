@@ -76,7 +76,7 @@ export default function Directory() {
       const res = await fetch(`${import.meta.env.BASE_URL}api/businesses/random`);
       if (res.ok) {
         const business = await res.json();
-        setLocation(`/businesses/${business.id}`);
+        setLocation(`/businesses/${business.slug || business.id}`);
       }
     } catch {
       // silent fail

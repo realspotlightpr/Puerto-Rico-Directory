@@ -54,6 +54,7 @@ function buildBusinessResponse(b: any, category?: any, owner?: any) {
     coverUrl: b.coverUrl,
     status: b.status,
     featured: b.featured,
+    isClaimed: b.isClaimed,
     averageRating: b.averageRating ?? 0,
     reviewCount: b.reviewCount ?? 0,
     ownerId: b.ownerId,
@@ -63,6 +64,10 @@ function buildBusinessResponse(b: any, category?: any, owner?: any) {
     hours: b.hours,
     socialLinks: b.socialLinks,
   };
+}
+
+function isValidSlug(slug: string): boolean {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 100;
 }
 
 router.get("/businesses", async (req, res) => {
@@ -156,17 +161,17 @@ router.get("/businesses/random", async (req, res) => {
 
 router.get("/businesses/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      res.status(404).json({ error: "Not found" });
-      return;
-    }
+    const param = req.params.id;
+    const numericId = parseInt(param);
+    const whereCondition = isNaN(numericId)
+      ? eq(businessesTable.slug, param)
+      : eq(businessesTable.id, numericId);
 
     const rows = await db
       .select()
       .from(businessesTable)
       .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
-      .where(eq(businessesTable.id, id))
+      .where(whereCondition)
       .limit(1);
 
     if (rows.length === 0) {
@@ -376,10 +381,28 @@ router.put("/businesses/:id", async (req, res) => {
       return;
     }
 
-    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks } = req.body;
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug } = req.body;
+
+    let resolvedSlug = b.slug;
+    if (slug !== undefined && slug !== b.slug) {
+      const cleaned = slug.trim().toLowerCase();
+      if (!isValidSlug(cleaned)) {
+        res.status(400).json({ error: "Invalid slug. Use only lowercase letters, numbers, and hyphens (e.g. my-business-name)." });
+        return;
+      }
+      const conflict = await db.select({ id: businessesTable.id }).from(businessesTable)
+        .where(eq(businessesTable.slug, cleaned)).limit(1);
+      if (conflict.length > 0 && conflict[0].id !== id) {
+        res.status(409).json({ error: "This URL is already taken. Please choose a different one." });
+        return;
+      }
+      resolvedSlug = cleaned;
+    }
+
     const [updated] = await db.update(businessesTable)
       .set({
         name: name ?? b.name,
+        slug: resolvedSlug,
         description: description ?? b.description,
         categoryId: categoryId ? parseInt(categoryId) : b.categoryId,
         municipality: municipality ?? b.municipality,

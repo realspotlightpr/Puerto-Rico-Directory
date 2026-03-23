@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   Store, MapPin, Phone, Globe, Upload, Star, MessageSquare,
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
-  Facebook, Twitter, ChevronRight, Loader2, User, Bot,
+  Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
@@ -37,7 +37,17 @@ const detailsSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
+  slug: z.string()
+    .min(2, "URL must be at least 2 characters.")
+    .max(100, "URL is too long.")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use only lowercase letters, numbers, and hyphens (e.g. my-business).")
+    .optional()
+    .or(z.literal("")),
 });
+
+function toSlug(str: string): string {
+  return str.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
 
 const mediaSchema = z.object({
   logoUrl: z.string().optional().or(z.literal("")),
@@ -95,7 +105,7 @@ export default function ManageBusiness() {
   // ── Details form ──────────────────────────────────────
   const detailsForm = useForm({
     resolver: zodResolver(detailsSchema),
-    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", address: "", phone: "", email: "", website: "" },
+    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", address: "", phone: "", email: "", website: "", slug: "" },
   });
 
   const mediaForm = useForm({
@@ -120,6 +130,7 @@ export default function ManageBusiness() {
       phone: business.phone ?? "",
       email: business.email ?? "",
       website: business.website ?? "",
+      slug: (business as any).slug ?? "",
     });
     mediaForm.reset({
       logoUrl: business.logoUrl ?? "",
@@ -219,7 +230,7 @@ export default function ManageBusiness() {
               <div className="flex items-center gap-2">
                 <StatusBadge status={business.status} />
                 {business.status === "approved" && (
-                  <Link href={`/businesses/${business.id}`}>
+                  <Link href={`/businesses/${(business as any).slug || business.id}`}>
                     <span className="text-xs text-primary hover:underline flex items-center gap-0.5">
                       View public listing <ChevronRight className="w-3 h-3" />
                     </span>
@@ -368,6 +379,35 @@ export default function ManageBusiness() {
                       <FormMessage />
                     </FormItem>
                   )} />
+
+                  {/* ── Custom URL slug ── */}
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-primary" />
+                      <p className="font-semibold text-sm text-foreground">Custom Listing URL</p>
+                    </div>
+                    <FormField control={detailsForm.control} name="slug" render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="flex items-center rounded-xl border border-border bg-white overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted/50 border-r border-border select-none whitespace-nowrap">
+                              spotlightpuertorico.com/businesses/
+                            </span>
+                            <input
+                              {...field}
+                              className="flex-1 px-3 py-2 text-sm bg-transparent outline-none font-mono"
+                              placeholder="my-business-name"
+                              onChange={e => field.onChange(toSlug(e.target.value))}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-muted-foreground">
+                          Only lowercase letters, numbers, and hyphens. This is your public listing URL.
+                        </p>
+                      </FormItem>
+                    )} />
+                  </div>
 
                   <div className="flex justify-end pt-4 border-t border-border">
                     <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">

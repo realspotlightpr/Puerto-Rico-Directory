@@ -13,12 +13,15 @@ import { BusinessMap } from "@/components/business/BusinessMap";
 
 export default function BusinessDetail() {
   const { id } = useParams();
-  const businessId = parseInt(id || "0", 10);
+  const businessSlugOrId = id || "";
+  const numericId = parseInt(businessSlugOrId, 10);
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: business, isLoading: loadingBusiness, refetch: refetchBusiness } = useGetBusiness(businessId, { query: { enabled: !!businessId } });
+  const { data: business, isLoading: loadingBusiness, refetch: refetchBusiness } = useGetBusiness(businessSlugOrId, { query: { enabled: !!businessSlugOrId } });
+  // Reviews still use numeric ID (fetched from business data once loaded)
+  const businessId = business?.id ?? (isNaN(numericId) ? 0 : numericId);
   const { data: reviewsData, isLoading: loadingReviews } = useListBusinessReviews(businessId, { query: { enabled: !!businessId } });
 
   const [rating, setRating] = useState(0);
@@ -72,7 +75,7 @@ export default function BusinessDetail() {
       setReviewBody("");
       // Invalidate queries to refresh list and average rating
       queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/reviews`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessSlugOrId}`] });
     } catch (error) {
       toast({ title: "Error", description: "Failed to submit review.", variant: "destructive" });
     } finally {

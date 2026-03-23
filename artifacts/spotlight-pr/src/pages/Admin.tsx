@@ -67,6 +67,7 @@ const businessEditSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lowercase letters, numbers, hyphens only").optional().or(z.literal("")),
   status: z.enum(["pending", "approved", "rejected"]),
   featured: z.boolean(),
   isClaimed: z.boolean(),
@@ -465,7 +466,7 @@ export default function Admin() {
   // ── Forms ──
   const businessForm = useForm<BusinessEditValues>({
     resolver: zodResolver(businessEditSchema),
-    defaultValues: { name: "", description: "", municipality: "", address: "", phone: "", email: "", website: "", status: "pending", featured: false, isClaimed: false },
+    defaultValues: { name: "", description: "", municipality: "", address: "", phone: "", email: "", website: "", slug: "", status: "pending", featured: false, isClaimed: false },
   });
 
   const userForm = useForm<UserEditValues>({
@@ -488,8 +489,8 @@ export default function Admin() {
     businessForm.reset({
       name: b.name ?? "", description: b.description ?? "", categoryId: b.categoryId ?? undefined,
       municipality: b.municipality ?? "", address: b.address ?? "", phone: b.phone ?? "",
-      email: b.email ?? "", website: b.website ?? "", status: b.status ?? "pending",
-      featured: b.featured ?? false, isClaimed: b.isClaimed ?? false,
+      email: b.email ?? "", website: b.website ?? "", slug: b.slug ?? "",
+      status: b.status ?? "pending", featured: b.featured ?? false, isClaimed: b.isClaimed ?? false,
     });
   };
 
@@ -950,7 +951,7 @@ export default function Admin() {
                                 <Button size="icon" variant="outline" title="Edit" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openBusinessEdit(b)}>
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
-                                <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.id}`, "_blank")}>
+                                <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}>
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
                               </div>
@@ -1363,6 +1364,18 @@ export default function Admin() {
             <form onSubmit={businessForm.handleSubmit(values => adminUpdateBusiness({ id: editingBusiness.id, data: values }))} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={businessForm.control} name="name" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Business Name</FormLabel><FormControl><Input className="rounded-xl" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={businessForm.control} name="slug" render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel className="flex items-center gap-1.5"><Link className="w-3.5 h-3.5" /> Custom URL Slug</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center rounded-xl border border-border overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+                        <span className="px-3 py-2 text-sm text-muted-foreground bg-muted/50 border-r border-border select-none whitespace-nowrap">/businesses/</span>
+                        <input {...field} className="flex-1 px-3 py-2 text-sm bg-transparent outline-none font-mono" placeholder="my-business-name" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={businessForm.control} name="description" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Description</FormLabel><FormControl><Textarea className="rounded-xl min-h-[80px]" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={businessForm.control} name="categoryId" render={({ field }) => (
                   <FormItem><FormLabel>Category</FormLabel>

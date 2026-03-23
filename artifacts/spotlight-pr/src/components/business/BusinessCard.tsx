@@ -15,7 +15,7 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
   const isClaimed = business.isClaimed;
   
   return (
-    <Link href={`/businesses/${business.id}`}>
+    <Link href={`/businesses/${(business as any).slug || business.id}`}>
       <div className={`
         group h-full bg-card rounded-2xl overflow-hidden border
         transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/30

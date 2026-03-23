@@ -191,7 +191,7 @@ export default function Dashboard() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 sm:flex-col sm:gap-2 md:flex-row">
                     {business.status === "approved" && (
-                      <Link href={`/businesses/${business.id}`} className="flex-1 sm:flex-none">
+                      <Link href={`/businesses/${(business as any).slug || business.id}`} className="flex-1 sm:flex-none">
                         <Button variant="outline" size="sm" className="rounded-lg gap-1.5 w-full">
                           <Eye className="w-3.5 h-3.5" /> View
                         </Button>
