@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { MapPin, Facebook, Instagram, Twitter } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 
 export function Footer() {
   return (
@@ -7,24 +7,24 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4 group inline-flex">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-md">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <span className="font-display font-bold text-xl">Spotlight PR 🇵🇷</span>
+            <Link href="/" className="flex items-center gap-3 mb-4 group inline-flex hover:opacity-80 transition-opacity">
+              <img
+                src={`${import.meta.env.BASE_URL}logo.png`}
+                alt="Spotlight Puerto Rico"
+                className="h-10 w-auto object-contain"
+                style={{ mixBlendMode: "multiply" }}
+              />
+              <span className="font-display font-bold text-lg">Spotlight PR</span>
             </Link>
             <p className="text-muted-foreground max-w-sm mb-6">
               The premier directory for discovering the best local businesses, services, and experiences across Puerto Rico. Support local!
             </p>
             <div className="flex items-center gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors">
+              <a href="https://www.facebook.com/SpotlightpromoPR" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-blue-600 hover:text-white transition-colors" title="Follow on Facebook">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-secondary hover:text-white transition-colors">
+              <a href="https://www.instagram.com/spotlightpromopr/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-pink-500 hover:text-white transition-colors" title="Follow on Instagram">
                 <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-white transition-colors">
-                <Twitter className="w-5 h-5" />
               </a>
             </div>
           </div>
