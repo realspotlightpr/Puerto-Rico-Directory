@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "@workspace/replit-auth-web";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
@@ -76,12 +77,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider supabase={supabase}>
-        <TooltipProvider>
-          <WouterRouter base={basePath}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <WouterRouter base={basePath}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </LanguageProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

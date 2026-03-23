@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -72,6 +73,8 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4 border-l border-border/50 pl-6">
+            <LanguageSwitcher />
+            
             {isAuthenticated ? (
               <>
                 {/* Business owner / admin quick add */}
