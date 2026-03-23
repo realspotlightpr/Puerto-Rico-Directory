@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { Search, MapPin, TrendingUp, Shuffle, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MapPin, TrendingUp, Shuffle, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -221,91 +221,181 @@ export default function Home() {
           {HERO_IMAGES[heroImageIndex].city}, {HERO_IMAGES[heroImageIndex].region}
         </div>
 
-        <div className="container relative z-10 px-4 flex flex-col items-center text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-8"
-          >
-            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-            Discover the best of Puerto Rico
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-display font-extrabold text-white max-w-4xl leading-tight mb-6 drop-shadow-lg"
-          >
-            Find Local Businesses You Can <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">Trust</span>
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-white/90 max-w-2xl mb-10 font-medium drop-shadow"
-          >
-            Explore restaurants, services, shops, and experiences verified by the local community across all 78 municipalities.
-          </motion.p>
+        <div className="container relative z-10 px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
-          <motion.form 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            onSubmit={handleSearch}
-            className="w-full max-w-3xl glass-panel p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-2xl"
-          >
-            <div className="relative flex-1 flex items-center">
-              <Search className="absolute left-4 text-muted-foreground w-5 h-5" />
-              <Input 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="What are you looking for?" 
-                className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus-visible:ring-1 focus-visible:ring-primary/50 bg-transparent"
-              />
-            </div>
-            
-            <div className="hidden md:block w-px h-8 bg-border my-auto mx-2" />
-            
-            <div className="relative flex-1 flex items-center border-t md:border-t-0 border-border pt-2 md:pt-0">
-              <MapPin className="absolute left-4 text-muted-foreground w-5 h-5 z-10" />
-              <Select value={municipality} onValueChange={setMunicipality}>
-                <SelectTrigger className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus:ring-1 focus:ring-primary/50 bg-transparent">
-                  <SelectValue placeholder="Any Municipality" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] rounded-xl">
-                  <SelectItem value="all">Any Municipality</SelectItem>
-                  {MUNICIPALITIES.map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button type="submit" size="lg" className="h-14 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 mt-2 md:mt-0 w-full md:w-auto">
-              Search
-            </Button>
-          </motion.form>
+            {/* ── Left: Search ── */}
+            <div className="flex flex-col items-start text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6"
+              >
+                <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+                Discover the best of Puerto Rico
+              </motion.div>
 
-          {/* Surprise Me */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.45 }}
-            className="mt-5 flex items-center gap-3"
-          >
-            <span className="text-white/60 text-sm">or</span>
-            <button
-              onClick={handleSurpriseMe}
-              disabled={surpriseMeLoading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold backdrop-blur-md transition-all duration-200 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-white leading-tight mb-5 drop-shadow-lg"
+              >
+                Find Local Businesses You Can{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">Trust</span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-base md:text-lg text-white/85 max-w-xl mb-8 font-medium drop-shadow"
+              >
+                Explore restaurants, services, shops, and experiences verified by the local community across all 78 municipalities.
+              </motion.p>
+
+              <motion.form
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                onSubmit={handleSearch}
+                className="w-full glass-panel p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-2xl"
+              >
+                <div className="relative flex-1 flex items-center">
+                  <Search className="absolute left-4 text-muted-foreground w-5 h-5" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="What are you looking for?"
+                    className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus-visible:ring-1 focus-visible:ring-primary/50 bg-transparent"
+                  />
+                </div>
+
+                <div className="hidden md:block w-px h-8 bg-border my-auto mx-2" />
+
+                <div className="relative flex-1 flex items-center border-t md:border-t-0 border-border pt-2 md:pt-0">
+                  <MapPin className="absolute left-4 text-muted-foreground w-5 h-5 z-10" />
+                  <Select value={municipality} onValueChange={setMunicipality}>
+                    <SelectTrigger className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus:ring-1 focus:ring-primary/50 bg-transparent">
+                      <SelectValue placeholder="Any Municipality" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] rounded-xl">
+                      <SelectItem value="all">Any Municipality</SelectItem>
+                      {MUNICIPALITIES.map(m => (
+                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button type="submit" size="lg" className="h-14 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 mt-2 md:mt-0 w-full md:w-auto">
+                  Search
+                </Button>
+              </motion.form>
+
+              {/* Surprise Me */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.45 }}
+                className="mt-5 flex items-center gap-3"
+              >
+                <span className="text-white/60 text-sm">or</span>
+                <button
+                  onClick={handleSurpriseMe}
+                  disabled={surpriseMeLoading}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold backdrop-blur-md transition-all duration-200 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Shuffle className={`w-4 h-4 ${surpriseMeLoading ? "animate-spin" : ""}`} />
+                  {surpriseMeLoading ? "Finding a surprise…" : "Surprise Me 🎲"}
+                </button>
+              </motion.div>
+            </div>
+
+            {/* ── Right: Featured Businesses ── */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="hidden lg:flex flex-col gap-3"
             >
-              <Shuffle className={`w-4 h-4 ${surpriseMeLoading ? "animate-spin" : ""}`} />
-              {surpriseMeLoading ? "Finding a surprise…" : "Surprise Me 🎲"}
-            </button>
-          </motion.div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-secondary" />
+                  <span className="text-white/90 font-bold text-sm uppercase tracking-wider">Featured Businesses</span>
+                </div>
+                <Link href="/directory?featured=true">
+                  <span className="text-white/60 hover:text-white text-xs font-medium transition-colors flex items-center gap-1">
+                    View all <ArrowRight className="w-3 h-3" />
+                  </span>
+                </Link>
+              </div>
+
+              {featuredLoading ? (
+                <>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-20 bg-white/10 rounded-2xl animate-pulse" />
+                  ))}
+                </>
+              ) : featuredData?.businesses?.length ? (
+                featuredData.businesses.slice(0, 4).map((biz, i) => (
+                  <motion.div
+                    key={biz.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.08 }}
+                  >
+                    <Link href={`/businesses/${biz.slug || biz.id}`}>
+                      <div className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 rounded-2xl p-3 cursor-pointer transition-all duration-200 group">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white/10">
+                          {biz.imageUrl ? (
+                            <img src={biz.imageUrl} alt={biz.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl">🏢</div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm leading-tight truncate group-hover:text-secondary transition-colors">
+                            {biz.name}
+                          </p>
+                          <p className="text-white/60 text-xs mt-0.5 truncate">{biz.category} · {biz.municipality}</p>
+                          {(biz.rating ?? 0) > 0 && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                              <span className="text-white/80 text-xs font-medium">{Number(biz.rating).toFixed(1)}</span>
+                              <span className="text-white/40 text-xs">({biz.reviewCount})</span>
+                            </div>
+                          )}
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
+                      <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">🏢</div>
+                      <div>
+                        <p className="text-white/40 text-sm font-medium">Business listing</p>
+                        <p className="text-white/25 text-xs">Be the first to get featured</p>
+                      </div>
+                    </div>
+                  ))}
+                  <Link href="/list-your-business">
+                    <div className="text-center py-2">
+                      <span className="text-secondary/80 hover:text-secondary text-xs font-semibold transition-colors">
+                        + Add your business for free
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+
+          </div>
         </div>
       </section>
 
