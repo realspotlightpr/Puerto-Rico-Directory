@@ -136,6 +136,7 @@ export type CreateBusinessBodySocialLinks = {
   facebook?: string;
   instagram?: string;
   twitter?: string;
+  youtube?: string;
 };
 
 export interface CreateBusinessBody {
