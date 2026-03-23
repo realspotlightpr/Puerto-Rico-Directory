@@ -367,23 +367,25 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-foreground text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('/images/tropical-pattern.png')] bg-repeat mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-        
+      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-secondary">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+
         <div className="container px-4 mx-auto relative z-10 text-center max-w-3xl">
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">Own a business in Puerto Rico?</h2>
-          <p className="text-lg text-white/80 mb-10 leading-relaxed">
-            Join thousands of local businesses on Spotlight PR. Claim your listing, manage your reputation, and reach more customers across the island.
+          <p className="text-white/80 font-semibold tracking-widest uppercase text-sm mb-4">For Business Owners</p>
+          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-white drop-shadow">
+            Own a business in Puerto Rico?
+          </h2>
+          <p className="text-lg text-white/90 mb-10 leading-relaxed max-w-xl mx-auto">
+            Get listed, manage your reputation, and connect with customers across all 78 municipalities — completely free.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/list-your-business">
-              <Button size="lg" className="h-14 px-8 rounded-xl bg-secondary hover:bg-secondary/90 text-white font-bold text-lg w-full sm:w-auto shadow-lg shadow-secondary/25">
+              <Button size="lg" className="h-14 px-8 rounded-xl bg-white text-primary hover:bg-white/90 font-bold text-lg w-full sm:w-auto shadow-xl">
                 Add Your Business Free
               </Button>
             </Link>
             <Link href="/directory">
-              <Button size="lg" variant="outline" className="h-14 px-8 rounded-xl border-white/20 text-foreground bg-white hover:bg-white/90 font-bold text-lg w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="h-14 px-8 rounded-xl border-white/40 text-white hover:bg-white/10 font-bold text-lg w-full sm:w-auto">
                 Explore Directory
               </Button>
             </Link>
