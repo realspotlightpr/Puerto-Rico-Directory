@@ -723,16 +723,16 @@ export default function BusinessDetail() {
               <h3 className="font-bold mb-4 font-display">Contact Info</h3>
 
               {/* Primary CTAs */}
-              <div className="flex gap-2 mb-4">
+              <div className="space-y-2 mb-4">
                 {business.phone && (
-                  <a href={`tel:${business.phone}`} className="flex-1">
-                    <Button className="w-full rounded-xl gap-2 text-sm">
+                  <a href={`tel:${business.phone}`} className="block w-full">
+                    <Button className="w-full rounded-xl gap-2">
                       <Phone className="w-4 h-4" /> Call Now
                     </Button>
                   </a>
                 )}
-                <Button variant="outline" className="flex-1 rounded-xl gap-2 text-sm" onClick={scrollToInquiry}>
-                  <MessageSquare className="w-4 h-4" /> Message
+                <Button variant="outline" className="w-full rounded-xl gap-2" onClick={scrollToInquiry}>
+                  <MessageSquare className="w-4 h-4" /> Send a Message
                 </Button>
               </div>
 

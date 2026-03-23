@@ -589,8 +589,8 @@ router.get("/businesses/:id/similar", async (req, res) => {
         .limit(limit);
     }
 
-    // Fall back to same municipality
-    if (rows.length < 2) {
+    // Fall back to same municipality if category returned no results
+    if (rows.length === 0) {
       rows = await db
         .select()
         .from(businessesTable)
