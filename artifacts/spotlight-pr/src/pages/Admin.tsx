@@ -13,6 +13,7 @@ import {
   useAdminListReviews,
   useAdminDeleteReview,
   useAdminListUsers,
+  useAdminCreateUser,
   useAdminUpdateBusiness,
   useAdminUpdateUser,
   useListCategories,
@@ -82,6 +83,13 @@ const userEditSchema = z.object({
   emailVerified: z.boolean().optional(),
 });
 
+const addUserSchema = z.object({
+  email: z.string().email("A valid email is required"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  role: z.enum(["user", "business_owner", "admin"]),
+});
+
 const leadSchema = z.object({
   name: z.string().min(2, "Business name is required"),
   description: z.string().min(10, "Please add a short description (min 10 chars)"),
@@ -95,6 +103,7 @@ const leadSchema = z.object({
 
 type BusinessEditValues = z.infer<typeof businessEditSchema>;
 type UserEditValues = z.infer<typeof userEditSchema>;
+type AddUserValues = z.infer<typeof addUserSchema>;
 type LeadValues = z.infer<typeof leadSchema>;
 
 const PERMISSIONS = [
@@ -352,6 +361,7 @@ export default function Admin() {
   const [addingLead, setAddingLead] = useState(false);
   const [statsBusinessId, setStatsBusinessId] = useState<number | null>(null);
 
+  const [addingUser, setAddingUser] = useState(false);
   const [addingTeamMember, setAddingTeamMember] = useState(false);
   const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
   const [teamMemberSearch, setTeamMemberSearch] = useState("");
@@ -428,6 +438,18 @@ export default function Admin() {
       onError: () => toast({ title: "Failed to update user", variant: "destructive" }),
     },
   });
+
+  const { mutate: adminCreateUser, isPending: isCreatingUser } = useAdminCreateUser({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "User created", description: "A welcome email has been sent to the new user." });
+        queryClient.invalidateQueries({ queryKey: [`/api/admin/users`] });
+        setAddingUser(false);
+        addUserForm.reset();
+      },
+      onError: (e: any) => toast({ title: "Failed to create user", description: e?.message ?? "An error occurred", variant: "destructive" }),
+    },
+  });
   const { mutate: createLead, isPending: isCreatingLead } = useAdminCreateLead({
     mutation: {
       onSuccess: () => { toast({ title: "Lead added to directory", description: "Listed as scouted by your team and unclaimed." }); invalidateLeads(); setAddingLead(false); addLeadForm.reset(); },
@@ -476,6 +498,11 @@ export default function Admin() {
   const userForm = useForm<UserEditValues>({
     resolver: zodResolver(userEditSchema),
     defaultValues: { firstName: "", lastName: "", email: "", phone: "", role: "user" },
+  });
+
+  const addUserForm = useForm<AddUserValues>({
+    resolver: zodResolver(addUserSchema),
+    defaultValues: { email: "", firstName: "", lastName: "", role: "user" },
   });
 
   const addLeadForm = useForm<LeadValues>({
@@ -665,6 +692,11 @@ export default function Admin() {
             {section === "leads" && (
               <Button onClick={() => setAddingLead(true)} className="rounded-xl gap-2">
                 <Plus className="w-4 h-4" /> Scout a Business
+              </Button>
+            )}
+            {section === "users" && (
+              <Button onClick={() => setAddingUser(true)} className="rounded-xl gap-2">
+                <UserPlus className="w-4 h-4" /> Add User
               </Button>
             )}
             {(section === "users" || section === "reviews") && (
@@ -1474,6 +1506,63 @@ export default function Admin() {
                 <Button type="button" variant="outline" onClick={() => setEditingBusiness(null)} className="rounded-xl">Cancel</Button>
                 <Button type="submit" disabled={isSavingBusiness} className="rounded-xl gap-2">
                   {isSavingBusiness ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Changes</>}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Add User Dialog ── */}
+      <Dialog open={addingUser} onOpenChange={open => { if (!open) { setAddingUser(false); addUserForm.reset(); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" /> Add New User
+            </DialogTitle>
+            <DialogDescription>
+              Create a new user account. A role-specific welcome email with login instructions will be sent automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...addUserForm}>
+            <form onSubmit={addUserForm.handleSubmit(values => adminCreateUser({ data: values }))} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={addUserForm.control} name="firstName" render={({ field }) => (
+                  <FormItem><FormLabel>First Name</FormLabel><FormControl><Input className="rounded-xl" placeholder="María" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={addUserForm.control} name="lastName" render={({ field }) => (
+                  <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input className="rounded-xl" placeholder="García" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              <FormField control={addUserForm.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address <span className="text-destructive">*</span></FormLabel>
+                  <FormControl><Input type="email" className="rounded-xl" placeholder="user@example.com" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={addUserForm.control} name="role" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="user">Regular User — browse &amp; review businesses</SelectItem>
+                      <SelectItem value="business_owner">Business Owner — manage listings</SelectItem>
+                      <SelectItem value="admin">Admin — full platform access</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+                <Mail className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                A welcome email will be sent to this address with login instructions tailored to their role.
+              </div>
+              <DialogFooter className="pt-4 border-t border-border">
+                <Button type="button" variant="outline" onClick={() => { setAddingUser(false); addUserForm.reset(); }} className="rounded-xl">Cancel</Button>
+                <Button type="submit" disabled={isCreatingUser} className="rounded-xl gap-2">
+                  {isCreatingUser ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><UserPlus className="w-4 h-4" /> Create User</>}
                 </Button>
               </DialogFooter>
             </form>

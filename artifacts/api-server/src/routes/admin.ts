@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
+import { sendWelcomeNewUserEmail } from "../lib/email";
 
 function isValidSlug(slug: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 100;
@@ -289,6 +290,71 @@ router.get("/admin/users", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.post("/admin/users", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { email, firstName, lastName, role } = req.body as {
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+      role?: string;
+    };
+
+    if (!email || !email.includes("@")) {
+      res.status(400).json({ error: "A valid email is required" });
+      return;
+    }
+
+    const normalizedRole = ["user", "business_owner", "admin"].includes(role ?? "")
+      ? (role as "user" | "business_owner" | "admin")
+      : "user";
+
+    const existing = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.email, email.toLowerCase().trim()))
+      .limit(1);
+
+    if (existing.length > 0) {
+      res.status(409).json({ error: "A user with this email already exists" });
+      return;
+    }
+
+    const [newUser] = await db
+      .insert(usersTable)
+      .values({
+        email: email.toLowerCase().trim(),
+        firstName: firstName?.trim() || null,
+        lastName: lastName?.trim() || null,
+        role: normalizedRole,
+        emailVerified: false,
+      })
+      .returning();
+
+    const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || email.split("@")[0];
+
+    try {
+      await sendWelcomeNewUserEmail(email.toLowerCase().trim(), displayName, normalizedRole);
+    } catch (emailErr) {
+      req.log.warn({ emailErr }, "Failed to send welcome email — user still created");
+    }
+
+    res.status(201).json({
+      id: newUser.id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      role: newUser.role,
+      emailVerified: newUser.emailVerified,
+      createdAt: newUser.createdAt,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create user" });
   }
 });
 

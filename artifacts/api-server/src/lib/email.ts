@@ -174,6 +174,69 @@ export async function sendInquiryEmail(
   await sendEmail(to, businessName, `New inquiry for ${businessName} — Spotlight PR`, html);
 }
 
+export async function sendWelcomeNewUserEmail(
+  to: string,
+  name: string,
+  role: "user" | "business_owner" | "admin",
+): Promise<void> {
+  const loginUrl = SITE_URL;
+
+  const roleContent: Record<typeof role, { headline: string; body: string; cta: string }> = {
+    user: {
+      headline: "Welcome to Spotlight Puerto Rico!",
+      body: `You've been invited to join Spotlight Puerto Rico. Explore local businesses, leave reviews, and be part of the community.`,
+      cta: "Browse the Directory",
+    },
+    business_owner: {
+      headline: "You're set up as a Business Owner!",
+      body: `You've been added as a Business Owner on Spotlight Puerto Rico. You can now manage your listings, respond to inquiries, and grow your local presence.`,
+      cta: "Go to My Dashboard",
+    },
+    admin: {
+      headline: "You now have Admin Access!",
+      body: `You've been granted admin access to Spotlight Puerto Rico. You can manage businesses, users, reviews, and platform settings from the admin panel.`,
+      cta: "Open Admin Panel",
+    },
+  };
+
+  const { headline, body, cta } = roleContent[role];
+  const safeName = escapeHtml(name);
+
+  const html = emailWrapper(`
+    <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">${headline}</h2>
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      Hi ${safeName}, ${body}
+    </p>
+
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h3 style="color:#0c4a6e;margin:0 0 10px;font-size:15px;font-weight:700;">How to log in</h3>
+      <ol style="color:#374151;font-size:14px;line-height:1.8;padding-left:20px;margin:0;">
+        <li>Visit <a href="${loginUrl}" style="color:${BRAND_COLOR};">${loginUrl}</a></li>
+        <li>Click <strong>Log In</strong> and enter your email: <strong>${escapeHtml(to)}</strong></li>
+        <li>Check your email for a magic login link and click it to access your account</li>
+      </ol>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="${loginUrl}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
+        ${cta} →
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:13px;text-align:center;">
+      If you weren't expecting this invitation, you can safely ignore this email.
+    </p>
+  `);
+
+  const subjects: Record<typeof role, string> = {
+    user: "You're invited to Spotlight Puerto Rico!",
+    business_owner: "Your Business Owner account is ready — Spotlight PR",
+    admin: "Admin access granted — Spotlight Puerto Rico",
+  };
+
+  await sendEmail(to, name, subjects[role], html);
+}
+
 export async function sendVerificationEmail(
   to: string,
   name: string,

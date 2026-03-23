@@ -1893,6 +1893,57 @@ export function useAdminListUsers<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
+export interface CreateUserBody {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role?: "user" | "business_owner" | "admin";
+}
+
+export const adminCreateUser = async (
+  body: BodyType<CreateUserBody>,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>("/api/admin/users", {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const useAdminCreateUser = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateUser>>,
+    TError,
+    { data: BodyType<CreateUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateUser>>,
+  TError,
+  { data: BodyType<CreateUserBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateUser>>,
+    { data: BodyType<CreateUserBody> }
+  > = (props) => adminCreateUser(props.data, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
 /**
  * @summary Admin - update user role
  */
