@@ -114,12 +114,21 @@ export default function UserProfile() {
   }
 
   if (!isAuthenticated && !targetId) {
+    const { openAuthModal } = useAuth();
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center max-w-sm">
-          <UserIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="text-xl font-bold font-display mb-2">Sign in to see your profile</h2>
-          <p className="text-muted-foreground text-sm">Your review history and community reputation live here.</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-emerald-50/30">
+        <div className="bg-white rounded-3xl shadow-2xl border border-border p-8 md:p-12 max-w-sm w-full space-y-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+            <UserIcon className="w-8 h-8 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold font-display mb-2 text-foreground">See Your Profile</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">Track your reviews, build your reputation, and become a trusted community voice on Spotlight PR.</p>
+          </div>
+          <Button onClick={() => openAuthModal()} size="lg" className="w-full rounded-xl gap-2">
+            Sign In or Create Account
+          </Button>
+          <p className="text-xs text-muted-foreground">It's free and takes less than a minute</p>
         </div>
       </div>
     );
