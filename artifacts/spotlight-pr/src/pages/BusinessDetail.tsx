@@ -25,7 +25,7 @@ import { BusinessMap } from "@/components/business/BusinessMap";
 
 const API_BASE = import.meta.env.BASE_URL || "/";
 
-// ─── Puerto Rico timezone helpers ─────────────────────────────────────────────
+// Puerto Rico timezone helpers
 function getPRTime(): { day: string; minutes: number } {
   const now = new Date();
   const pr = new Intl.DateTimeFormat("en-US", {
@@ -67,7 +67,7 @@ function isOpenNow(hours: Record<string, string>): boolean | null {
   return minutes >= open && minutes < close;
 }
 
-// ─── Social icon SVGs ─────────────────────────────────────────────────────────
+// Social brand icons (Facebook, Instagram, Twitter/X, YouTube)
 function FacebookIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
@@ -109,7 +109,7 @@ function YouTubeIcon() {
   );
 }
 
-// ─── Hours list component ──────────────────────────────────────────────────────
+// Hours display component with open/closed state
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function HoursBlock({ hours }: { hours: Record<string, string> }) {
@@ -157,7 +157,7 @@ function HoursBlock({ hours }: { hours: Record<string, string> }) {
   );
 }
 
-// ─── Share popover ─────────────────────────────────────────────────────────────
+// Share popover (copy link, WhatsApp, Facebook)
 function SharePopover({ businessName, url }: { businessName: string; url: string }) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -220,7 +220,7 @@ function SharePopover({ businessName, url }: { businessName: string; url: string
   );
 }
 
-// ─── Inquiry form ──────────────────────────────────────────────────────────────
+// Contact inquiry form
 function InquiryForm({ businessId, businessName }: { businessId: number; businessName: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -297,7 +297,7 @@ function InquiryForm({ businessId, businessName }: { businessId: number; busines
   );
 }
 
-// ─── Similar businesses ────────────────────────────────────────────────────────
+// Similar businesses section
 function SimilarBusinessCard({ business }: { business: Business }) {
   const slug = business.slug || String(business.id);
   return (
@@ -353,7 +353,7 @@ function SimilarBusinesses({ businessId }: { businessId: number }) {
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// Main business detail page
 export default function BusinessDetail() {
   const { id } = useParams();
   const businessSlugOrId = id || "";
