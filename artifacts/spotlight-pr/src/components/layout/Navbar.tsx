@@ -147,12 +147,19 @@ export function Navbar() {
                 </DropdownMenu>
               </>
             ) : (
-              <Button
-                onClick={() => openAuthModal()}
-                className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-              >
-                Log in
-              </Button>
+              <>
+                <Link href="/list-your-business">
+                  <Button variant="outline" className="hidden lg:flex gap-2 rounded-full border-primary/20 text-primary hover:bg-primary/5">
+                    <Store className="w-4 h-4" /> Add Business
+                  </Button>
+                </Link>
+                <Button
+                  onClick={() => openAuthModal()}
+                  className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                >
+                  Log in
+                </Button>
+              </>
             )}
           </div>
         </nav>
@@ -227,6 +234,9 @@ export function Navbar() {
           {!isAuthenticated && (
             <>
               <div className="my-1 border-t border-border/50" />
+              <Link href="/list-your-business" className="text-base font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3 text-primary" onClick={() => setMobileMenuOpen(false)}>
+                <Store className="w-5 h-5" /> Add Business
+              </Link>
               <Button onClick={() => { openAuthModal(); setMobileMenuOpen(false); }} className="w-full rounded-xl">
                 Log in / Sign up
               </Button>
