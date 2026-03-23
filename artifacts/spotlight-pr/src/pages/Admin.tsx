@@ -253,11 +253,10 @@ export default function Admin() {
 
   const navItems: { id: AdminSection; label: string; icon: any; badge?: number; badgeColor?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "businesses", label: "Business Listings", icon: Store },
     { id: "leads", label: "Leads", icon: Target, badge: unclaimedLeads || undefined, badgeColor: "bg-violet-500" },
+    { id: "businesses", label: "Business Listings", icon: Store },
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
-    { id: "notifications", label: "Notifications", icon: Bell, badge: totalNotifications || undefined, badgeColor: "bg-rose-500" },
   ];
 
   const businessTabs: { id: BusinessTab; label: string; count: number; color: string; activeColor: string }[] = [
@@ -287,13 +286,33 @@ export default function Admin() {
           {navItems.map(item => {
             const Icon = item.icon;
             const active = section === item.id;
+            const isLeads = item.id === "leads";
+            
+            if (isLeads) {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => { setSection(item.id); setSearchTerm(""); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium border-2 ${active ? "bg-violet-50 text-violet-700 border-violet-500 shadow-md shadow-violet-500/20" : "text-violet-600 border-violet-300 hover:bg-violet-50 hover:border-violet-400"}`}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0 text-violet-600" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge ? (
+                    <span className={`text-xs min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${active ? "bg-violet-600 text-white" : "bg-violet-500 text-white"}`}>
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            }
+            
             return (
               <button
                 key={item.id}
                 onClick={() => { setSection(item.id); setSearchTerm(""); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${active ? "bg-primary text-white shadow-md shadow-primary/20" : "text-foreground hover:bg-muted/60"}`}
               >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-white" : item.id === "notifications" && totalNotifications > 0 ? "text-rose-500" : item.id === "leads" ? "text-violet-500" : "text-muted-foreground"}`} />
+                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-white" : "text-muted-foreground"}`} />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.badge ? (
                   <span className={`text-xs min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${active ? "bg-white/20 text-white" : `${item.badgeColor ?? "bg-amber-100"} text-white`}`}>
@@ -326,6 +345,11 @@ export default function Admin() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {totalNotifications > 0 && (
+              <Button onClick={() => setSection("notifications")} variant="outline" className="rounded-xl gap-2 border-rose-200 text-rose-600 hover:bg-rose-50" title="View pending items">
+                <Bell className="w-4 h-4" /> {totalNotifications} Pending
+              </Button>
+            )}
             {section === "leads" && (
               <Button onClick={() => setAddingLead(true)} className="rounded-xl gap-2">
                 <Plus className="w-4 h-4" /> Scout a Business
@@ -983,8 +1007,10 @@ export default function Admin() {
       {/* ── User Edit Dialog ── */}
       <Dialog open={!!editingUser} onOpenChange={open => !open && setEditingUser(null)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Edit User — @{editingUser?.username}</DialogTitle></DialogHeader>
-          <Form {...userForm}>
+          {editingUser && (
+            <>
+              <DialogHeader><DialogTitle>Edit User — @{editingUser?.username}</DialogTitle></DialogHeader>
+              <Form {...userForm}>
             <form onSubmit={userForm.handleSubmit(values => adminUpdateUser({ id: editingUser.id, data: values }))} className="space-y-4">
               <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
@@ -1033,6 +1059,8 @@ export default function Admin() {
               </DialogFooter>
             </form>
           </Form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
