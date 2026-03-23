@@ -26,6 +26,7 @@ import {
   useAdminUpdateTeamMember,
   useAdminRemoveTeamMember,
   useAdminImportLeads,
+  useAdminDeleteBusiness,
 } from "@workspace/api-client-react";
 import type { Lead, TeamMember, ScraperRecord } from "@workspace/api-client-react";
 import {
@@ -585,6 +586,8 @@ export default function Admin() {
   const [teamMemberSearch, setTeamMemberSearch] = useState("");
   const [teamUserSearch, setTeamUserSearch] = useState("");
 
+  const [deletingBusiness, setDeletingBusiness] = useState<{ id: number; name: string } | null>(null);
+
   const [impersonationSession, setImpersonationSession] = useState<any | null>(null);
   const [impersonatedUser, setImpersonatedUser] = useState<any | null>(null);
 
@@ -642,6 +645,12 @@ export default function Admin() {
 
   const { mutate: approve } = useApproveBusiness({ mutation: { onSuccess: () => { toast({ title: "Business approved" }); invalidateBusinesses(); } } });
   const { mutate: reject } = useRejectBusiness({ mutation: { onSuccess: () => { toast({ title: "Business rejected" }); invalidateBusinesses(); } } });
+  const { mutate: deleteBusiness, isPending: isDeletingBusiness } = useAdminDeleteBusiness({
+    mutation: {
+      onSuccess: () => { toast({ title: "Business deleted", description: "The listing has been permanently removed." }); invalidateBusinesses(); setDeletingBusiness(null); },
+      onError: () => toast({ title: "Failed to delete business", variant: "destructive" }),
+    },
+  });
   const { mutate: feature } = useFeatureBusiness({ mutation: { onSuccess: () => { toast({ title: "Featured status toggled" }); queryClient.invalidateQueries({ queryKey: [`/api/admin/businesses`] }); } } });
   const { mutate: deleteReview } = useAdminDeleteReview({ mutation: { onSuccess: () => { toast({ title: "Review deleted" }); queryClient.invalidateQueries({ queryKey: [`/api/admin/reviews`] }); } } });
   const { mutate: adminUpdateBusiness, isPending: isSavingBusiness } = useAdminUpdateBusiness({
@@ -1277,6 +1286,9 @@ export default function Admin() {
                                 <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}>
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
+                                <Button size="icon" variant="outline" title="Delete Business" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingBusiness({ id: b.id, name: b.name })}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -1478,6 +1490,9 @@ export default function Admin() {
                           <Button size="sm" variant="ghost" className="rounded-xl text-muted-foreground" onClick={() => { setSection("businesses"); setBusinessTab("pending"); }}>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Button>
+                          <Button size="sm" variant="ghost" title="Delete Business" className="rounded-xl text-destructive hover:bg-destructive/10" onClick={() => setDeletingBusiness({ id: b.id, name: b.name })}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -1616,6 +1631,31 @@ export default function Admin() {
 
         </div>
       </div>
+
+      {/* ── Delete Business Confirmation Dialog ── */}
+      <Dialog open={!!deletingBusiness} onOpenChange={open => !open && setDeletingBusiness(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" /> Delete Business Listing
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <strong>{deletingBusiness?.name}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-4 border-t border-border gap-2">
+            <Button variant="outline" onClick={() => setDeletingBusiness(null)} className="rounded-xl" disabled={isDeletingBusiness}>Cancel</Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl gap-2"
+              disabled={isDeletingBusiness}
+              onClick={() => deletingBusiness && deleteBusiness({ id: deletingBusiness.id })}
+            >
+              {isDeletingBusiness ? <><Loader2 className="w-4 h-4 animate-spin" /> Deleting…</> : <><Trash2 className="w-4 h-4" /> Delete Permanently</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Add Team Member Dialog ── */}
       <AddTeamMemberDialog

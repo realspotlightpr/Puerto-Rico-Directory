@@ -109,6 +109,34 @@ router.get("/admin/businesses", async (req, res) => {
   }
 });
 
+router.delete("/admin/businesses/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: "Invalid business id" });
+      return;
+    }
+
+    const existing = await db.select({ id: businessesTable.id }).from(businessesTable).where(eq(businessesTable.id, id)).limit(1);
+    if (existing.length === 0) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.delete(reviewsTable).where(eq(reviewsTable.businessId, id));
+      await tx.delete(businessesTable).where(eq(businessesTable.id, id));
+    });
+
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete business" });
+  }
+});
+
 router.post("/admin/businesses/:id/approve", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
