@@ -31,6 +31,11 @@ export function Navbar() {
     { href: "/business", label: "For Business" },
   ];
 
+  // Admin shortcut — always visible in the top nav when logged in as admin
+  const adminNavLinks = isAdmin
+    ? [{ href: "/admin", label: "Admin" }]
+    : [];
+
   const showAddBusinessNav = !isAuthenticated || isOwner || isAdmin;
 
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || user?.username || "My Account";
@@ -51,12 +56,12 @@ export function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <div className="flex items-center gap-6">
-            {navLinks.map((link) => (
+            {[...navLinks, ...adminNavLinks].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === link.href ? "text-primary font-semibold" : "text-muted-foreground"
+                  location === link.href ? "text-primary font-semibold" : link.href === "/admin" ? "text-purple-600 hover:text-purple-700" : "text-muted-foreground"
                 }`}
               >
                 {link.label}
