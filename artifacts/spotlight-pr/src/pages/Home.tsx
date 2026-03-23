@@ -292,6 +292,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Explore by Town */}
+      <section className="py-20 bg-muted/30">
+        <div className="container px-4 mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Explore by Town</h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">From mountain towns to coastal cities — find businesses across the island.</p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
+            {FEATURED_TOWNS.map((town, i) => (
+              <TownTile key={town.name} town={town} index={i} />
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/directory">
+              <Button variant="outline" className="rounded-full">View all 78 municipalities</Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Featured Businesses */}
       <section className="py-24 bg-muted/50 border-y border-border relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 z-0" />
@@ -336,33 +363,6 @@ export default function Home() {
               <p className="text-muted-foreground">No featured businesses yet.</p>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Explore by Town */}
-      <section className="py-20 bg-background">
-        <div className="container px-4 mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Explore by Town</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">From mountain towns to coastal cities — find businesses across the island.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
-            {FEATURED_TOWNS.map((town, i) => (
-              <TownTile key={town.name} town={town} index={i} />
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link href="/directory">
-              <Button variant="outline" className="rounded-full">View all 78 municipalities</Button>
-            </Link>
-          </div>
         </div>
       </section>
 
