@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable } from "@workspace/db/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, ilike } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -411,6 +411,165 @@ router.put("/admin/users/:id/role", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update role" });
+  }
+});
+
+// ── Leads (Spotlight Rep Scouted Businesses) ──────────────────────────────────
+
+function generateSlug(name: string): string {
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${base}-${suffix}`;
+}
+
+router.get("/admin/leads", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { search } = req.query as { search?: string };
+
+    const rows = await db.select({
+      id: businessesTable.id,
+      name: businessesTable.name,
+      slug: businessesTable.slug,
+      description: businessesTable.description,
+      categoryId: businessesTable.categoryId,
+      categoryName: categoriesTable.name,
+      municipality: businessesTable.municipality,
+      address: businessesTable.address,
+      phone: businessesTable.phone,
+      email: businessesTable.email,
+      website: businessesTable.website,
+      logoUrl: businessesTable.logoUrl,
+      coverUrl: businessesTable.coverUrl,
+      status: businessesTable.status,
+      featured: businessesTable.featured,
+      isClaimed: businessesTable.isClaimed,
+      source: businessesTable.source,
+      addedByRepId: businessesTable.addedByRepId,
+      addedByRepName: businessesTable.addedByRepName,
+      createdAt: businessesTable.createdAt,
+      updatedAt: businessesTable.updatedAt,
+    })
+    .from(businessesTable)
+    .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
+    .where(
+      search
+        ? and(eq(businessesTable.source, "spotlight_rep"), ilike(businessesTable.name, `%${search}%`))
+        : eq(businessesTable.source, "spotlight_rep")
+    )
+    .orderBy(desc(businessesTable.createdAt));
+
+    res.json({ leads: rows, total: rows.length });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch leads" });
+  }
+});
+
+router.post("/admin/leads", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl } = req.body;
+
+    if (!name || !description || !municipality) {
+      res.status(400).json({ error: "name, description, and municipality are required" });
+      return;
+    }
+
+    const repId = req.user!.id;
+    const repName = `${req.user!.firstName ?? ""} ${req.user!.lastName ?? ""}`.trim() || req.user!.username;
+
+    let slug = generateSlug(name);
+    // Ensure slug is unique
+    const existing = await db.select({ id: businessesTable.id }).from(businessesTable).where(eq(businessesTable.slug, slug));
+    if (existing.length > 0) slug = `${slug}-${Date.now().toString(36)}`;
+
+    const [lead] = await db.insert(businessesTable).values({
+      name,
+      slug,
+      description,
+      categoryId: categoryId ?? null,
+      municipality,
+      address: address ?? null,
+      phone: phone ?? null,
+      email: email ?? null,
+      website: website ?? null,
+      logoUrl: logoUrl ?? null,
+      coverUrl: coverUrl ?? null,
+      status: "approved",
+      isClaimed: false,
+      source: "spotlight_rep",
+      addedByRepId: repId,
+      addedByRepName: repName,
+      ownerId: "__spotlight_rep__",
+      ownerName: repName,
+    }).returning();
+
+    res.status(201).json(lead);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create lead" });
+  }
+});
+
+router.patch("/admin/leads/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, status } = req.body;
+
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (categoryId !== undefined) updates.categoryId = categoryId;
+    if (municipality !== undefined) updates.municipality = municipality;
+    if (address !== undefined) updates.address = address;
+    if (phone !== undefined) updates.phone = phone;
+    if (email !== undefined) updates.email = email;
+    if (website !== undefined) updates.website = website;
+    if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+    if (coverUrl !== undefined) updates.coverUrl = coverUrl;
+    if (status !== undefined && ["pending", "approved", "rejected"].includes(status)) updates.status = status;
+
+    const [updated] = await db.update(businessesTable)
+      .set(updates)
+      .where(and(eq(businessesTable.id, id), eq(businessesTable.source, "spotlight_rep")))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update lead" });
+  }
+});
+
+router.delete("/admin/leads/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+
+    const [deleted] = await db.delete(businessesTable)
+      .where(and(eq(businessesTable.id, id), eq(businessesTable.source, "spotlight_rep")))
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ error: "Lead not found" });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete lead" });
   }
 });
 

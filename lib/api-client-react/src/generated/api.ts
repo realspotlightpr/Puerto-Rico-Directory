@@ -25,6 +25,10 @@ import type {
   AdminUpdateBusinessBody,
   AdminUpdateUserBody,
   Business,
+  CreateLeadBody,
+  Lead,
+  LeadListResponse,
+  UpdateLeadBody,
   BusinessDetail,
   BusinessListResponse,
   CategoryListResponse,
@@ -2426,6 +2430,169 @@ export type RequestUploadUrlMutationResult = NonNullable<
 >;
 export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>;
 export type RequestUploadUrlMutationError = ErrorType<ErrorEnvelope>;
+
+// ── Admin: Leads ──────────────────────────────────────────────────────────────
+
+export const getAdminLeadsQueryKey = (params?: { search?: string }) =>
+  [`/api/admin/leads`, ...(params ? [params] : [])] as const;
+
+export const adminGetLeads = async (
+  params?: { search?: string },
+  options?: RequestInit,
+): Promise<LeadListResponse> => {
+  const query = params?.search ? `?search=${encodeURIComponent(params.search)}` : "";
+  return customFetch<LeadListResponse>(`/api/admin/leads${query}`, { ...options });
+};
+
+export const useAdminGetLeads = <
+  TData = Awaited<ReturnType<typeof adminGetLeads>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: { search?: string },
+  options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof adminGetLeads>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getAdminLeadsQueryKey(params);
+  return useQuery({
+    queryFn: () => adminGetLeads(params, requestOptions),
+    queryKey,
+    ...queryOptions,
+  });
+};
+
+export const adminCreateLead = async (
+  body: BodyType<CreateLeadBody>,
+  options?: RequestInit,
+): Promise<Lead> => {
+  return customFetch<Lead>("/api/admin/leads", {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const useAdminCreateLead = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateLead>>,
+    TError,
+    { data: BodyType<CreateLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateLead>>,
+  TError,
+  { data: BodyType<CreateLeadBody> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateLead>>,
+    { data: BodyType<CreateLeadBody> }
+  > = (props) => adminCreateLead(props.data, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+export const adminUpdateLead = async (
+  id: number,
+  body: BodyType<UpdateLeadBody>,
+  options?: RequestInit,
+): Promise<Lead> => {
+  return customFetch<Lead>(`/api/admin/leads/${id}`, {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const useAdminUpdateLead = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateLead>>,
+    TError,
+    { id: number; data: BodyType<UpdateLeadBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateLead>>,
+  TError,
+  { id: number; data: BodyType<UpdateLeadBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateLead>>,
+    { id: number; data: BodyType<UpdateLeadBody> }
+  > = (props) => adminUpdateLead(props.id, props.data, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+export const adminDeleteLead = async (
+  id: number,
+  options?: RequestInit,
+): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(`/api/admin/leads/${id}`, {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const useAdminDeleteLead = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteLead>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteLead>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteLead>>,
+    { id: number }
+  > = (props) => adminDeleteLead(props.id, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
 
 // ── Admin: Update Business ────────────────────────────────────────────────────
 

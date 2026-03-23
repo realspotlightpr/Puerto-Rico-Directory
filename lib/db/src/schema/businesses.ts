@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const businessStatusEnum = pgEnum("business_status", ["pending", "approved", "rejected"]);
+export const businessSourceEnum = pgEnum("business_source", ["user_submitted", "spotlight_rep"]);
 
 export const categoriesTable = pgTable("categories", {
   id: serial("id").primaryKey(),
@@ -35,6 +36,9 @@ export const businessesTable = pgTable("businesses", {
   ownerPhone: text("owner_phone"),
   ownerContactEmail: text("owner_contact_email"),
   isClaimed: boolean("is_claimed").notNull().default(false),
+  source: businessSourceEnum("source").notNull().default("user_submitted"),
+  addedByRepId: text("added_by_rep_id"),
+  addedByRepName: text("added_by_rep_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -223,6 +223,62 @@ export interface UserListResponse {
   total: number;
 }
 
+export interface Lead {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  municipality: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  status: "pending" | "approved" | "rejected";
+  featured: boolean;
+  isClaimed: boolean;
+  source: "spotlight_rep";
+  addedByRepId?: string | null;
+  addedByRepName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeadListResponse {
+  leads: Lead[];
+  total: number;
+}
+
+export interface CreateLeadBody {
+  name: string;
+  description: string;
+  municipality: string;
+  categoryId?: number;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logoUrl?: string;
+  coverUrl?: string;
+}
+
+export interface UpdateLeadBody {
+  name?: string;
+  description?: string;
+  municipality?: string;
+  categoryId?: number;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logoUrl?: string;
+  coverUrl?: string;
+  status?: "pending" | "approved" | "rejected";
+}
+
 export type UpdateUserRoleBodyRole =
   (typeof UpdateUserRoleBodyRole)[keyof typeof UpdateUserRoleBodyRole];
 
