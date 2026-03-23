@@ -2855,6 +2855,77 @@ export const useAdminDeleteLead = <
   return useMutation({ mutationFn, ...mutationOptions });
 };
 
+// ── Admin: Import Leads from Google Maps Scraper ──────────────────────────────
+
+export type ScraperRecord = {
+  title?: string;
+  name?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  email?: string | string[];
+  description?: string;
+  category?: string;
+  thumbnail?: string;
+  review_count?: number;
+  review_rating?: number;
+  [key: string]: unknown;
+};
+
+export type ImportLeadsBody = {
+  records: ScraperRecord[];
+};
+
+export type ImportLeadsResult = {
+  imported: number;
+  skipped: number;
+  duplicates: string[];
+};
+
+export const adminImportLeads = async (
+  body: BodyType<ImportLeadsBody>,
+  options?: RequestInit,
+): Promise<ImportLeadsResult> => {
+  return customFetch<ImportLeadsResult>("/api/admin/leads/import", {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const useAdminImportLeads = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminImportLeads>>,
+    TError,
+    { data: BodyType<ImportLeadsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminImportLeads>>,
+  TError,
+  { data: BodyType<ImportLeadsBody> },
+  TContext
+> => {
+  const mutationKey = ["adminImportLeads"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminImportLeads>>,
+    { data: BodyType<ImportLeadsBody> }
+  > = (props) => adminImportLeads(props.data, requestOptions);
+
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
 // ── Admin: Update Business ────────────────────────────────────────────────────
 
 export const getAdminUpdateBusinessUrl = (id: number) => `/api/admin/businesses/${id}`;

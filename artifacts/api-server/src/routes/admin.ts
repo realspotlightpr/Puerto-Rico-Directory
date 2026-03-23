@@ -602,6 +602,128 @@ router.post("/admin/leads", async (req, res) => {
   }
 });
 
+const PR_MUNICIPALITIES = [
+  "Adjuntas", "Aguada", "Aguadilla", "Aguas Buenas", "Aibonito", "Añasco",
+  "Arecibo", "Arroyo", "Barceloneta", "Barranquitas", "Bayamón", "Cabo Rojo",
+  "Caguas", "Camuy", "Canóvanas", "Carolina", "Cataño", "Cayey", "Ceiba",
+  "Ciales", "Cidra", "Coamo", "Comerío", "Corozal", "Culebra", "Dorado",
+  "Fajardo", "Florida", "Guánica", "Guayama", "Guayanilla", "Guaynabo",
+  "Gurabo", "Hatillo", "Hormigueros", "Humacao", "Isabela", "Jayuya",
+  "Juana Díaz", "Juncos", "Lajas", "Lares", "Las Marías", "Las Piedras",
+  "Loíza", "Luquillo", "Manatí", "Maricao", "Maunabo", "Mayagüez", "Moca",
+  "Morovis", "Naguabo", "Naranjito", "Orocovis", "Patillas", "Peñuelas",
+  "Ponce", "Quebradillas", "Rincón", "Río Grande", "Sabana Grande", "Salinas",
+  "San Germán", "San Juan", "San Lorenzo", "San Sebastián", "Santa Isabel",
+  "Toa Alta", "Toa Baja", "Trujillo Alto", "Utuado", "Vega Alta", "Vega Baja",
+  "Vieques", "Villalba", "Yabucoa", "Yauco",
+];
+
+function detectMunicipality(address: string): string {
+  const normalized = address.toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  for (const m of PR_MUNICIPALITIES) {
+    const mn = m.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (normalized.includes(mn)) return m;
+  }
+  return "San Juan";
+}
+
+router.post("/admin/leads/import", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { records } = req.body;
+
+    if (!Array.isArray(records) || records.length === 0) {
+      res.status(400).json({ error: "records array is required and must not be empty" });
+      return;
+    }
+
+    const repId = req.user!.id;
+    const repName = `${req.user!.firstName ?? ""} ${req.user!.lastName ?? ""}`.trim() || req.user!.username || "Admin";
+
+    let imported = 0;
+    let skipped = 0;
+    const skippedNames: string[] = [];
+
+    const limitedRecords = records.slice(0, 500);
+
+    for (const record of limitedRecords) {
+      const name = (record.title || record.name || "").trim();
+      if (!name) { skipped++; continue; }
+
+      const address = (record.address || "").trim();
+      const municipality = detectMunicipality(address);
+
+      const rawEmail = record.email;
+      const email = Array.isArray(rawEmail)
+        ? (rawEmail[0] || null)
+        : (typeof rawEmail === "string" ? rawEmail || null : null);
+
+      const description = (record.description || "").trim() ||
+        `${name} is a business located in ${municipality}, Puerto Rico.`;
+
+      const website = record.website || null;
+      const phone = record.phone || null;
+      const logoUrl = record.thumbnail || null;
+
+      const existing = await db
+        .select({ id: businessesTable.id })
+        .from(businessesTable)
+        .where(eq(businessesTable.name, name))
+        .limit(1);
+
+      if (existing.length > 0) {
+        skipped++;
+        skippedNames.push(name);
+        continue;
+      }
+
+      let slug = generateSlug(name);
+      const existingSlug = await db
+        .select({ id: businessesTable.id })
+        .from(businessesTable)
+        .where(eq(businessesTable.slug, slug))
+        .limit(1);
+      if (existingSlug.length > 0) slug = `${slug}-${Date.now().toString(36)}`;
+
+      try {
+        await db.insert(businessesTable).values({
+          name,
+          slug,
+          description,
+          municipality,
+          address: address || null,
+          phone,
+          email,
+          website,
+          logoUrl,
+          status: "approved",
+          isClaimed: false,
+          source: "spotlight_rep",
+          addedByRepId: repId,
+          addedByRepName: repName,
+          ownerId: "__spotlight_rep__",
+          ownerName: repName,
+        });
+        imported++;
+      } catch {
+        skipped++;
+        skippedNames.push(name);
+      }
+    }
+
+    res.json({
+      imported,
+      skipped,
+      duplicates: skippedNames.slice(0, 20),
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to import leads" });
+  }
+});
+
 router.patch("/admin/leads/:id", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 

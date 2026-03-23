@@ -25,14 +25,16 @@ import {
   useAdminAddTeamMember,
   useAdminUpdateTeamMember,
   useAdminRemoveTeamMember,
+  useAdminImportLeads,
 } from "@workspace/api-client-react";
-import type { Lead, TeamMember } from "@workspace/api-client-react";
+import type { Lead, TeamMember, ScraperRecord } from "@workspace/api-client-react";
 import {
   Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
   LayoutDashboard, Edit2, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
+  Upload, FileJson, CheckCircle, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +115,221 @@ const PERMISSIONS = [
 ] as const;
 
 type PermissionKey = "add_businesses" | "approve" | "verify";
+
+function parseCSV(text: string): Record<string, string>[] {
+  const lines: string[] = [];
+  let cur = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') { inQ = !inQ; cur += ch; }
+    else if (ch === '\n' && !inQ) { lines.push(cur); cur = ""; }
+    else { cur += ch; }
+  }
+  if (cur) lines.push(cur);
+
+  function splitRow(row: string): string[] {
+    const cells: string[] = [];
+    let cell = "", q = false;
+    for (let i = 0; i < row.length; i++) {
+      const ch = row[i];
+      if (ch === '"') {
+        if (q && row[i + 1] === '"') { cell += '"'; i++; }
+        else q = !q;
+      } else if (ch === ',' && !q) { cells.push(cell); cell = ""; }
+      else cell += ch;
+    }
+    cells.push(cell);
+    return cells;
+  }
+
+  if (lines.length < 2) return [];
+  const headers = splitRow(lines[0]);
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = splitRow(line);
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => { row[h.trim()] = (vals[i] ?? "").trim(); });
+    return row;
+  });
+}
+
+function GoogleMapsImportDialog({
+  open, onClose, onImport, isImporting,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onImport: (records: ScraperRecord[]) => void;
+  isImporting: boolean;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const [records, setRecords] = useState<ScraperRecord[]>([]);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  function reset() {
+    setRecords([]);
+    setParseError(null);
+    setFileName(null);
+  }
+
+  function handleFile(file: File) {
+    setFileName(file.name);
+    setParseError(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      try {
+        if (file.name.endsWith(".json")) {
+          const parsed = JSON.parse(text);
+          const arr = Array.isArray(parsed) ? parsed : [parsed];
+          setRecords(arr);
+        } else if (file.name.endsWith(".csv")) {
+          const rows = parseCSV(text);
+          setRecords(rows as ScraperRecord[]);
+        } else {
+          try {
+            const arr = JSON.parse(text);
+            setRecords(Array.isArray(arr) ? arr : [arr]);
+          } catch {
+            setParseError("Unsupported format. Please upload a .json or .csv file from the Google Maps Scraper.");
+          }
+        }
+      } catch {
+        setParseError("Could not parse file. Make sure it's valid JSON or CSV output from the Google Maps Scraper.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  }
+
+  function handleClose() {
+    reset();
+    onClose();
+  }
+
+  const preview = records.slice(0, 5);
+
+  return (
+    <Dialog open={open} onOpenChange={open => !open && handleClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileJson className="w-5 h-5 text-violet-500" /> Import from Google Maps Scraper
+          </DialogTitle>
+          <DialogDescription>
+            Upload the JSON or CSV output from{" "}
+            <a href="https://github.com/gosom/google-maps-scraper" target="_blank" rel="noopener noreferrer" className="underline text-violet-600">gosom/google-maps-scraper</a>.
+            Businesses will be imported as unclaimed listings attributed to Spotlight PR. Up to 500 records per import.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Usage hint */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 space-y-1.5 font-mono">
+            <p className="font-semibold text-slate-700 font-sans text-sm">How to run the scraper:</p>
+            <p>docker run --rm -v $PWD:/queries gosom/google-maps-scraper \</p>
+            <p>&nbsp;&nbsp;-input /queries/queries.txt -json \</p>
+            <p>&nbsp;&nbsp;-exit-on-inactivity 3m &gt; results.json</p>
+            <p className="font-sans text-slate-500 pt-1">Then upload the <strong>results.json</strong> file below.</p>
+          </div>
+
+          {/* Drop zone */}
+          {records.length === 0 && !parseError && (
+            <div
+              className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${dragOver ? "border-violet-400 bg-violet-50" : "border-border hover:border-violet-300 hover:bg-violet-50/50"}`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById("gm-import-file")?.click()}
+            >
+              <Upload className="w-8 h-8 text-violet-400 mx-auto mb-3" />
+              <p className="font-semibold text-sm">Drop your file here or click to browse</p>
+              <p className="text-xs text-muted-foreground mt-1">Accepts .json or .csv from Google Maps Scraper</p>
+              <input id="gm-import-file" type="file" accept=".json,.csv" className="hidden" onChange={handleInputChange} />
+            </div>
+          )}
+
+          {/* Error */}
+          {parseError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3 items-start">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Parse error</p>
+                <p className="text-xs text-red-600 mt-0.5">{parseError}</p>
+                <Button size="sm" variant="outline" className="mt-3 rounded-lg h-7 text-xs" onClick={reset}>Try another file</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Parsed result */}
+          {records.length > 0 && (
+            <div className="space-y-3">
+              <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-violet-500" />
+                  <div>
+                    <p className="font-semibold text-sm text-violet-900">{fileName}</p>
+                    <p className="text-xs text-violet-700">{records.length} businesses parsed and ready to import</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" className="rounded-lg text-xs h-7" onClick={reset}>Clear</Button>
+              </div>
+
+              {/* Preview table */}
+              <div className="border border-border rounded-xl overflow-hidden text-sm">
+                <div className="bg-muted/40 px-4 py-2 border-b border-border">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Preview (first {Math.min(5, records.length)} of {records.length})</p>
+                </div>
+                <div className="divide-y divide-border">
+                  {preview.map((r, i) => (
+                    <div key={i} className="px-4 py-3 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="font-semibold truncate">{r.title || r.name || "(no name)"}</p>
+                        <p className="text-muted-foreground truncate">{r.category || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="truncate text-muted-foreground">{r.address || "—"}</p>
+                        <p className="text-muted-foreground">{r.phone || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="truncate text-muted-foreground">{r.website || "—"}</p>
+                        {r.review_rating ? <p className="text-amber-600">★ {r.review_rating}</p> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="pt-4 border-t border-border">
+          <Button type="button" variant="outline" onClick={handleClose} className="rounded-xl">Cancel</Button>
+          <Button
+            type="button"
+            disabled={records.length === 0 || isImporting}
+            className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700"
+            onClick={() => onImport(records)}
+          >
+            {isImporting
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Importing…</>
+              : <><Upload className="w-4 h-4" /> Import {records.length > 0 ? `${records.length} Businesses` : "Businesses"}</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function AddTeamMemberDialog({
   open, onClose, onAdd, isAdding, users, teamMemberUserIds,
@@ -359,6 +576,7 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [addingLead, setAddingLead] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [statsBusinessId, setStatsBusinessId] = useState<number | null>(null);
 
   const [addingUser, setAddingUser] = useState(false);
@@ -466,6 +684,16 @@ export default function Admin() {
     mutation: {
       onSuccess: () => { toast({ title: "Lead removed" }); invalidateLeads(); },
       onError: () => toast({ title: "Failed to remove lead", variant: "destructive" }),
+    },
+  });
+  const { mutate: importLeads, isPending: isImportingLeads } = useAdminImportLeads({
+    mutation: {
+      onSuccess: (result) => {
+        toast({ title: `Imported ${result.imported} businesses`, description: result.skipped > 0 ? `${result.skipped} skipped (already exist or invalid)` : undefined });
+        invalidateLeads();
+        setShowImportDialog(false);
+      },
+      onError: () => toast({ title: "Import failed", variant: "destructive" }),
     },
   });
 
@@ -690,9 +918,14 @@ export default function Admin() {
               </Button>
             )}
             {section === "leads" && (
-              <Button onClick={() => setAddingLead(true)} className="rounded-xl gap-2">
-                <Plus className="w-4 h-4" /> Scout a Business
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setShowImportDialog(true)} className="rounded-xl gap-2 border-violet-200 text-violet-700 hover:bg-violet-50">
+                  <Upload className="w-4 h-4" /> Import from Google Maps
+                </Button>
+                <Button onClick={() => setAddingLead(true)} className="rounded-xl gap-2">
+                  <Plus className="w-4 h-4" /> Scout a Business
+                </Button>
+              </>
             )}
             {section === "users" && (
               <Button onClick={() => setAddingUser(true)} className="rounded-xl gap-2">
@@ -1404,6 +1637,14 @@ export default function Admin() {
           isSaving={isUpdatingTeamMember}
         />
       )}
+
+      {/* ── Google Maps Import Dialog ── */}
+      <GoogleMapsImportDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImport={(records) => importLeads({ data: { records } })}
+        isImporting={isImportingLeads}
+      />
 
       {/* ── Add Lead Dialog ── */}
       <Dialog open={addingLead} onOpenChange={open => { if (!open) { setAddingLead(false); addLeadForm.reset(); } }}>
