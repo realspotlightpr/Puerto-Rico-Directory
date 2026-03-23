@@ -4,9 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@workspace/replit-auth-web";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { SetPasswordModal } from "@/components/auth/SetPasswordModal";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
@@ -54,11 +55,41 @@ function ScrollToTop() {
   return null;
 }
 
+// Detects when the user has arrived via a magic link and prompts them to set a password
+function MagicLinkHandler() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const [showSetPassword, setShowSetPassword] = useState(false);
+  const detectedRef = useRef(false);
+
+  // Capture the URL hash immediately on mount — Supabase clears it once it processes the token
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (
+      hash.includes("type=magiclink") ||
+      hash.includes("type=signup")
+    ) {
+      detectedRef.current = true;
+    }
+  }, []);
+
+  // Once auth resolves and the user is logged in, show the set-password modal
+  useEffect(() => {
+    if (detectedRef.current && !isLoading && isAuthenticated) {
+      setShowSetPassword(true);
+    }
+  }, [isLoading, isAuthenticated]);
+
+  if (!showSetPassword) return null;
+
+  return <SetPasswordModal onComplete={() => setShowSetPassword(false)} />;
+}
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
       <AuthTokenWirer />
+      <MagicLinkHandler />
       <Navbar />
       <main className="flex-1">
         <Switch>
