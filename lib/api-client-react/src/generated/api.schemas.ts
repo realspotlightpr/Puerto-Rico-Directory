@@ -93,12 +93,26 @@ export type BusinessDetailSocialLinks = {
 export type BusinessDetail = Business & {
   hours?: BusinessDetailHours;
   socialLinks?: BusinessDetailSocialLinks;
-  specialOffer?: string;
+  specialOffer?: string | null;
   isClaimed?: boolean;
   pageViews?: number;
   websiteClicks?: number;
   mapsClicks?: number;
 };
+
+export interface BusinessInquiryBody {
+  name: string;
+  email: string;
+  message: string;
+}
+
+export interface BusinessInquiryResponse {
+  success: boolean;
+}
+
+export interface SimilarBusinessListResponse {
+  businesses: Business[];
+}
 
 export interface BusinessListResponse {
   businesses: Business[];
@@ -162,6 +176,7 @@ export interface UpdateBusinessBody {
   hours?: UpdateBusinessBodyHours;
   socialLinks?: UpdateBusinessBodySocialLinks;
   specialOffer?: string;
+  slug?: string;
 }
 
 export interface Review {

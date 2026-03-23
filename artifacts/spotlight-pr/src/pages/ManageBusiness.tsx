@@ -25,6 +25,7 @@ import {
   useListBusinessReviews,
   useListCategories,
 } from "@workspace/api-client-react";
+import type { BusinessDetail, UpdateBusinessBody } from "@workspace/api-client-react";
 import { MUNICIPALITIES } from "@/lib/constants";
 import { format } from "date-fns";
 
@@ -123,6 +124,7 @@ export default function ManageBusiness() {
   // Populate forms when business loads
   useEffect(() => {
     if (!business) return;
+    const detail = business as BusinessDetail;
     detailsForm.reset({
       name: business.name ?? "",
       description: business.description ?? "",
@@ -132,14 +134,14 @@ export default function ManageBusiness() {
       phone: business.phone ?? "",
       email: business.email ?? "",
       website: business.website ?? "",
-      specialOffer: (business as any).specialOffer ?? "",
-      slug: (business as any).slug ?? "",
+      specialOffer: detail.specialOffer ?? "",
+      slug: business.slug ?? "",
     });
     mediaForm.reset({
       logoUrl: business.logoUrl ?? "",
       coverUrl: business.coverUrl ?? "",
     });
-    const sl = business.socialLinks as any;
+    const sl = detail.socialLinks;
     socialForm.reset({
       facebook: sl?.facebook ?? "",
       instagram: sl?.instagram ?? "",
@@ -150,7 +152,19 @@ export default function ManageBusiness() {
 
   const saveDetails = async (data: z.infer<typeof detailsSchema>) => {
     try {
-      await updateBusiness({ id, data: data as any });
+      const payload: UpdateBusinessBody = {
+        name: data.name,
+        description: data.description,
+        categoryId: data.categoryId,
+        municipality: data.municipality,
+        address: data.address,
+        phone: data.phone,
+        email: data.email,
+        website: data.website,
+        specialOffer: data.specialOffer,
+        slug: data.slug || undefined,
+      };
+      await updateBusiness({ id, data: payload });
       refetch();
       toast({ title: "Details saved!", description: "Your listing has been updated." });
     } catch {
@@ -160,7 +174,11 @@ export default function ManageBusiness() {
 
   const saveMedia = async (data: z.infer<typeof mediaSchema>) => {
     try {
-      await updateBusiness({ id, data: data as any });
+      const payload: UpdateBusinessBody = {
+        logoUrl: data.logoUrl,
+        coverUrl: data.coverUrl,
+      };
+      await updateBusiness({ id, data: payload });
       refetch();
       toast({ title: "Media saved!" });
     } catch {
@@ -170,7 +188,15 @@ export default function ManageBusiness() {
 
   const saveSocial = async (data: z.infer<typeof socialSchema>) => {
     try {
-      await updateBusiness({ id, data: { socialLinks: data } as any });
+      const payload: UpdateBusinessBody = {
+        socialLinks: {
+          facebook: data.facebook,
+          instagram: data.instagram,
+          twitter: data.twitter,
+          youtube: data.youtube,
+        },
+      };
+      await updateBusiness({ id, data: payload });
       refetch();
       toast({ title: "Social links saved!" });
     } catch {
@@ -180,7 +206,8 @@ export default function ManageBusiness() {
 
   const saveHours = async () => {
     try {
-      await updateBusiness({ id, data: { hours } as any });
+      const payload: UpdateBusinessBody = { hours };
+      await updateBusiness({ id, data: payload });
       refetch();
       toast({ title: "Hours saved!" });
     } catch {
@@ -234,7 +261,7 @@ export default function ManageBusiness() {
               <div className="flex items-center gap-2">
                 <StatusBadge status={business.status} />
                 {business.status === "approved" && (
-                  <Link href={`/businesses/${(business as any).slug || business.id}`}>
+                  <Link href={`/businesses/${business.slug || String(business.id)}`}>
                     <span className="text-xs text-primary hover:underline flex items-center gap-0.5">
                       View public listing <ChevronRight className="w-3 h-3" />
                     </span>

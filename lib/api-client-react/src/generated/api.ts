@@ -25,6 +25,8 @@ import type {
   AdminUpdateBusinessBody,
   AdminUpdateUserBody,
   Business,
+  BusinessInquiryBody,
+  BusinessInquiryResponse,
   CreateLeadBody,
   Lead,
   LeadListResponse,
@@ -49,6 +51,7 @@ import type {
   Review,
   ReviewListResponse,
   SendOpenaiMessageBody,
+  SimilarBusinessListResponse,
   UpdateBusinessBody,
   UpdateUserRoleBody,
   UploadUrlRequest,
@@ -644,6 +647,168 @@ export const useUpdateBusiness = <
 > => {
   return useMutation(getUpdateBusinessMutationOptions(options));
 };
+
+/**
+ * @summary Send an inquiry message to a business
+ */
+export const getSubmitBusinessInquiryUrl = (id: number) => {
+  return `/api/businesses/${id}/inquiry`;
+};
+
+export const submitBusinessInquiry = async (
+  id: number,
+  businessInquiryBody: BusinessInquiryBody,
+  options?: RequestInit,
+): Promise<BusinessInquiryResponse> => {
+  return customFetch<BusinessInquiryResponse>(getSubmitBusinessInquiryUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(businessInquiryBody),
+  });
+};
+
+export const getSubmitBusinessInquiryMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitBusinessInquiry>>,
+    TError,
+    { id: number; data: BodyType<BusinessInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitBusinessInquiry>>,
+  TError,
+  { id: number; data: BodyType<BusinessInquiryBody> },
+  TContext
+> => {
+  const mutationKey = ["submitBusinessInquiry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitBusinessInquiry>>,
+    { id: number; data: BodyType<BusinessInquiryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+    return submitBusinessInquiry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitBusinessInquiryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitBusinessInquiry>>
+>;
+export type SubmitBusinessInquiryMutationBody = BodyType<BusinessInquiryBody>;
+export type SubmitBusinessInquiryMutationError = ErrorType<ErrorResponse>;
+
+export const useSubmitBusinessInquiry = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitBusinessInquiry>>,
+    TError,
+    { id: number; data: BodyType<BusinessInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitBusinessInquiry>>,
+  TError,
+  { id: number; data: BodyType<BusinessInquiryBody> },
+  TContext
+> => {
+  return useMutation(getSubmitBusinessInquiryMutationOptions(options));
+};
+
+/**
+ * @summary Get similar businesses (same category or municipality)
+ */
+export const getGetSimilarBusinessesUrl = (id: number) => {
+  return `/api/businesses/${id}/similar`;
+};
+
+export const getSimilarBusinesses = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SimilarBusinessListResponse> => {
+  return customFetch<SimilarBusinessListResponse>(getGetSimilarBusinessesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSimilarBusinessesQueryKey = (id: number) => {
+  return [`/api/businesses/${id}/similar`] as const;
+};
+
+export const getGetSimilarBusinessesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSimilarBusinesses>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSimilarBusinesses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetSimilarBusinessesQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSimilarBusinesses>>> = ({
+    signal,
+  }) => getSimilarBusinesses(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSimilarBusinesses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSimilarBusinessesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSimilarBusinesses>>
+>;
+export type GetSimilarBusinessesQueryError = ErrorType<ErrorResponse>;
+
+export function useGetSimilarBusinesses<
+  TData = Awaited<ReturnType<typeof getSimilarBusinesses>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSimilarBusinesses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSimilarBusinessesQueryOptions(id, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Delete a business

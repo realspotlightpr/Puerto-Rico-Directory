@@ -2,6 +2,15 @@ const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const BRAND_COLOR = "#0891b2";
 const SITE_URL = process.env.VITE_PUBLIC_URL || "https://spotlightpuertorico.com";
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function emailWrapper(content: string): string {
   return `
     <html>
@@ -122,10 +131,15 @@ export async function sendInquiryEmail(
   senderEmail: string,
   message: string,
 ): Promise<void> {
+  const safeName = escapeHtml(senderName);
+  const safeEmail = escapeHtml(senderEmail);
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+  const safeBusinessName = escapeHtml(businessName);
+
   const html = emailWrapper(`
     <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">New Customer Inquiry</h2>
     <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      Someone sent a message to <strong>${businessName}</strong> through Spotlight Puerto Rico.
+      Someone sent a message to <strong>${safeBusinessName}</strong> through Spotlight Puerto Rico.
     </p>
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
@@ -133,22 +147,22 @@ export async function sendInquiryEmail(
       <table style="width:100%;border-collapse:collapse;">
         <tr>
           <td style="padding:8px 0;color:#6b7280;font-size:13px;width:30%;vertical-align:top;">From</td>
-          <td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;">${senderName}</td>
+          <td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;">${safeName}</td>
         </tr>
         <tr>
           <td style="padding:8px 0;color:#6b7280;font-size:13px;vertical-align:top;">Email</td>
-          <td style="padding:8px 0;font-size:14px;"><a href="mailto:${senderEmail}" style="color:${BRAND_COLOR};">${senderEmail}</a></td>
+          <td style="padding:8px 0;font-size:14px;"><a href="mailto:${safeEmail}" style="color:${BRAND_COLOR};">${safeEmail}</a></td>
         </tr>
         <tr>
           <td style="padding:8px 0;color:#6b7280;font-size:13px;vertical-align:top;">Message</td>
-          <td style="padding:8px 0;color:#374151;font-size:14px;line-height:1.6;">${message.replace(/\n/g, "<br>")}</td>
+          <td style="padding:8px 0;color:#374151;font-size:14px;line-height:1.6;">${safeMessage}</td>
         </tr>
       </table>
     </div>
 
     <div style="text-align:center;margin-bottom:24px;">
-      <a href="mailto:${senderEmail}?subject=Re: Your inquiry about ${encodeURIComponent(businessName)}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
-        Reply to ${senderName} →
+      <a href="mailto:${safeEmail}?subject=Re: Your inquiry about ${encodeURIComponent(businessName)}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
+        Reply to ${safeName} →
       </a>
     </div>
 

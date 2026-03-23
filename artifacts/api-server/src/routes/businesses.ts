@@ -564,8 +564,15 @@ router.get("/businesses/:id/similar", async (req, res) => {
       return;
     }
 
-    // Try same category first
-    let rows: any[] = [];
+    // Try same category first — use a type-safe accumulator, filled by either query
+    const queryBase = () =>
+      db
+        .select()
+        .from(businessesTable)
+        .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id));
+
+    type SimilarRow = Awaited<ReturnType<typeof queryBase>>[number];
+    let rows: SimilarRow[] = [];
     if (current.categoryId) {
       rows = await db
         .select()
