@@ -95,6 +95,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/postcard-marketing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  📬 Postcard Marketing
+                </Link>
+              </li>
+              <li>
                 <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Advertise with Us
                 </a>

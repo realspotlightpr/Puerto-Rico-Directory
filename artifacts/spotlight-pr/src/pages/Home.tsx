@@ -448,11 +448,6 @@ export default function Home() {
                 Add Your Business Free
               </Button>
             </Link>
-            <Link href="/postcard-marketing">
-              <Button size="lg" className="h-14 px-8 rounded-xl bg-secondary/90 text-white hover:bg-secondary font-bold text-lg w-full sm:w-auto shadow-xl">
-                📬 Postcard Marketing
-              </Button>
-            </Link>
             <Link href="/directory">
               <Button size="lg" variant="outline" className="h-14 px-8 rounded-xl border-white/40 text-white hover:bg-white/10 font-bold text-lg w-full sm:w-auto">
                 Explore Directory
