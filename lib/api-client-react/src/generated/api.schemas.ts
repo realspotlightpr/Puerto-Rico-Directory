@@ -193,6 +193,29 @@ export interface AdminStats {
   approvedBusinesses: number;
   totalReviews: number;
   totalUsers: number;
+  avgRating?: number;
+}
+
+export interface AdminUpdateBusinessBody {
+  name?: string;
+  description?: string;
+  categoryId?: number;
+  municipality?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logoUrl?: string;
+  coverUrl?: string;
+  status?: "pending" | "approved" | "rejected";
+  featured?: boolean;
+  isClaimed?: boolean;
+}
+
+export interface AdminUpdateUserBody {
+  firstName?: string;
+  lastName?: string;
+  role?: "user" | "business_owner" | "admin";
 }
 
 export interface UserListResponse {

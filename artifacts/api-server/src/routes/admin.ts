@@ -21,12 +21,13 @@ router.get("/admin/stats", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
-    const [totalB, pendingB, approvedB, totalR, totalU] = await Promise.all([
+    const [totalB, pendingB, approvedB, totalR, totalU, avgRatingResult] = await Promise.all([
       db.select({ count: sql<number>`count(*)::int` }).from(businessesTable).then(r => r[0]?.count ?? 0),
       db.select({ count: sql<number>`count(*)::int` }).from(businessesTable).where(eq(businessesTable.status, "pending")).then(r => r[0]?.count ?? 0),
       db.select({ count: sql<number>`count(*)::int` }).from(businessesTable).where(eq(businessesTable.status, "approved")).then(r => r[0]?.count ?? 0),
       db.select({ count: sql<number>`count(*)::int` }).from(reviewsTable).then(r => r[0]?.count ?? 0),
       db.select({ count: sql<number>`count(*)::int` }).from(usersTable).then(r => r[0]?.count ?? 0),
+      db.select({ avg: sql<number>`coalesce(avg(${reviewsTable.rating}), 0)::numeric(3,2)` }).from(reviewsTable).then(r => r[0]?.avg ?? 0),
     ]);
 
     res.json({
@@ -35,6 +36,7 @@ router.get("/admin/stats", async (req, res) => {
       approvedBusinesses: approvedB,
       totalReviews: totalR,
       totalUsers: totalU,
+      avgRating: parseFloat(String(avgRatingResult)),
     });
   } catch (err) {
     req.log.error(err);
@@ -283,6 +285,95 @@ router.get("/admin/users", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.patch("/admin/businesses/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, status, featured, isClaimed } = req.body;
+
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (categoryId !== undefined) updates.categoryId = categoryId;
+    if (municipality !== undefined) updates.municipality = municipality;
+    if (address !== undefined) updates.address = address;
+    if (phone !== undefined) updates.phone = phone;
+    if (email !== undefined) updates.email = email;
+    if (website !== undefined) updates.website = website;
+    if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+    if (coverUrl !== undefined) updates.coverUrl = coverUrl;
+    if (status !== undefined && ["pending", "approved", "rejected"].includes(status)) updates.status = status;
+    if (featured !== undefined) updates.featured = featured;
+    if (isClaimed !== undefined) updates.isClaimed = isClaimed;
+
+    const [updated] = await db.update(businessesTable)
+      .set(updates)
+      .where(eq(businessesTable.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const categoryRow = updated.categoryId
+      ? await db.select().from(categoriesTable).where(eq(categoriesTable.id, updated.categoryId)).limit(1)
+      : [];
+
+    res.json({
+      ...updated,
+      categoryName: categoryRow[0]?.name ?? null,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update business" });
+  }
+});
+
+router.patch("/admin/users/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const userId = req.params.id;
+    const { firstName, lastName, role } = req.body;
+
+    const updates: Record<string, any> = {};
+    if (firstName !== undefined) updates.firstName = firstName;
+    if (lastName !== undefined) updates.lastName = lastName;
+    if (role !== undefined && ["user", "business_owner", "admin"].includes(role)) updates.role = role;
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "No fields to update" });
+      return;
+    }
+
+    const [updated] = await db.update(usersTable)
+      .set(updates)
+      .where(eq(usersTable.id, userId))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json({
+      id: updated.id,
+      username: updated.username,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      email: updated.email,
+      profileImage: updated.profileImageUrl,
+      role: updated.role ?? "user",
+      createdAt: updated.createdAt,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update user" });
   }
 });
 

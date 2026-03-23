@@ -22,6 +22,8 @@ import type {
   AdminListReviewsParams,
   AdminListUsersParams,
   AdminStats,
+  AdminUpdateBusinessBody,
+  AdminUpdateUserBody,
   Business,
   BusinessDetail,
   BusinessListResponse,
@@ -2424,6 +2426,150 @@ export type RequestUploadUrlMutationResult = NonNullable<
 >;
 export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>;
 export type RequestUploadUrlMutationError = ErrorType<ErrorEnvelope>;
+
+// ── Admin: Update Business ────────────────────────────────────────────────────
+
+export const getAdminUpdateBusinessUrl = (id: number) => `/api/admin/businesses/${id}`;
+
+export const adminUpdateBusiness = async (
+  id: number,
+  adminUpdateBusinessBody: BodyType<AdminUpdateBusinessBody>,
+  options?: RequestInit,
+): Promise<Business> => {
+  return customFetch<Business>(getAdminUpdateBusinessUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateBusinessBody),
+  });
+};
+
+export const getAdminUpdateBusinessMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateBusiness>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateBusinessBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateBusiness>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateBusinessBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateBusiness"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateBusiness>>,
+    { id: number; data: BodyType<AdminUpdateBusinessBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+    return adminUpdateBusiness(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useAdminUpdateBusiness = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateBusiness>>,
+    TError,
+    { id: number; data: BodyType<AdminUpdateBusinessBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateBusiness>>,
+  TError,
+  { id: number; data: BodyType<AdminUpdateBusinessBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateBusinessMutationOptions(options));
+};
+
+// ── Admin: Update User ────────────────────────────────────────────────────────
+
+export const getAdminUpdateUserUrl = (id: string) => `/api/admin/users/${id}`;
+
+export const adminUpdateUser = async (
+  id: string,
+  adminUpdateUserBody: BodyType<AdminUpdateUserBody>,
+  options?: RequestInit,
+): Promise<User> => {
+  return customFetch<User>(getAdminUpdateUserUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateUserBody),
+  });
+};
+
+export const getAdminUpdateUserMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateUser>>,
+    TError,
+    { id: string; data: BodyType<AdminUpdateUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateUser>>,
+  TError,
+  { id: string; data: BodyType<AdminUpdateUserBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateUser>>,
+    { id: string; data: BodyType<AdminUpdateUserBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+    return adminUpdateUser(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export const useAdminUpdateUser = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateUser>>,
+    TError,
+    { id: string; data: BodyType<AdminUpdateUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateUser>>,
+  TError,
+  { id: string; data: BodyType<AdminUpdateUserBody> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateUserMutationOptions(options));
+};
 
 /**
  * @summary Request a presigned URL for file upload
