@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import {
   MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2,
   BadgeCheck, AlertCircle, Loader2, Star, Clock, Send, Copy,
-  MessageSquare, ChevronDown, ChevronUp, Tag,
+  MessageSquare, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -533,7 +533,7 @@ export default function BusinessDetail() {
         {detail.specialOffer && (
           <div className="mb-8 bg-gradient-to-r from-amber-50 to-teal-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
             <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-              <Tag className="w-5 h-5 text-amber-600" />
+              <Star className="w-5 h-5 text-amber-600 fill-amber-400" />
             </div>
             <div>
               <p className="text-xs font-bold text-amber-700 uppercase tracking-widest mb-1">Special Offer</p>
