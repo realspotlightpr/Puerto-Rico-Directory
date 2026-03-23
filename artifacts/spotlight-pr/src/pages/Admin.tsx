@@ -20,13 +20,18 @@ import {
   useAdminCreateLead,
   useAdminUpdateLead,
   useAdminDeleteLead,
+  useAdminListTeam,
+  useAdminAddTeamMember,
+  useAdminUpdateTeamMember,
+  useAdminRemoveTeamMember,
 } from "@workspace/api-client-react";
-import type { Lead } from "@workspace/api-client-react";
+import type { Lead, TeamMember } from "@workspace/api-client-react";
 import {
   Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
   LayoutDashboard, Edit2, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
-  Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link,
+  Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
+  ToggleLeft, ToggleRight, Key, Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +52,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads";
+type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
@@ -89,6 +94,241 @@ type BusinessEditValues = z.infer<typeof businessEditSchema>;
 type UserEditValues = z.infer<typeof userEditSchema>;
 type LeadValues = z.infer<typeof leadSchema>;
 
+const PERMISSIONS = [
+  { key: "add_businesses", label: "Add Businesses", desc: "Can scout and add new business listings" },
+  { key: "approve", label: "Approve / Deny", desc: "Can approve or reject business submissions" },
+  { key: "verify", label: "Verify / Feature", desc: "Can mark businesses as verified or featured" },
+] as const;
+
+type PermissionKey = "add_businesses" | "approve" | "verify";
+
+function AddTeamMemberDialog({
+  open, onClose, onAdd, isAdding, users, teamMemberUserIds,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (data: any) => void;
+  isAdding: boolean;
+  users: any[];
+  teamMemberUserIds: string[];
+}) {
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [type, setType] = useState<"team_member" | "affiliate">("team_member");
+  const [permissions, setPermissions] = useState<PermissionKey[]>(["add_businesses"]);
+  const [notes, setNotes] = useState("");
+
+  const availableUsers = users.filter(u =>
+    !teamMemberUserIds.includes(u.id) && (
+      userSearch === "" ||
+      `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase().includes(userSearch.toLowerCase()) ||
+      u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+      (u.email ?? "").toLowerCase().includes(userSearch.toLowerCase())
+    )
+  );
+
+  const selectedUser = users.find(u => u.id === selectedUserId);
+
+  function togglePermission(perm: PermissionKey) {
+    setPermissions(prev => prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]);
+  }
+
+  function handleSubmit() {
+    if (!selectedUserId) return;
+    onAdd({ userId: selectedUserId, type, permissions, notes: notes || undefined });
+  }
+
+  function handleClose() {
+    setSelectedUserId(""); setUserSearch(""); setType("team_member"); setPermissions(["add_businesses"]); setNotes("");
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={open => !open && handleClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-teal-600" /> Add Team Member</DialogTitle>
+          <DialogDescription>Select a user and configure their role and permissions.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm font-semibold mb-2">Select User</p>
+            {selectedUser ? (
+              <div className="flex items-center gap-3 p-3 bg-teal-50 border border-teal-200 rounded-xl">
+                <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-700">
+                  {(selectedUser.firstName?.[0] ?? selectedUser.username[0]).toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{selectedUser.firstName ? `${selectedUser.firstName} ${selectedUser.lastName ?? ""}`.trim() : selectedUser.username}</p>
+                  <p className="text-xs text-muted-foreground">@{selectedUser.username}</p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedUserId("")} className="text-muted-foreground"><X className="w-4 h-4" /></Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                  <Input placeholder="Search users..." value={userSearch} onChange={e => setUserSearch(e.target.value)} className="pl-9 rounded-xl" />
+                </div>
+                <div className="border border-border rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                  {availableUsers.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-4">No users found</p>
+                  ) : availableUsers.slice(0, 10).map(u => (
+                    <button key={u.id} onClick={() => setSelectedUserId(u.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted transition-colors text-left border-b border-border last:border-0">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-sm flex-shrink-0">
+                        {(u.firstName?.[0] ?? u.username[0]).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{u.firstName ? `${u.firstName} ${u.lastName ?? ""}`.trim() : u.username}</p>
+                        <p className="text-xs text-muted-foreground">@{u.username}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Member Type</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(["team_member", "affiliate"] as const).map(t => (
+                <button key={t} onClick={() => setType(t)}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${type === t ? "border-teal-500 bg-teal-50" : "border-border hover:border-muted-foreground"}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {t === "affiliate" ? <Briefcase className="w-4 h-4" /> : <UserCog className="w-4 h-4" />}
+                    <span className="text-sm font-semibold capitalize">{t === "team_member" ? "Team Member" : "Affiliate"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t === "team_member" ? "Internal staff with direct access" : "External partner with limited access"}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Permissions</p>
+            <div className="space-y-2">
+              {PERMISSIONS.map(p => (
+                <button key={p.key} onClick={() => togglePermission(p.key)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${permissions.includes(p.key) ? "border-teal-500 bg-teal-50" : "border-border hover:border-muted-foreground"}`}>
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${permissions.includes(p.key) ? "bg-teal-500 border-teal-500" : "border-muted-foreground"}`}>
+                    {permissions.includes(p.key) && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{p.label}</p>
+                    <p className="text-xs text-muted-foreground">{p.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Notes (optional)</p>
+            <Input placeholder="e.g. Ponce region affiliate" value={notes} onChange={e => setNotes(e.target.value)} className="rounded-xl" />
+          </div>
+        </div>
+        <DialogFooter className="pt-4 border-t border-border">
+          <Button variant="outline" onClick={handleClose} className="rounded-xl">Cancel</Button>
+          <Button onClick={handleSubmit} disabled={!selectedUserId || isAdding} className="rounded-xl gap-2 bg-teal-600 hover:bg-teal-700">
+            {isAdding ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding…</> : <><UserPlus className="w-4 h-4" /> Add to Team</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditTeamMemberDialog({
+  open, member, onClose, onSave, isSaving,
+}: {
+  open: boolean;
+  member: TeamMember;
+  onClose: () => void;
+  onSave: (data: any) => void;
+  isSaving: boolean;
+}) {
+  const [type, setType] = useState<"team_member" | "affiliate">(member.type as any ?? "team_member");
+  const [permissions, setPermissions] = useState<PermissionKey[]>((member.permissions ?? []) as PermissionKey[]);
+  const [notes, setNotes] = useState(member.notes ?? "");
+  const [status, setStatus] = useState<"active" | "inactive">(member.status as any ?? "active");
+
+  function togglePermission(perm: PermissionKey) {
+    setPermissions(prev => prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><UserCog className="w-5 h-5 text-teal-600" /> Edit Team Member</DialogTitle>
+          <DialogDescription>
+            {member.user?.firstName ? `${member.user.firstName} ${member.user.lastName ?? ""}`.trim() : member.user?.username}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div>
+            <p className="text-sm font-semibold mb-2">Member Type</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(["team_member", "affiliate"] as const).map(t => (
+                <button key={t} onClick={() => setType(t)}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${type === t ? "border-teal-500 bg-teal-50" : "border-border hover:border-muted-foreground"}`}>
+                  <div className="flex items-center gap-2">
+                    {t === "affiliate" ? <Briefcase className="w-4 h-4" /> : <UserCog className="w-4 h-4" />}
+                    <span className="text-sm font-semibold">{t === "team_member" ? "Team Member" : "Affiliate"}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Status</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(["active", "inactive"] as const).map(s => (
+                <button key={s} onClick={() => setStatus(s)}
+                  className={`p-3 rounded-xl border-2 text-left transition-all ${status === s ? (s === "active" ? "border-emerald-500 bg-emerald-50" : "border-slate-400 bg-slate-50") : "border-border hover:border-muted-foreground"}`}>
+                  <span className="text-sm font-semibold capitalize">{s}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Permissions</p>
+            <div className="space-y-2">
+              {PERMISSIONS.map(p => (
+                <button key={p.key} onClick={() => togglePermission(p.key)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${permissions.includes(p.key) ? "border-teal-500 bg-teal-50" : "border-border hover:border-muted-foreground"}`}>
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${permissions.includes(p.key) ? "bg-teal-500 border-teal-500" : "border-muted-foreground"}`}>
+                    {permissions.includes(p.key) && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{p.label}</p>
+                    <p className="text-xs text-muted-foreground">{p.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-2">Notes</p>
+            <Input placeholder="e.g. Ponce region affiliate" value={notes} onChange={e => setNotes(e.target.value)} className="rounded-xl" />
+          </div>
+        </div>
+        <DialogFooter className="pt-4 border-t border-border">
+          <Button variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
+          <Button onClick={() => onSave({ type, permissions, notes: notes || undefined, status })} disabled={isSaving} className="rounded-xl gap-2 bg-teal-600 hover:bg-teal-700">
+            {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Changes</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function Admin() {
@@ -108,6 +348,11 @@ export default function Admin() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [addingLead, setAddingLead] = useState(false);
 
+  const [addingTeamMember, setAddingTeamMember] = useState(false);
+  const [editingTeamMember, setEditingTeamMember] = useState<TeamMember | null>(null);
+  const [teamMemberSearch, setTeamMemberSearch] = useState("");
+  const [teamUserSearch, setTeamUserSearch] = useState("");
+
   const isAdmin = isAuthenticated && user?.role === "admin";
 
   // ── Queries ──
@@ -123,6 +368,7 @@ export default function Admin() {
     leadSearch ? { search: leadSearch } : undefined,
     { query: { enabled: isAdmin } },
   );
+  const { data: teamData, refetch: refetchTeam } = useAdminListTeam({ query: { enabled: isAdmin } });
 
   const pendingCount = pendingData?.total ?? stats?.pendingBusinesses ?? 0;
   const leadsCount = leadsData?.total ?? 0;
@@ -194,6 +440,26 @@ export default function Admin() {
     },
   });
 
+  const invalidateTeam = () => queryClient.invalidateQueries({ queryKey: ["/api/admin/team"] });
+  const { mutate: addTeamMember, isPending: isAddingTeamMember } = useAdminAddTeamMember({
+    mutation: {
+      onSuccess: () => { toast({ title: "Team member added" }); invalidateTeam(); setAddingTeamMember(false); },
+      onError: (e: any) => toast({ title: "Failed to add member", description: e?.message, variant: "destructive" }),
+    },
+  });
+  const { mutate: updateTeamMember, isPending: isUpdatingTeamMember } = useAdminUpdateTeamMember({
+    mutation: {
+      onSuccess: () => { toast({ title: "Team member updated" }); invalidateTeam(); setEditingTeamMember(null); },
+      onError: () => toast({ title: "Failed to update member", variant: "destructive" }),
+    },
+  });
+  const { mutate: removeTeamMember } = useAdminRemoveTeamMember({
+    mutation: {
+      onSuccess: () => { toast({ title: "Team member removed" }); invalidateTeam(); },
+      onError: () => toast({ title: "Failed to remove member", variant: "destructive" }),
+    },
+  });
+
   // ── Forms ──
   const businessForm = useForm<BusinessEditValues>({
     resolver: zodResolver(businessEditSchema),
@@ -251,12 +517,16 @@ export default function Admin() {
     </div>
   );
 
+  const teamMembers = teamData?.members ?? [];
+  const activeTeamCount = teamMembers.filter(m => m.status === "active").length;
+
   const navItems: { id: AdminSection; label: string; icon: any; badge?: number; badgeColor?: string }[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "leads", label: "Leads", icon: Target, badge: unclaimedLeads || undefined, badgeColor: "bg-violet-500" },
     { id: "businesses", label: "Business Listings", icon: Store },
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
+    { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
   ];
 
   const businessTabs: { id: BusinessTab; label: string; count: number; color: string; activeColor: string }[] = [
@@ -905,8 +1175,134 @@ export default function Admin() {
               )}
             </div>
           )}
+
+          {/* ── TEAM & AFFILIATES ── */}
+          {section === "team" && (
+            <div className="space-y-6">
+              <div className="bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+                <Handshake className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm text-teal-900">Team & Affiliate Management</p>
+                  <p className="text-xs text-teal-700 mt-0.5">
+                    Add users as team members or affiliates and assign them specific permissions.
+                    Team members can access their own dashboard at <strong>/team</strong> to track their submissions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="relative w-72">
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                  <Input placeholder="Search team members..." value={teamMemberSearch} onChange={e => setTeamMemberSearch(e.target.value)} className="pl-10 rounded-xl" />
+                </div>
+                <Button onClick={() => setAddingTeamMember(true)} className="rounded-xl gap-2">
+                  <UserPlus className="w-4 h-4" /> Add Member
+                </Button>
+              </div>
+
+              {teamMembers.length === 0 ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <Handshake className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+                  <h3 className="text-lg font-bold font-display mb-2">No Team Members Yet</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Start building your team by adding users as members or affiliates.</p>
+                  <Button onClick={() => setAddingTeamMember(true)} className="rounded-xl gap-2">
+                    <UserPlus className="w-4 h-4" /> Add First Member
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {teamMembers
+                    .filter(m => {
+                      if (!teamMemberSearch) return true;
+                      const fullName = `${m.user?.firstName ?? ""} ${m.user?.lastName ?? ""}`.toLowerCase();
+                      return fullName.includes(teamMemberSearch.toLowerCase()) ||
+                        m.user?.username?.toLowerCase().includes(teamMemberSearch.toLowerCase()) ||
+                        m.user?.email?.toLowerCase().includes(teamMemberSearch.toLowerCase());
+                    })
+                    .map(member => (
+                    <div key={member.id} className="bg-white border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center overflow-hidden border-2 border-teal-200 flex-shrink-0">
+                          {member.user?.profileImageUrl
+                            ? <img src={member.user.profileImageUrl} alt="" className="w-full h-full object-cover" />
+                            : <span className="font-bold text-teal-700 text-lg">{((member.user?.firstName?.[0] ?? member.user?.username?.[0] ?? "T")).toUpperCase()}</span>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-sm">
+                              {member.user?.firstName ? `${member.user.firstName} ${member.user.lastName ?? ""}`.trim() : member.user?.username ?? "Unknown"}
+                            </p>
+                            <Badge className={`text-xs ${member.type === "affiliate" ? "bg-amber-100 text-amber-700 hover:bg-amber-100" : "bg-teal-100 text-teal-700 hover:bg-teal-100"} gap-1`}>
+                              {member.type === "affiliate" ? <Briefcase className="w-3 h-3" /> : <UserCog className="w-3 h-3" />}
+                              {member.type === "affiliate" ? "Affiliate" : "Team Member"}
+                            </Badge>
+                            <Badge className={`text-xs ${member.status === "active" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-500 hover:bg-slate-100"}`}>
+                              {member.status}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            @{member.user?.username} · {member.user?.email ?? "No email"}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {(["add_businesses", "approve", "verify"] as const).map(perm => {
+                              const has = (member.permissions ?? []).includes(perm);
+                              const labels: Record<string, string> = { add_businesses: "Add Businesses", approve: "Approve/Deny", verify: "Verify" };
+                              return (
+                                <span key={perm} className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${has ? "bg-teal-50 text-teal-700 border-teal-200" : "bg-muted/50 text-muted-foreground border-border line-through"}`}>
+                                  {labels[perm]}
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1.5">
+                            <span className="font-medium text-teal-700">{member.businessesAdded ?? 0}</span> businesses added
+                            {member.notes && <span> · {member.notes}</span>}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button size="sm" variant="outline" className="rounded-xl gap-1 text-xs" onClick={() => setEditingTeamMember(member)}>
+                            <Edit2 className="w-3 h-3" /> Edit
+                          </Button>
+                          <Button size="sm" variant="outline" className="rounded-xl gap-1 text-xs border-red-200 text-red-600 hover:bg-red-50" onClick={() => {
+                            if (confirm(`Remove ${member.user?.firstName ?? member.user?.username} from the team?`)) {
+                              removeTeamMember({ id: member.id });
+                            }
+                          }}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* ── Add Team Member Dialog ── */}
+      <AddTeamMemberDialog
+        open={addingTeamMember}
+        onClose={() => setAddingTeamMember(false)}
+        onAdd={(data) => addTeamMember({ data })}
+        isAdding={isAddingTeamMember}
+        users={usersData?.users ?? []}
+        teamMemberUserIds={teamMembers.map(m => m.userId)}
+      />
+
+      {/* ── Edit Team Member Dialog ── */}
+      {editingTeamMember && (
+        <EditTeamMemberDialog
+          open={!!editingTeamMember}
+          member={editingTeamMember}
+          onClose={() => setEditingTeamMember(null)}
+          onSave={(data) => updateTeamMember({ id: editingTeamMember.id, data })}
+          isSaving={isUpdatingTeamMember}
+        />
+      )}
 
       {/* ── Add Lead Dialog ── */}
       <Dialog open={addingLead} onOpenChange={open => { if (!open) { setAddingLead(false); addLeadForm.reset(); } }}>

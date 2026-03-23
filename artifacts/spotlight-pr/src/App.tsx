@@ -18,6 +18,7 @@ import ForBusiness from "@/pages/ForBusiness";
 import ManageBusiness from "@/pages/ManageBusiness";
 import UserProfile from "@/pages/UserProfile";
 import VerifyEmail from "@/pages/VerifyEmail";
+import TeamDashboard from "@/pages/TeamDashboard";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -56,6 +57,7 @@ function Router() {
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
+          <Route path="/team" component={TeamDashboard} />
           <Route path="/business" component={ForBusiness} />
           <Route path="/manage/:id" component={ManageBusiness} />
           <Route path="/profile" component={UserProfile} />

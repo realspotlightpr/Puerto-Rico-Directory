@@ -64,3 +64,22 @@ export type Business = typeof businessesTable.$inferSelect;
 export const insertReviewSchema = createInsertSchema(reviewsTable).omit({ id: true, createdAt: true });
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviewsTable.$inferSelect;
+
+export const teamMemberTypeEnum = pgEnum("team_member_type", ["team_member", "affiliate"]);
+export const teamMemberStatusEnum = pgEnum("team_member_status", ["active", "inactive"]);
+
+export const teamMembersTable = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  type: teamMemberTypeEnum("type").notNull().default("team_member"),
+  permissions: jsonb("permissions").$type<string[]>().notNull().default([]),
+  invitedBy: text("invited_by"),
+  notes: text("notes"),
+  status: teamMemberStatusEnum("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembersTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembersTable.$inferSelect;

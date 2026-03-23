@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { businessesTable, reviewsTable, usersTable, categoriesTable } from "@workspace/db/schema";
+import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -570,6 +570,166 @@ router.delete("/admin/leads/:id", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to delete lead" });
+  }
+});
+
+// ── Team Members Management ────────────────────────────────────────────────────
+
+router.get("/admin/team", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const rows = await db
+      .select({
+        id: teamMembersTable.id,
+        userId: teamMembersTable.userId,
+        type: teamMembersTable.type,
+        permissions: teamMembersTable.permissions,
+        invitedBy: teamMembersTable.invitedBy,
+        notes: teamMembersTable.notes,
+        status: teamMembersTable.status,
+        createdAt: teamMembersTable.createdAt,
+        updatedAt: teamMembersTable.updatedAt,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: usersTable.email,
+        profileImageUrl: usersTable.profileImageUrl,
+        userRole: usersTable.role,
+      })
+      .from(teamMembersTable)
+      .leftJoin(usersTable, eq(teamMembersTable.userId, usersTable.id))
+      .orderBy(desc(teamMembersTable.createdAt));
+
+    const members = rows.map(r => ({
+      id: r.id,
+      userId: r.userId,
+      type: r.type,
+      permissions: r.permissions ?? [],
+      invitedBy: r.invitedBy,
+      notes: r.notes,
+      status: r.status,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: {
+        username: r.username,
+        firstName: r.firstName,
+        lastName: r.lastName,
+        email: r.email,
+        profileImageUrl: r.profileImageUrl,
+        role: r.userRole,
+      },
+      businessesAdded: 0,
+    }));
+
+    const memberIds = members.map(m => m.userId);
+    if (memberIds.length > 0) {
+      const counts = await db
+        .select({ repId: businessesTable.addedByRepId, count: sql<number>`count(*)::int` })
+        .from(businessesTable)
+        .where(sql`${businessesTable.addedByRepId} = ANY(ARRAY[${sql.raw(memberIds.map(id => `'${id}'`).join(','))}]::text[])`)
+        .groupBy(businessesTable.addedByRepId);
+      const countMap: Record<string, number> = {};
+      for (const c of counts) {
+        if (c.repId) countMap[c.repId] = c.count;
+      }
+      members.forEach(m => { m.businessesAdded = countMap[m.userId] ?? 0; });
+    }
+
+    res.json({ members, total: members.length });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch team members" });
+  }
+});
+
+router.post("/admin/team", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { userId, type = "team_member", permissions = [], notes } = req.body;
+
+    if (!userId) {
+      res.status(400).json({ error: "userId is required" });
+      return;
+    }
+
+    const user = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (user.length === 0) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const existing = await db.select().from(teamMembersTable).where(eq(teamMembersTable.userId, userId)).limit(1);
+    if (existing.length > 0) {
+      res.status(409).json({ error: "User is already a team member" });
+      return;
+    }
+
+    const [member] = await db.insert(teamMembersTable).values({
+      userId,
+      type,
+      permissions,
+      notes: notes ?? null,
+      invitedBy: req.user!.id,
+      status: "active",
+    }).returning();
+
+    res.status(201).json({ ...member, user: user[0] });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to add team member" });
+  }
+});
+
+router.patch("/admin/team/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    const { type, permissions, notes, status } = req.body;
+
+    const updates: Record<string, any> = { updatedAt: new Date() };
+    if (type !== undefined) updates.type = type;
+    if (permissions !== undefined) updates.permissions = permissions;
+    if (notes !== undefined) updates.notes = notes;
+    if (status !== undefined) updates.status = status;
+
+    const [updated] = await db.update(teamMembersTable)
+      .set(updates)
+      .where(eq(teamMembersTable.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Team member not found" });
+      return;
+    }
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update team member" });
+  }
+});
+
+router.delete("/admin/team/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    const [deleted] = await db.delete(teamMembersTable)
+      .where(eq(teamMembersTable.id, id))
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ error: "Team member not found" });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to remove team member" });
   }
 });
 
