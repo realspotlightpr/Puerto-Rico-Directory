@@ -356,6 +356,9 @@ export default function Admin() {
   const [teamMemberSearch, setTeamMemberSearch] = useState("");
   const [teamUserSearch, setTeamUserSearch] = useState("");
 
+  const [impersonationSession, setImpersonationSession] = useState<any | null>(null);
+  const [impersonatedUser, setImpersonatedUser] = useState<any | null>(null);
+
   const isAdmin = isAuthenticated && user?.role === "admin";
 
   // ── Queries ──
@@ -508,6 +511,41 @@ export default function Admin() {
     });
   };
 
+  const loginAsUser = async (userId: string, userData: any) => {
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/users/${userId}/impersonate`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to impersonate user");
+      const session = await res.json();
+      setImpersonationSession(session);
+      setImpersonatedUser(userData);
+      toast({ title: `Logged in as ${userData.firstName || userData.username}` });
+    } catch (err) {
+      toast({ title: "Failed to login as user", variant: "destructive" });
+    }
+  };
+
+  const switchBackToAdmin = async () => {
+    if (!impersonationSession) return;
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/impersonate/exit`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: impersonationSession.sessionId }),
+      });
+      if (!res.ok) throw new Error("Failed to exit impersonation");
+      setImpersonationSession(null);
+      setImpersonatedUser(null);
+      toast({ title: "Switched back to admin account" });
+    } catch (err) {
+      toast({ title: "Failed to switch back", variant: "destructive" });
+    }
+  };
+
   // ── Auth guard ──
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>;
 
@@ -636,6 +674,22 @@ export default function Admin() {
             )}
           </div>
         </div>
+
+        {/* Impersonation Banner */}
+        {impersonationSession && impersonatedUser && (
+          <div className="bg-blue-50 border-b-2 border-blue-200 px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <UserCog className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="font-semibold text-blue-900">Logged in as: <span className="font-bold">{impersonatedUser.firstName || impersonatedUser.username}</span></p>
+                <p className="text-sm text-blue-700">You are impersonating this user. Actions will be recorded under their account.</p>
+              </div>
+            </div>
+            <Button onClick={switchBackToAdmin} variant="outline" className="rounded-lg bg-blue-600 text-white hover:bg-blue-700 border-blue-600">
+              Switch Back to Admin
+            </Button>
+          </div>
+        )}
 
         <div className="p-8 space-y-6">
 
@@ -1054,9 +1108,14 @@ export default function Admin() {
                           <td className="p-4"><RoleBadge role={u.role} /></td>
                           <td className="p-4 text-muted-foreground text-sm">{format(new Date(u.createdAt), "MMM d, yyyy")}</td>
                           <td className="p-4 text-right">
-                            <Button size="icon" variant="outline" title="Edit User" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openUserEdit(u)}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-2 justify-end">
+                              <Button size="icon" variant="outline" title="Login As This User" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => loginAsUser(u.id, u)}>
+                                <UserCog className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="outline" title="Edit User" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openUserEdit(u)}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

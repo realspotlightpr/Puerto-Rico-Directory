@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, timestamp, varchar, foreignKey } from "drizzle-orm/pg-core";
 
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessionsTable = pgTable(
@@ -28,3 +28,23 @@ export const usersTable = pgTable("users", {
 
 export type UpsertUser = typeof usersTable.$inferInsert;
 export type User = typeof usersTable.$inferSelect;
+
+// Admin impersonation sessions — tracks when an admin is logged in as another user
+export const adminImpersonationSessions = pgTable(
+  "admin_impersonation_sessions",
+  {
+    id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+    adminId: varchar("admin_id").notNull(),
+    impersonatedUserId: varchar("impersonated_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("idx_admin_impersonation_admin_id").on(table.adminId),
+    index("idx_admin_impersonation_expires_at").on(table.expiresAt),
+    foreignKey({ columns: [table.adminId], foreignColumns: [usersTable.id] }),
+    foreignKey({ columns: [table.impersonatedUserId], foreignColumns: [usersTable.id] }),
+  ],
+);
+
+export type AdminImpersonationSession = typeof adminImpersonationSessions.$inferSelect;

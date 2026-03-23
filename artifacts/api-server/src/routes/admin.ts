@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable } from "@workspace/db/schema";
-import { eq, desc, sql, and, ilike } from "drizzle-orm";
+import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions } from "@workspace/db/schema";
+import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
 
 function isValidSlug(slug: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 100;
@@ -752,6 +752,117 @@ router.delete("/admin/team/:id", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to remove team member" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin Impersonation Routes
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.post("/admin/users/:userId/impersonate", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { userId } = req.params;
+    const adminId = req.user.id;
+
+    if (!userId) {
+      res.status(400).json({ error: "userId is required" });
+      return;
+    }
+
+    // Verify the user exists
+    const [targetUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (!targetUser) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Create impersonation session (24 hour expiry)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const [session] = await db
+      .insert(adminImpersonationSessions)
+      .values({ adminId, impersonatedUserId: userId, expiresAt })
+      .returning();
+
+    res.json({
+      sessionId: session.id,
+      adminId: session.adminId,
+      impersonatedUserId: session.impersonatedUserId,
+      expiresAt: session.expiresAt,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create impersonation session" });
+  }
+});
+
+router.post("/admin/impersonate/exit", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      res.status(400).json({ error: "sessionId is required" });
+      return;
+    }
+
+    // Verify the session belongs to this admin and delete it
+    const [session] = await db
+      .select()
+      .from(adminImpersonationSessions)
+      .where(eq(adminImpersonationSessions.id, sessionId))
+      .limit(1);
+
+    if (!session || session.adminId !== req.user.id) {
+      res.status(403).json({ error: "Cannot exit this impersonation session" });
+      return;
+    }
+
+    await db.delete(adminImpersonationSessions).where(eq(adminImpersonationSessions.id, sessionId));
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to exit impersonation session" });
+  }
+});
+
+// Get current impersonation status (if any)
+router.get("/admin/impersonate/status", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const adminId = req.user.id;
+
+    // Find active impersonation session for this admin
+    const [session] = await db
+      .select()
+      .from(adminImpersonationSessions)
+      .where(and(eq(adminImpersonationSessions.adminId, adminId), gt(adminImpersonationSessions.expiresAt, new Date())))
+      .limit(1);
+
+    if (!session) {
+      res.json({ isImpersonating: false });
+      return;
+    }
+
+    // Get the impersonated user details
+    const [impersonatedUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, session.impersonatedUserId))
+      .limit(1);
+
+    res.json({
+      isImpersonating: true,
+      sessionId: session.id,
+      impersonatedUser: impersonatedUser || null,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to get impersonation status" });
   }
 });
 
