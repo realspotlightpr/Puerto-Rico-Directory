@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
-import { MapPin, Phone, Globe, Mail, Clock, Share2, Heart, Flag, ShieldCheck, CheckCircle2, BadgeCheck, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2, BadgeCheck, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGetBusiness, useListBusinessReviews, useCreateReview, useClaimBusiness } from "@workspace/api-client-react";
@@ -9,6 +9,7 @@ import { StarRating } from "@/components/ui/star-rating";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { BusinessMap } from "@/components/business/BusinessMap";
 
 export default function BusinessDetail() {
   const { id } = useParams();
@@ -344,6 +345,13 @@ export default function BusinessDetail() {
 
           {/* Right Column (Sidebar) */}
           <div className="space-y-6">
+            {/* Map */}
+            <BusinessMap
+              address={business.address}
+              municipality={business.municipality}
+              businessName={business.name}
+            />
+
             <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sticky top-24">
               <h3 className="font-bold mb-4 font-display">Contact Info</h3>
               
