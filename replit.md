@@ -39,7 +39,13 @@ A full-stack business directory web application for Puerto Rico. Businesses can 
 - "Verified" badge (emerald) — shown on business cards and detail pages when `status === "approved"`. "Claimed" badge (blue) — shown when `isClaimed === true` (owner has verified their email).
 - Image uploads — business owners can upload logo and cover photo directly from the listing submission form and the dashboard Media tab. Uses Replit Object Storage (GCS-backed) with a two-step presigned URL flow: client sends metadata → server returns signed URL → client uploads directly to GCS. `ImageUploadField` component handles preview, progress, errors, and clear. Served from `/api/storage/objects/*`.
 - `/business` marketing page — "For Business" landing page with features, how-it-works, FAQ, CTAs
-- Admin panel (stats, business approval workflow, user management, review management)
+- **Admin panel** (`/admin`) — left sidebar navigation with 4 sections:
+  - **Dashboard** — stats cards (total businesses, pending review, total users, reviews), approval rate, avg business per user
+  - **Business Listings** — table with status filter, search, approve/reject/feature actions, verified/claimed status badges, edit button
+  - **Users & Owners** — user table with name/username/join date, inline role selector (Regular User / Business Owner / Admin), search, edit button
+  - **Reviews** — review moderation table with author, business ID, rating, content, delete button
+  - Search and filter across businesses and users
+  - Quick access "Exit Admin" button at bottom of sidebar
 - 78 Puerto Rico municipalities in dropdowns
 - 12 pre-seeded business categories
 
