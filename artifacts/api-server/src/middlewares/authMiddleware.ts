@@ -28,6 +28,13 @@ const JWKS = createRemoteJWKSet(
   new URL(`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`),
 );
 
+const ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
+
 async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
   const id = payload.sub as string;
   const email = (payload.email as string | undefined) ?? null;
@@ -52,9 +59,19 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
       .limit(1);
 
     if (existing && existing.id !== id) {
+      const isConfiguredAdminMerge = ADMIN_EMAILS.has(email.toLowerCase());
       const [updated] = await db
         .update(usersTable)
-        .set({ id, firstName, lastName, username, profileImageUrl, emailVerified, updatedAt: new Date() })
+        .set({
+          id,
+          firstName,
+          lastName,
+          username,
+          profileImageUrl,
+          emailVerified,
+          role: isConfiguredAdminMerge ? "admin" : existing.role,
+          updatedAt: new Date(),
+        })
         .where(eq(usersTable.email, email))
         .returning();
 
@@ -66,7 +83,13 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
     }
   }
 
-  // Normal upsert by Supabase UUID — never overwrite an existing role
+  // Determine the correct role — always admin if in the ADMIN_EMAILS env list
+  const isConfiguredAdmin = email ? ADMIN_EMAILS.has(email.toLowerCase()) : false;
+  const initialRole = isConfiguredAdmin ? "admin" : "user";
+
+  // Normal upsert by Supabase UUID
+  // - Never overwrite an existing non-admin role (preserved via conflict exclusion)
+  // - Admin emails always get/keep admin role
   const [existingById] = await db
     .select()
     .from(usersTable)
@@ -75,7 +98,7 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
 
   const [user] = await db
     .insert(usersTable)
-    .values({ id, email, firstName, lastName, username, profileImageUrl, role: "user", emailVerified })
+    .values({ id, email, firstName, lastName, username, profileImageUrl, role: initialRole, emailVerified })
     .onConflictDoUpdate({
       target: usersTable.id,
       set: {
@@ -85,6 +108,8 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
         username,
         profileImageUrl,
         emailVerified: sql`${usersTable.emailVerified} OR ${emailVerified}`,
+        // Always promote configured admins; otherwise keep existing role
+        role: isConfiguredAdmin ? sql`'admin'` : usersTable.role,
         updatedAt: new Date(),
       },
     })
