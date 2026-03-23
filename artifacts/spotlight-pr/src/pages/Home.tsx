@@ -9,6 +9,39 @@ import { useListBusinesses } from "@workspace/api-client-react";
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { motion } from "framer-motion";
 
+function TownTile({ town, index }: { town: typeof FEATURED_TOWNS[0]; index: number }) {
+  const { data } = useListBusinesses({ municipality: town.name, limit: 1 });
+  const count = data?.total ?? null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.06 }}
+      whileHover={{ y: -3, transition: { duration: 0.15 } }}
+    >
+      <Link href={`/directory?municipality=${encodeURIComponent(town.name)}`}>
+        <div className="group bg-card border border-border hover:border-primary/40 hover:bg-primary/5 rounded-2xl p-4 md:p-5 text-center cursor-pointer transition-all duration-300 hover:shadow-lg">
+          <div className="text-3xl mb-2">{town.emoji}</div>
+          <h3 className="font-display font-bold text-foreground group-hover:text-primary transition-colors text-sm md:text-base">{town.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{town.region} PR</p>
+          {count !== null ? (
+            <p className="mt-1.5 text-xs font-semibold text-primary/80">
+              {count} {count === 1 ? "business" : "businesses"}
+            </p>
+          ) : (
+            <div className="mt-1.5 h-3 w-12 mx-auto bg-muted rounded animate-pulse" />
+          )}
+          <div className="mt-2 text-xs text-primary/70 font-medium group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1">
+            Browse <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
 const VIBE_CARDS = [
   {
     emoji: "🌙",
@@ -321,25 +354,7 @@ export default function Home() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
             {FEATURED_TOWNS.map((town, i) => (
-              <motion.div
-                key={town.name}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={{ y: -3, transition: { duration: 0.15 } }}
-              >
-                <Link href={`/directory?municipality=${encodeURIComponent(town.name)}`}>
-                  <div className="group bg-card border border-border hover:border-primary/40 hover:bg-primary/5 rounded-2xl p-4 md:p-5 text-center cursor-pointer transition-all duration-300 hover:shadow-lg">
-                    <div className="text-3xl mb-2">{town.emoji}</div>
-                    <h3 className="font-display font-bold text-foreground group-hover:text-primary transition-colors text-sm md:text-base">{town.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{town.region} PR</p>
-                    <div className="mt-2 text-xs text-primary/70 font-medium group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1">
-                      Browse <ArrowRight className="w-3 h-3" />
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
+              <TownTile key={town.name} town={town} index={i} />
             ))}
           </div>
 
