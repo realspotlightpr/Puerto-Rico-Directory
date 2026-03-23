@@ -505,4 +505,50 @@ router.post("/businesses/:id/claim", async (req, res) => {
   }
 });
 
+// Analytics tracking endpoints
+router.post("/businesses/:id/track-page-view", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const [updated] = await db
+      .update(businessesTable)
+      .set({ pageViews: sql`${businessesTable.pageViews} + 1` })
+      .where(eq(businessesTable.id, businessId))
+      .returning();
+    res.json({ pageViews: updated.pageViews });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to track page view" });
+  }
+});
+
+router.post("/businesses/:id/track-website-click", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const [updated] = await db
+      .update(businessesTable)
+      .set({ websiteClicks: sql`${businessesTable.websiteClicks} + 1` })
+      .where(eq(businessesTable.id, businessId))
+      .returning();
+    res.json({ websiteClicks: updated.websiteClicks });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to track website click" });
+  }
+});
+
+router.post("/businesses/:id/track-maps-click", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const [updated] = await db
+      .update(businessesTable)
+      .set({ mapsClicks: sql`${businessesTable.mapsClicks} + 1` })
+      .where(eq(businessesTable.id, businessId))
+      .returning();
+    res.json({ mapsClicks: updated.mapsClicks });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to track maps click" });
+  }
+});
+
 export default router;

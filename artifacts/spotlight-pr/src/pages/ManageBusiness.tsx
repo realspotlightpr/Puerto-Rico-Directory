@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   Store, MapPin, Phone, Globe, Upload, Star, MessageSquare,
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
-  Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2,
+  Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
@@ -283,6 +283,9 @@ export default function ManageBusiness() {
             <TabsTrigger value="ai" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
               <Bot className="w-4 h-4" /> AI Assistant
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+              <BarChart3 className="w-4 h-4" /> Analytics
+            </TabsTrigger>
             <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Globe className="w-4 h-4" /> Social
             </TabsTrigger>
@@ -551,6 +554,56 @@ export default function ManageBusiness() {
                   </div>
                 </form>
               </Form>
+            </div>
+          </TabsContent>
+
+          {/* ── ANALYTICS ── */}
+          <TabsContent value="analytics">
+            <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
+              <h2 className="text-lg font-bold font-display mb-8 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" /> Performance Analytics
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Page Views Card */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-blue-900">Page Views</p>
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-blue-600">{business?.pageViews || 0}</p>
+                  <p className="text-xs text-blue-700 mt-2">Total times your spotlight page was viewed</p>
+                </div>
+
+                {/* Website Clicks Card */}
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-emerald-900">Website Clicks</p>
+                    <Globe className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">{business?.websiteClicks || 0}</p>
+                  <p className="text-xs text-emerald-700 mt-2">Visitors clicked on your website link</p>
+                </div>
+
+                {/* Maps Clicks Card */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-purple-900">Map Clicks</p>
+                    <MapPin className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-purple-600">{business?.mapsClicks || 0}</p>
+                  <p className="text-xs text-purple-700 mt-2">Visitors clicked on map/directions</p>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+                <MessageSquare className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-semibold mb-1">How we track analytics</p>
+                  <p>We automatically track when someone views your business page, clicks the "Visit Website" link, or clicks on map/directions buttons. This helps you understand customer interest and engagement.</p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 

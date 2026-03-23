@@ -18,9 +18,12 @@ interface BusinessMapProps {
   address?: string | null;
   municipality?: string | null;
   businessName: string;
+  businessId?: number;
 }
 
-export function BusinessMap({ address, municipality, businessName }: BusinessMapProps) {
+const API_BASE = import.meta.env.BASE_URL || "/";
+
+export function BusinessMap({ address, municipality, businessName, businessId }: BusinessMapProps) {
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [geocodeFailed, setGeocodeFailed] = useState(false);
@@ -91,6 +94,11 @@ export function BusinessMap({ address, municipality, businessName }: BusinessMap
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              if (businessId && businessId > 0) {
+                fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
+              }
+            }}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#4285F4] hover:bg-[#3367d6] text-white text-sm font-semibold transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 48 48" fill="none">
@@ -103,6 +111,11 @@ export function BusinessMap({ address, municipality, businessName }: BusinessMap
             href={appleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              if (businessId && businessId > 0) {
+                fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
+              }
+            }}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold transition-colors"
           >
             <svg width="13" height="16" viewBox="0 0 13 16" fill="white">

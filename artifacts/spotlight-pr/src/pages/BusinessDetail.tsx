@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2, BadgeCheck, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { BusinessMap } from "@/components/business/BusinessMap";
+
+const API_BASE = import.meta.env.BASE_URL || "/";
 
 export default function BusinessDetail() {
   const { id } = useParams();
@@ -23,6 +25,13 @@ export default function BusinessDetail() {
   // Reviews still use numeric ID (fetched from business data once loaded)
   const businessId = business?.id ?? (isNaN(numericId) ? 0 : numericId);
   const { data: reviewsData, isLoading: loadingReviews } = useListBusinessReviews(businessId, { query: { enabled: !!businessId } });
+
+  // Track page view on load
+  useEffect(() => {
+    if (businessId && businessId > 0) {
+      fetch(`${API_BASE}api/businesses/${businessId}/track-page-view`, { method: "POST" }).catch(err => console.error("Failed to track page view", err));
+    }
+  }, [businessId]);
 
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
@@ -353,6 +362,7 @@ export default function BusinessDetail() {
               address={business.address}
               municipality={business.municipality}
               businessName={business.name}
+              businessId={businessId}
             />
 
             <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sticky top-24">
@@ -383,7 +393,19 @@ export default function BusinessDetail() {
                 {business.website && (
                   <li className="flex gap-3 items-center text-muted-foreground">
                     <Globe className="w-5 h-5 text-primary shrink-0" />
-                    <a href={business.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">Visit Website</a>
+                    <a 
+                      href={business.website} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={() => {
+                        if (businessId && businessId > 0) {
+                          fetch(`${API_BASE}api/businesses/${businessId}/track-website-click`, { method: "POST" }).catch(err => console.error("Failed to track website click", err));
+                        }
+                      }}
+                      className="text-primary hover:underline truncate"
+                    >
+                      Visit Website
+                    </a>
                   </li>
                 )}
               </ul>
