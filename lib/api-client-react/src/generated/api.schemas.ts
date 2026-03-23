@@ -73,7 +73,6 @@ export interface Business {
   coverUrl?: string;
   status: BusinessStatus;
   featured: boolean;
-  isClaimed?: boolean;
   averageRating?: number;
   reviewCount?: number;
   ownerId?: string;
@@ -268,6 +267,17 @@ export interface GenerateOpenaiImageResponse {
 
 export interface OpenaiError {
   error: string;
+}
+
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 
 export type ListBusinessesParams = {

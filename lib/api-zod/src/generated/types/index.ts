@@ -45,6 +45,8 @@ export * from "./updateBusinessBodyHours";
 export * from "./updateBusinessBodySocialLinks";
 export * from "./updateUserRoleBody";
 export * from "./updateUserRoleBodyRole";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";
 export * from "./user";
 export * from "./userListResponse";
 export * from "./userRole";

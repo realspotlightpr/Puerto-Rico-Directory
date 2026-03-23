@@ -9,6 +9,7 @@ import {
   Facebook, Twitter, ChevronRight, Loader2, User, Bot,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,8 +40,8 @@ const detailsSchema = z.object({
 });
 
 const mediaSchema = z.object({
-  logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  coverUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  logoUrl: z.string().optional().or(z.literal("")),
+  coverUrl: z.string().optional().or(z.literal("")),
 });
 
 const socialSchema = z.object({
@@ -471,38 +472,38 @@ export default function ManageBusiness() {
                 <Upload className="w-5 h-5 text-primary" /> Logo & Cover Photo
               </h2>
 
-              {/* Preview */}
-              {(mediaForm.watch("coverUrl") || mediaForm.watch("logoUrl")) && (
-                <div className="relative h-40 rounded-xl bg-muted overflow-hidden mb-6 border border-border">
-                  {mediaForm.watch("coverUrl") && (
-                    <img src={mediaForm.watch("coverUrl")} alt="Cover preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = "none")} />
-                  )}
-                  {mediaForm.watch("logoUrl") && (
-                    <div className="absolute bottom-3 left-3 w-16 h-16 rounded-xl border-2 border-white shadow-lg overflow-hidden bg-white">
-                      <img src={mediaForm.watch("logoUrl")} alt="Logo preview" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = "none")} />
-                    </div>
-                  )}
-                </div>
-              )}
-
               <Form {...mediaForm}>
                 <form onSubmit={mediaForm.handleSubmit(saveMedia)} className="space-y-6">
-                  <FormField control={mediaForm.control} name="logoUrl" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Logo Image URL</FormLabel>
-                      <FormControl><Input className="rounded-xl" placeholder="https://example.com/logo.jpg" {...field} /></FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">Square image recommended (1:1 ratio).</p>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={mediaForm.control} name="coverUrl" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cover Photo URL</FormLabel>
-                      <FormControl><Input className="rounded-xl" placeholder="https://example.com/cover.jpg" {...field} /></FormControl>
-                      <p className="text-xs text-muted-foreground mt-1">Wide landscape image recommended (16:9 ratio).</p>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <FormField control={mediaForm.control} name="logoUrl" render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUploadField
+                            value={field.value}
+                            onChange={field.onChange}
+                            label="Business Logo"
+                            hint="Square image · PNG or JPG recommended"
+                            aspectRatio="square"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={mediaForm.control} name="coverUrl" render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUploadField
+                            value={field.value}
+                            onChange={field.onChange}
+                            label="Cover / Header Photo"
+                            hint="Wide landscape image · 16:9 ratio ideal"
+                            aspectRatio="wide"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
                   <div className="flex justify-end pt-4 border-t border-border">
                     <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">
                       {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Media</>}

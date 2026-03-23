@@ -8,6 +8,7 @@ import myRouter from "./my";
 import adminRouter from "./admin";
 import usersRouter from "./users";
 import openaiRouter from "./openai/index";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(myRouter);
 router.use(adminRouter);
 router.use(usersRouter);
 router.use(openaiRouter);
+router.use(storageRouter);
 
 export default router;

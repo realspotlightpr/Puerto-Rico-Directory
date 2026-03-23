@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Store, MapPin, Phone, Globe, Upload, User } from "lucide-react";
+import { Store, MapPin, Phone, Globe, Upload, User, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 
 const formSchema = z.object({
   ownerName: z.string().min(2, "Please enter your full name."),
@@ -26,8 +27,8 @@ const formSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal("")),
   website: z.string().url("Invalid URL. Must include http:// or https://").optional().or(z.literal("")),
-  logoUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-  coverUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  logoUrl: z.string().optional().or(z.literal("")),
+  coverUrl: z.string().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -274,27 +275,44 @@ export default function ListBusiness() {
               {/* Media */}
               <div className="space-y-6">
                 <div className="flex items-center gap-2 border-b border-border pb-2 pt-4">
-                  <Upload className="w-5 h-5 text-primary" />
-                  <h3 className="font-bold text-lg font-display">Media (URLs)</h3>
+                  <Image className="w-5 h-5 text-primary" />
+                  <h3 className="font-bold text-lg font-display">Business Images</h3>
                 </div>
+                <p className="text-sm text-muted-foreground -mt-2">
+                  Upload images to make your listing stand out. You can also update these later from your dashboard.
+                </p>
 
-                <FormField control={form.control} name="logoUrl" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Logo Image URL</FormLabel>
-                    <FormControl><Input placeholder="https://example.com/logo.jpg" className="rounded-xl" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">Square image recommended.</p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <FormField control={form.control} name="logoUrl" render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ImageUploadField
+                          value={field.value}
+                          onChange={field.onChange}
+                          label="Business Logo"
+                          hint="Square image · PNG or JPG recommended"
+                          aspectRatio="square"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
 
-                <FormField control={form.control} name="coverUrl" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cover Image URL</FormLabel>
-                    <FormControl><Input placeholder="https://example.com/cover.jpg" className="rounded-xl" {...field} /></FormControl>
-                    <p className="text-xs text-muted-foreground mt-1">Wide landscape image recommended.</p>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                  <FormField control={form.control} name="coverUrl" render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ImageUploadField
+                          value={field.value}
+                          onChange={field.onChange}
+                          label="Cover / Header Image"
+                          hint="Wide landscape image · 16:9 ratio ideal"
+                          aspectRatio="wide"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
 
               <div className="pt-6 border-t border-border flex items-center justify-end gap-4">
