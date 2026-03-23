@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { Search, MapPin, TrendingUp, Shuffle, ArrowRight } from "lucide-react";
+import { Search, MapPin, TrendingUp, Shuffle, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -110,16 +110,41 @@ const FEATURED_TOWNS = [
   { name: "Aguadilla", region: "West", emoji: "🏄" },
 ];
 
+const HERO_IMAGES = [
+  { city: "San Juan", region: "Metro", path: "hero-bg.png" },
+  { city: "Ponce", region: "South", path: "hero-ponce.png" },
+  { city: "Mayagüez", region: "West", path: "hero-mayaguez.png" },
+  { city: "Arecibo", region: "North", path: "hero-arecibo.png" },
+  { city: "Culebra", region: "Island", path: "hero-culebra.png" },
+];
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [municipality, setMunicipality] = useState("");
   const [surpriseMeLoading, setSurpriseMeLoading] = useState(false);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
 
   const { data: featuredData, isLoading: featuredLoading } = useListBusinesses({ 
     featured: true, 
     limit: 6 
   });
+
+  // Cycle through hero images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const nextHeroImage = () => {
+    setHeroImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
+  };
+
+  const prevHeroImage = () => {
+    setHeroImageIndex(prev => (prev - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,14 +172,53 @@ export default function Home() {
   return (
     <div className="w-full flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative w-full py-24 lg:py-32 overflow-hidden flex items-center justify-center">
+      <section className="relative w-full py-24 lg:py-32 overflow-hidden flex items-center justify-center group">
         <div className="absolute inset-0 z-0">
-          <img 
-            src={`${import.meta.env.BASE_URL}images/hero-bg.png`} 
-            alt="Puerto Rico tropical background" 
-            className="w-full h-full object-cover opacity-90"
-          />
+          {/* Image carousel */}
+          {HERO_IMAGES.map((img, idx) => (
+            <motion.img
+              key={idx}
+              src={`${import.meta.env.BASE_URL}images/${img.path}`}
+              alt={`${img.city}, ${img.region} - Puerto Rico`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: idx === heroImageIndex ? 0.9 : 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute w-full h-full object-cover"
+            />
+          ))}
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+        </div>
+
+        {/* Navigation arrows */}
+        <button
+          onClick={prevHeroImage}
+          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={nextHeroImage}
+          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Indicator dots */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {HERO_IMAGES.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setHeroImageIndex(idx)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                idx === heroImageIndex ? 'bg-white w-6' : 'bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* City label */}
+        <div className="absolute top-6 right-6 z-20 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
+          {HERO_IMAGES[heroImageIndex].city}, {HERO_IMAGES[heroImageIndex].region}
         </div>
 
         <div className="container relative z-10 px-4 flex flex-col items-center text-center">
