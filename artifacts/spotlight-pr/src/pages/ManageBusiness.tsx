@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   Store, MapPin, Phone, Globe, Upload, Star, MessageSquare,
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
-  Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3,
+  Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3, Tag, Youtube,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
@@ -107,7 +107,7 @@ export default function ManageBusiness() {
   // ── Details form ──────────────────────────────────────
   const detailsForm = useForm({
     resolver: zodResolver(detailsSchema),
-    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", address: "", phone: "", email: "", website: "", slug: "" },
+    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", address: "", phone: "", email: "", website: "", specialOffer: "", slug: "" },
   });
 
   const mediaForm = useForm({
@@ -132,6 +132,7 @@ export default function ManageBusiness() {
       phone: business.phone ?? "",
       email: business.email ?? "",
       website: business.website ?? "",
+      specialOffer: (business as any).specialOffer ?? "",
       slug: (business as any).slug ?? "",
     });
     mediaForm.reset({
@@ -143,6 +144,7 @@ export default function ManageBusiness() {
       facebook: sl?.facebook ?? "",
       instagram: sl?.instagram ?? "",
       twitter: sl?.twitter ?? "",
+      youtube: sl?.youtube ?? "",
     });
   }, [business]);
 
@@ -382,6 +384,26 @@ export default function ManageBusiness() {
                       <FormLabel className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Website</FormLabel>
                       <FormControl><Input className="rounded-xl" placeholder="https://www.mybusiness.com" {...field} /></FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  {/* ── Special Offer ── */}
+                  <FormField control={detailsForm.control} name="specialOffer" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-amber-500" /> Special Offer / Promotion
+                        <span className="text-xs font-normal text-muted-foreground ml-1">(optional · max 160 chars)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="rounded-xl resize-none min-h-[72px]"
+                          placeholder="e.g. 10% off for new customers this month! Mention Spotlight PR."
+                          maxLength={160}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">{(field.value || "").length}/160 — Displayed as a highlighted banner on your public listing.</p>
                     </FormItem>
                   )} />
 
@@ -635,6 +657,13 @@ export default function ManageBusiness() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2"><Twitter className="w-4 h-4 text-sky-500" /> X / Twitter</FormLabel>
                       <FormControl><Input className="rounded-xl" placeholder="https://x.com/yourbusiness" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={socialForm.control} name="youtube" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2"><Youtube className="w-4 h-4 text-red-500" /> YouTube</FormLabel>
+                      <FormControl><Input className="rounded-xl" placeholder="https://youtube.com/@yourbusiness" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
