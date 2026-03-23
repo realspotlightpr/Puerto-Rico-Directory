@@ -10,22 +10,20 @@ export default function VerifyEmail() {
   const [resent, setResent] = useState(false);
   const [resendError, setResendError] = useState(false);
 
-  // Dynamically import supabase to resend email
+  // Resend verification email via backend
   async function resendVerification() {
     setResending(true);
     setResendError(false);
     try {
-      // Dynamically use supabase from the global app context
-      const { createClient } = await import("@supabase/supabase-js");
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const email = user?.email ?? supabaseUser?.email;
-      if (email) {
-        const { error } = await supabase.auth.resend({ type: "signup", email });
-        if (error) throw error;
-        setResent(true);
+      const response = await fetch(`${import.meta.env.BASE_URL}api/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to resend email");
       }
+      setResent(true);
     } catch {
       setResendError(true);
     } finally {
@@ -45,7 +43,7 @@ export default function VerifyEmail() {
         </div>
 
         <h1 className="text-2xl font-bold font-display text-foreground mb-2">
-          Check Your Email
+          Verify Your Email
         </h1>
         <p className="text-muted-foreground mb-6 leading-relaxed">
           To access your dashboard and earn the{" "}

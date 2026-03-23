@@ -43,10 +43,12 @@ export function AuthModal() {
         const nameParts = fullName.trim().split(" ");
         const firstName = nameParts[0] ?? "";
         const lastName = nameParts.slice(1).join(" ") || undefined;
+        const redirectUrl = `${window.location.origin}${import.meta.env.BASE_URL}verify-email`;
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            emailRedirectTo: redirectUrl,
             data: { first_name: firstName, last_name: lastName, full_name: fullName },
           },
         });
