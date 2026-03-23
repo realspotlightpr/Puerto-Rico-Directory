@@ -387,6 +387,11 @@ router.put("/businesses/:id", async (req, res) => {
 
     const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug, specialOffer } = req.body;
 
+    if (specialOffer !== undefined && specialOffer !== null && typeof specialOffer === "string" && specialOffer.length > 160) {
+      res.status(400).json({ error: "Special offer must be 160 characters or fewer" });
+      return;
+    }
+
     let resolvedSlug = b.slug;
     if (slug !== undefined && slug !== b.slug) {
       const cleaned = slug.trim().toLowerCase();
@@ -514,10 +519,31 @@ router.post("/businesses/:id/claim", async (req, res) => {
 router.post("/businesses/:id/inquiry", async (req, res) => {
   try {
     const businessId = parseInt(req.params.id);
+    if (isNaN(businessId)) {
+      res.status(400).json({ error: "Invalid business ID" });
+      return;
+    }
+
     const { name, email, message } = req.body;
 
     if (!name || !email || !message) {
       res.status(400).json({ error: "name, email, and message are required" });
+      return;
+    }
+
+    if (typeof name !== "string" || name.trim().length < 1 || name.length > 200) {
+      res.status(400).json({ error: "name must be between 1 and 200 characters" });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (typeof email !== "string" || !emailRegex.test(email) || email.length > 254) {
+      res.status(400).json({ error: "A valid email address is required" });
+      return;
+    }
+
+    if (typeof message !== "string" || message.trim().length < 1 || message.length > 5000) {
+      res.status(400).json({ error: "message must be between 1 and 5000 characters" });
       return;
     }
 
