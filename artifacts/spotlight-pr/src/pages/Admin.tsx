@@ -49,6 +49,7 @@ import { MUNICIPALITIES } from "@/lib/constants";
 
 type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
+type UserRole = "all" | "user" | "business_owner" | "admin";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ const userEditSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   role: z.enum(["user", "business_owner", "admin"]),
+  emailVerified: z.boolean().optional(),
 });
 
 const leadSchema = z.object({
@@ -97,6 +99,7 @@ export default function Admin() {
 
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [businessTab, setBusinessTab] = useState<BusinessTab>("approved");
+  const [userRole, setUserRole] = useState<UserRole>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [leadSearch, setLeadSearch] = useState("");
 
@@ -140,10 +143,14 @@ export default function Admin() {
     b.municipality?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredUsers = (usersData?.users ?? []).filter(u =>
-    `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = (usersData?.users ?? []).filter(u => {
+    const matchesSearch = 
+      `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u as any).email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = userRole === "all" || u.role === userRole;
+    return matchesSearch && matchesRole;
+  });
 
   // ── Mutations ──
   const invalidateBusinesses = () => {
@@ -668,45 +675,95 @@ export default function Admin() {
 
           {/* ── USERS ── */}
           {section === "users" && (
-            <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/40 text-muted-foreground border-b border-border">
-                    <tr>
-                      <th className="p-4 font-medium">User</th>
-                      <th className="p-4 font-medium">Username</th>
-                      <th className="p-4 font-medium">Joined</th>
-                      <th className="p-4 font-medium">Role</th>
-                      <th className="p-4 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredUsers.map(u => (
-                      <tr key={u.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {u.profileImage ? <img src={u.profileImage} alt="" className="w-full h-full object-cover" /> : <span className="text-sm font-bold text-primary">{(u.firstName?.[0] ?? u.username?.[0] ?? "?").toUpperCase()}</span>}
-                            </div>
-                            <div>
-                              <p className="font-semibold">{u.firstName} {u.lastName}</p>
-                              <p className="text-xs text-muted-foreground">{(u as any).email ?? ""}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-muted-foreground text-sm">@{u.username}</td>
-                        <td className="p-4 text-muted-foreground text-sm">{format(new Date(u.createdAt), "MMM d, yyyy")}</td>
-                        <td className="p-4"><RoleBadge role={u.role} /></td>
-                        <td className="p-4 text-right">
-                          <Button size="icon" variant="outline" title="Edit User" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openUserEdit(u)}>
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        </td>
+            <div className="space-y-4">
+              {/* Role Tabs */}
+              <div className="flex gap-2 border-b border-border pb-0 overflow-x-auto">
+                {["all", "user", "business_owner", "admin"].map(role => {
+                  const roleLabels = {
+                    "all": "All Users",
+                    "user": "Regular Users",
+                    "business_owner": "Business Owners",
+                    "admin": "Admins",
+                  };
+                  const roleCounts = {
+                    "all": (usersData?.users ?? []).length,
+                    "user": (usersData?.users ?? []).filter(u => u.role === "user").length,
+                    "business_owner": (usersData?.users ?? []).filter(u => u.role === "business_owner").length,
+                    "admin": (usersData?.users ?? []).filter(u => u.role === "admin").length,
+                  };
+                  return (
+                    <button
+                      key={role}
+                      onClick={() => setUserRole(role as UserRole)}
+                      className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                        userRole === role
+                          ? "border-b-primary text-primary"
+                          : "border-b-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {roleLabels[role as keyof typeof roleLabels]} <span className="text-xs ml-1">({roleCounts[role as keyof typeof roleCounts]})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Users Table */}
+              <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-muted/40 text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="p-4 font-medium">User</th>
+                        <th className="p-4 font-medium">Email</th>
+                        <th className="p-4 font-medium">Status</th>
+                        <th className="p-4 font-medium">Role</th>
+                        <th className="p-4 font-medium">Joined</th>
+                        <th className="p-4 font-medium text-right">Actions</th>
                       </tr>
-                    ))}
-                    {filteredUsers.length === 0 && <tr><td colSpan={5} className="p-12 text-center text-muted-foreground">No users found.</td></tr>}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredUsers.map(u => (
+                        <tr key={u.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {u.profileImage ? <img src={u.profileImage} alt="" className="w-full h-full object-cover" /> : <span className="text-sm font-bold text-primary">{(u.firstName?.[0] ?? u.username?.[0] ?? "?").toUpperCase()}</span>}
+                              </div>
+                              <div>
+                                <p className="font-semibold">{u.firstName ? `${u.firstName} ${u.lastName ?? ""}`.trim() : u.username}</p>
+                                <p className="text-xs text-muted-foreground">@{u.username}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{(u as any).email ?? "—"}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {(u as any).emailVerified ? (
+                              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Unverified</Badge>
+                            )}
+                          </td>
+                          <td className="p-4"><RoleBadge role={u.role} /></td>
+                          <td className="p-4 text-muted-foreground text-sm">{format(new Date(u.createdAt), "MMM d, yyyy")}</td>
+                          <td className="p-4 text-right">
+                            <Button size="icon" variant="outline" title="Edit User" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openUserEdit(u)}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredUsers.length === 0 && <tr><td colSpan={6} className="p-12 text-center text-muted-foreground">No users found in this role.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -933,11 +990,24 @@ export default function Admin() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                   {editingUser?.profileImage ? <img src={editingUser.profileImage} alt="" className="w-full h-full object-cover" /> : <span className="font-bold text-primary">{(editingUser?.firstName?.[0] ?? editingUser?.username?.[0] ?? "?").toUpperCase()}</span>}
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-sm">{editingUser?.firstName} {editingUser?.lastName}</p>
                   <p className="text-xs text-muted-foreground">@{editingUser?.username}</p>
                 </div>
+                {(editingUser as any).emailVerified ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 gap-1 shrink-0">
+                    <CheckCircle2 className="w-3 h-3" /> Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 shrink-0">Unverified</Badge>
+                )}
               </div>
+
+              <div className="bg-muted/30 rounded-xl p-3 border border-muted">
+                <p className="text-xs text-muted-foreground mb-1 font-medium">Email Address</p>
+                <p className="text-sm font-medium text-foreground">{(editingUser as any).email || "No email"}</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={userForm.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input className="rounded-xl" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={userForm.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input className="rounded-xl" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -948,6 +1018,12 @@ export default function Admin() {
                     <FormControl><SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent><SelectItem value="user">Regular User</SelectItem><SelectItem value="business_owner">Business Owner</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
                   </Select><FormMessage /></FormItem>
+              )} />
+              <FormField control={userForm.control} name="emailVerified" render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-xl border border-border p-3 bg-muted/20">
+                  <div><FormLabel className="cursor-pointer">Mark Email as Verified</FormLabel></div>
+                  <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
+                </FormItem>
               )} />
               <DialogFooter className="pt-4 border-t border-border">
                 <Button type="button" variant="outline" onClick={() => setEditingUser(null)} className="rounded-xl">Cancel</Button>
