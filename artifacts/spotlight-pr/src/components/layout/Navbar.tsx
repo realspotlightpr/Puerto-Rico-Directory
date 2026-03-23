@@ -30,6 +30,8 @@ export function Navbar() {
     { href: "/business", label: "For Business" },
   ];
 
+  const showAddBusinessNav = !isAuthenticated || isOwner || isAdmin;
+
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || user?.username || "My Account";
   const initials = displayName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
 
@@ -59,6 +61,12 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            
+            {showAddBusinessNav && (
+              <Link href="/list-your-business" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+                Add Business
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-4 border-l border-border/50 pl-6">
@@ -147,19 +155,12 @@ export function Navbar() {
                 </DropdownMenu>
               </>
             ) : (
-              <>
-                <Link href="/list-your-business">
-                  <Button variant="outline" className="hidden lg:flex gap-2 rounded-full border-primary/20 text-primary hover:bg-primary/5">
-                    <Store className="w-4 h-4" /> Add Business
-                  </Button>
-                </Link>
-                <Button
-                  onClick={() => openAuthModal()}
-                  className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                >
-                  Log in
-                </Button>
-              </>
+              <Button
+                onClick={() => openAuthModal()}
+                className="rounded-full px-6 shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              >
+                Log in
+              </Button>
             )}
           </div>
         </nav>
