@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Search, MapPin, Filter, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, MapPin, Filter, SlidersHorizontal, ChevronDown, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,31 +9,55 @@ import { useListBusinesses, useListCategories } from "@workspace/api-client-reac
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { useDebounce } from "@/hooks/use-debounce";
 
+interface QuickFilter {
+  label: string;
+  emoji: string;
+  category?: string;
+  municipality?: string;
+  featured?: string;
+  search?: string;
+}
+
+const QUICK_FILTERS: QuickFilter[] = [
+  { label: "All", emoji: "✨" },
+  { label: "Restaurants", emoji: "🍽", category: "restaurants-food" },
+  { label: "Shopping", emoji: "🛍", category: "shopping-retail" },
+  { label: "Health & Beauty", emoji: "💆", category: "health-beauty" },
+  { label: "Services", emoji: "🔧", category: "professional-services" },
+  { label: "Cafés", emoji: "☕", search: "coffee" },
+  { label: "Featured", emoji: "🌟", featured: "true" },
+  { label: "San Juan", emoji: "🏙", municipality: "San Juan" },
+  { label: "Ponce", emoji: "🎭", municipality: "Ponce" },
+  { label: "Mayagüez", emoji: "🌊", municipality: "Mayagüez" },
+];
+
 export default function Directory() {
-  const [location] = useLocation();
+  const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "all");
   const [municipality, setMunicipality] = useState(searchParams.get("municipality") || "all");
+  const [featured, setFeatured] = useState(searchParams.get("featured") || "");
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1", 10));
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [surpriseMeLoading, setSurpriseMeLoading] = useState(false);
 
   const debouncedSearch = useDebounce(search, 500);
 
-  // Update URL when filters change (except during initial render)
   useEffect(() => {
     const params = new URLSearchParams();
     if (debouncedSearch) params.set("search", debouncedSearch);
     if (category && category !== "all") params.set("category", category);
     if (municipality && municipality !== "all") params.set("municipality", municipality);
+    if (featured) params.set("featured", featured);
     if (page > 1) params.set("page", page.toString());
     
     const newUrl = `/directory${params.toString() ? `?${params.toString()}` : ''}`;
     if (window.location.pathname + window.location.search !== newUrl) {
       window.history.replaceState(null, '', newUrl);
     }
-  }, [debouncedSearch, category, municipality, page]);
+  }, [debouncedSearch, category, municipality, featured, page]);
 
   const { data: categoriesData } = useListCategories();
   
@@ -41,17 +65,91 @@ export default function Directory() {
     search: debouncedSearch || undefined,
     category: category !== "all" ? category : undefined,
     municipality: municipality !== "all" ? municipality : undefined,
+    featured: featured === "true" ? true : undefined,
     page,
     limit: 12
   });
+
+  const handleSurpriseMe = async () => {
+    setSurpriseMeLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/businesses/random`);
+      if (res.ok) {
+        const business = await res.json();
+        setLocation(`/businesses/${business.id}`);
+      }
+    } catch {
+      // silent fail
+    } finally {
+      setSurpriseMeLoading(false);
+    }
+  };
+
+  const getActiveQuickFilter = () => {
+    return QUICK_FILTERS.find(f => {
+      if (!f.category && !f.municipality && !f.featured && !f.search) {
+        return category === "all" && municipality === "all" && !featured && !debouncedSearch;
+      }
+      if (f.category) return category === f.category;
+      if (f.municipality) return municipality === f.municipality;
+      if (f.featured) return featured === f.featured;
+      if (f.search) return debouncedSearch === f.search;
+      return false;
+    });
+  };
+
+  const applyQuickFilter = (f: QuickFilter) => {
+    setSearch(f.search || "");
+    setCategory(f.category || "all");
+    setMunicipality(f.municipality || "all");
+    setFeatured(f.featured || "");
+    setPage(1);
+  };
+
+  const activeFilter = getActiveQuickFilter();
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header Area */}
       <div className="bg-white border-b border-border py-8 md:py-12">
         <div className="container px-4 mx-auto">
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-4">Discover Puerto Rico</h1>
-          <p className="text-muted-foreground text-lg max-w-2xl">Find the best local businesses, from hidden gem restaurants in the mountains to professional services in San Juan.</p>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Discover Puerto Rico</h1>
+              <p className="text-muted-foreground text-lg max-w-2xl">From hidden gem restaurants in the mountains to professional services in San Juan.</p>
+            </div>
+            <button
+              onClick={handleSurpriseMe}
+              disabled={surpriseMeLoading}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary/5 hover:bg-primary/10 border border-primary/20 text-primary text-sm font-semibold transition-all duration-200 hover:scale-105 disabled:opacity-60 shrink-0 self-start md:self-auto"
+            >
+              <Shuffle className={`w-4 h-4 ${surpriseMeLoading ? "animate-spin" : ""}`} />
+              {surpriseMeLoading ? "Finding…" : "Surprise Me 🎲"}
+            </button>
+          </div>
+
+          {/* Quick Filter Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+            {QUICK_FILTERS.map(f => {
+              const isActive = activeFilter?.label === f.label;
+              return (
+                <button
+                  key={f.label}
+                  onClick={() => applyQuickFilter(f)}
+                  className={`
+                    flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0
+                    ${isActive
+                      ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                      : "bg-white text-foreground border-border hover:border-primary/40 hover:text-primary hover:bg-primary/5"
+                    }
+                  `}
+                >
+                  <span>{f.emoji}</span>
+                  <span>{f.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -122,6 +220,18 @@ export default function Directory() {
                   </Select>
                 </div>
 
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground">Show</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setFeatured(featured === "true" ? "" : "true"); setPage(1); }}
+                      className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium border transition-all ${featured === "true" ? "bg-primary text-white border-primary" : "bg-muted/50 border-transparent text-muted-foreground hover:text-foreground"}`}
+                    >
+                      🌟 Featured only
+                    </button>
+                  </div>
+                </div>
+
                 <Button 
                   variant="ghost" 
                   className="w-full text-muted-foreground hover:text-foreground"
@@ -129,6 +239,7 @@ export default function Directory() {
                     setSearch("");
                     setCategory("all");
                     setMunicipality("all");
+                    setFeatured("");
                     setPage(1);
                   }}
                 >
@@ -143,6 +254,9 @@ export default function Directory() {
             <div className="mb-6 flex items-center justify-between">
               <p className="text-muted-foreground">
                 Showing <span className="font-semibold text-foreground">{data?.total || 0}</span> results
+                {activeFilter && activeFilter.label !== "All" && (
+                  <span className="ml-2 text-primary font-medium">for "{activeFilter.emoji} {activeFilter.label}"</span>
+                )}
               </p>
             </div>
 
@@ -166,7 +280,7 @@ export default function Directory() {
                 <Button 
                   variant="outline" 
                   className="rounded-full"
-                  onClick={() => { setSearch(""); setCategory("all"); setMunicipality("all"); }}
+                  onClick={() => { setSearch(""); setCategory("all"); setMunicipality("all"); setFeatured(""); }}
                 >
                   Clear Filters
                 </Button>

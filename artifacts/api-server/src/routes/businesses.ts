@@ -132,6 +132,28 @@ router.get("/businesses", async (req, res) => {
   }
 });
 
+router.get("/businesses/random", async (req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(businessesTable)
+      .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
+      .where(eq(businessesTable.status, "approved"))
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: "No businesses found" });
+      return;
+    }
+
+    res.json(buildBusinessResponse(rows[0].businesses, rows[0].categories));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch random business" });
+  }
+});
+
 router.get("/businesses/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
