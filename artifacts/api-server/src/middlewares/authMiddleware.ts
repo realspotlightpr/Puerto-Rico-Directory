@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { type Request, type Response, type NextFunction } from "express";
 import { db, usersTable, businessesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { AuthUser } from "../types/auth";
 
 export type { AuthUser };
@@ -38,9 +38,10 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
   const username = (meta.user_name ?? meta.preferred_username ?? meta.username ?? null) as string | null;
   const profileImageUrl = (meta.avatar_url ?? meta.picture ?? null) as string | null;
 
-  // Supabase sets email_confirmed_at when the user verifies their email
+  // Supabase sets email_confirmed_at OR user_metadata.email_verified
   const emailConfirmedAt = payload.email_confirmed_at as string | undefined;
-  const emailVerified = !!emailConfirmedAt;
+  const metaEmailVerified = meta.email_verified === true;
+  const emailVerified = !!emailConfirmedAt || metaEmailVerified;
 
   // Check if a pre-seeded record exists with this email but a different ID
   if (email) {
@@ -83,7 +84,7 @@ async function upsertUserFromJWT(payload: JWTPayload): Promise<AuthUser> {
         lastName,
         username,
         profileImageUrl,
-        emailVerified,
+        emailVerified: sql`${usersTable.emailVerified} OR ${emailVerified}`,
         updatedAt: new Date(),
       },
     })

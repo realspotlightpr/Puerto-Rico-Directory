@@ -73,6 +73,15 @@ export function AuthProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  const refreshAppUser = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) {
+      const u = await fetchAppUser(token);
+      if (u) setAppUser(u);
+    }
+  }, [supabase]);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       const s = data.session ?? null;
@@ -100,8 +109,16 @@ export function AuthProvider({
       },
     );
 
-    return () => listener.subscription.unsubscribe();
-  }, [supabase]);
+    const handleVisibilityChange = () => {
+      if (!document.hidden) refreshAppUser();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      listener.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [supabase, refreshAppUser]);
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
