@@ -3,10 +3,12 @@ import { useRoute, useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import DOMPurify from "dompurify";
 import {
   Store, MapPin, Phone, Globe, Upload, Star, MessageSquare,
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
   Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3, Tag, Youtube,
+  Wand2, Eye, Code, RefreshCw, Check, X,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
@@ -69,6 +71,179 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "approved") return <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1"><CheckCircle2 className="w-3 h-3" />Live</Badge>;
   if (status === "rejected") return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rejected</Badge>;
   return <Badge className="bg-amber-500 hover:bg-amber-600 text-white gap-1"><Clock className="w-3 h-3" />Pending Review</Badge>;
+}
+
+const API_BASE = import.meta.env.BASE_URL || "/";
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["div", "p", "h1", "h2", "h3", "h4", "span", "ul", "ol", "li", "strong", "em", "br", "section", "article"],
+    ALLOWED_ATTR: ["style"],
+    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "link"],
+    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "href", "src"],
+  });
+}
+
+function HtmlDescriptionEditor({
+  value,
+  onChange,
+  businessId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  businessId: number;
+}) {
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [brief, setBrief] = useState("");
+  const [aiHtml, setAiHtml] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
+  const { getToken } = useAuth();
+
+  const generate = async () => {
+    if (!brief.trim()) return;
+    setIsGenerating(true);
+    setAiHtml("");
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}api/openai/generate-about-html`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ businessId, brief }),
+      });
+      if (!res.ok) throw new Error("AI generation failed");
+      const data = await res.json();
+      setAiHtml(data.html || "");
+    } catch {
+      toast({ title: "Error", description: "Could not generate design. Please try again.", variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const acceptAi = () => {
+    onChange(aiHtml);
+    setShowAiPanel(false);
+    setAiHtml("");
+    setBrief("");
+    toast({ title: "Design applied!", description: "The AI-generated HTML has been placed in the editor." });
+  };
+
+  const sanitized = sanitizeHtml(value);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMode("edit")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${mode === "edit" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}
+          >
+            <Code className="w-3.5 h-3.5" /> Edit HTML
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${mode === "preview" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}
+          >
+            <Eye className="w-3.5 h-3.5" /> Preview
+          </button>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="rounded-lg gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/5"
+          onClick={() => setShowAiPanel(v => !v)}
+        >
+          <Wand2 className="w-3.5 h-3.5" /> AI Design
+        </Button>
+      </div>
+
+      {mode === "edit" ? (
+        <textarea
+          className="w-full min-h-[160px] rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="Enter your description here. You can type plain text or use HTML with inline styles."
+          spellCheck={false}
+        />
+      ) : (
+        <div
+          className="min-h-[160px] rounded-xl border border-border bg-white p-4 text-sm leading-relaxed text-foreground overflow-auto about-html-preview"
+          dangerouslySetInnerHTML={{ __html: sanitized || "<p class='text-muted-foreground italic'>Preview will appear here…</p>" }}
+        />
+      )}
+
+      {showAiPanel && (
+        <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-emerald-500/5 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-primary" />
+              <h4 className="font-semibold text-sm text-foreground">AI Design Generator</h4>
+            </div>
+            <button type="button" onClick={() => setShowAiPanel(false)} className="text-muted-foreground hover:text-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">Describe the look and feel you want for your about section. Be specific about colors, style, what to highlight, etc.</p>
+          <textarea
+            className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            rows={3}
+            placeholder={`e.g. "Modern coffee shop vibe, warm teal and brown tones, highlight our specialty drinks and cozy atmosphere"`}
+            value={brief}
+            onChange={e => setBrief(e.target.value)}
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-lg gap-1.5"
+              onClick={generate}
+              disabled={isGenerating || !brief.trim()}
+            >
+              {isGenerating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</> : <><Wand2 className="w-3.5 h-3.5" /> Generate</>}
+            </Button>
+            {aiHtml && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-lg gap-1.5"
+                onClick={generate}
+                disabled={isGenerating}
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+              </Button>
+            )}
+          </div>
+
+          {aiHtml && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-foreground">AI Preview:</p>
+              <div
+                className="rounded-xl border border-border bg-white p-4 text-sm leading-relaxed overflow-auto max-h-64 about-html-preview"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(aiHtml) }}
+              />
+              <div className="flex gap-2">
+                <Button type="button" size="sm" className="rounded-lg gap-1.5 bg-emerald-600 hover:bg-emerald-700" onClick={acceptAi}>
+                  <Check className="w-3.5 h-3.5" /> Accept & Use This Design
+                </Button>
+                <Button type="button" size="sm" variant="ghost" className="rounded-lg" onClick={() => setAiHtml("")}>
+                  Discard
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ManageBusiness() {
@@ -341,7 +516,13 @@ export default function ManageBusiness() {
                   <FormField control={detailsForm.control} name="description" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
-                      <FormControl><Textarea className="rounded-xl min-h-[140px] resize-y" {...field} /></FormControl>
+                      <FormControl>
+                        <HtmlDescriptionEditor
+                          value={field.value}
+                          onChange={field.onChange}
+                          businessId={id}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

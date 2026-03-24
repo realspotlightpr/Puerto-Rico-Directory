@@ -300,6 +300,78 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   res.end();
 });
 
+// ── POST /openai/generate-about-html ────────────────────────────────────────
+router.post("/openai/generate-about-html", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const schema = z.object({
+    businessId: z.number().int().positive(),
+    brief: z.string().min(1).max(2000),
+  });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "businessId (number) and brief (string) are required" });
+    return;
+  }
+  const { businessId, brief } = parsed.data;
+
+  const [biz] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, businessId))
+    .limit(1);
+
+  if (!biz) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  if (biz.ownerId !== req.user.id && req.user.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const systemPrompt = `You are an expert HTML designer for business about-section pages. 
+Your task is to produce a single, self-contained HTML snippet for a business's "About" section.
+
+STRICT RULES — you must follow all of them:
+1. Output ONLY the raw HTML. No markdown, no code fences, no explanations.
+2. Use ONLY inline styles (style="..."). No <style> tags, no class references, no external resources.
+3. Do NOT include <html>, <head>, <body>, or <script> tags.
+4. Do NOT reference external URLs (no src, no href pointing to external resources).
+5. Keep the snippet concise — suitable for an about section (not a full page).
+6. The design should look polished, modern, and professional.
+7. Use safe HTML tags only: div, p, h1-h4, span, ul, ol, li, strong, em, br, section, article.`;
+
+  const userPrompt = `Business name: "${biz.name}"
+Business category: "${biz.categoryId}"
+Municipality: "${biz.municipality}"
+Current description: "${biz.description || "Not provided"}"
+
+Design brief from the owner: "${brief}"
+
+Create a visually appealing, self-contained HTML about-section snippet with inline styles only.`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      max_completion_tokens: 2048,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    });
+
+    const html = completion.choices[0]?.message?.content?.trim() ?? "";
+    res.json({ html });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "AI generation failed" });
+  }
+});
+
 // ── POST /openai/generate-image ─────────────────────────────────────────────
 router.post("/openai/generate-image", async (req, res) => {
   if (!req.isAuthenticated()) {

@@ -16,7 +16,7 @@ export const businessesTable = pgTable("businesses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  description: text("description").notNull(),
+  description: text("description").notNull(), // may contain HTML with inline styles (sanitized before display)
   categoryId: integer("category_id").references(() => categoriesTable.id),
   municipality: text("municipality").notNull(),
   address: text("address"),

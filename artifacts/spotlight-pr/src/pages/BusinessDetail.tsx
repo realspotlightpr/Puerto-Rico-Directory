@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "wouter";
+import DOMPurify from "dompurify";
 import {
   MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2,
   BadgeCheck, AlertCircle, Loader2, Star, Clock, Send, Copy,
@@ -582,9 +583,21 @@ export default function BusinessDetail() {
                 {activeTab === "about" && (
                   <section>
                     <h2 className="text-xl font-bold mb-4 font-display">About</h2>
-                    <div className="prose max-w-none text-muted-foreground whitespace-pre-line leading-relaxed">
-                      {business.description || "No description provided."}
-                    </div>
+                    {business.description ? (
+                      <div
+                        className="prose prose-sm max-w-none text-muted-foreground leading-relaxed about-html-content"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(business.description, {
+                            ALLOWED_TAGS: ["div", "p", "h1", "h2", "h3", "h4", "span", "ul", "ol", "li", "strong", "em", "br", "section", "article"],
+                            ALLOWED_ATTR: ["style"],
+                            FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "link"],
+                            FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "href", "src"],
+                          }),
+                        }}
+                      />
+                    ) : (
+                      <p className="text-muted-foreground italic">No description provided.</p>
+                    )}
                     {Object.keys(hours).length > 0 && <HoursBlock hours={hours} />}
                   </section>
                 )}
