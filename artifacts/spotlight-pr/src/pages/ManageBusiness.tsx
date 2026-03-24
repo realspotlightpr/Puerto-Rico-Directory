@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,8 +9,11 @@ import {
   ArrowLeft, CheckCircle2, Clock, XCircle, Save, Instagram,
   Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3, Tag, Youtube,
   Wand2, Eye, Code, RefreshCw, Check, X,
+  Image as ImageIcon, Sparkles, Calendar, Download, Trash2, LayoutGrid,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
+import { ImageStudio } from "@/components/dashboard/ImageStudio";
+import { SocialPlanner } from "@/components/dashboard/SocialPlanner";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,10 +249,18 @@ function HtmlDescriptionEditor({
   );
 }
 
+interface MediaItem {
+  id: number;
+  url: string;
+  prompt?: string;
+  size?: string;
+  createdAt: string;
+}
+
 export default function ManageBusiness() {
   const [, params] = useRoute("/manage/:id");
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, getToken } = useAuth();
   const { toast } = useToast();
   const id = parseInt(params?.id ?? "0");
 
@@ -266,6 +277,58 @@ export default function ManageBusiness() {
 
   // Hours state
   const [hours, setHours] = useState<Record<string, string>>({});
+
+  // Media Library state
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [deletingMediaId, setDeletingMediaId] = useState<number | null>(null);
+
+  const loadMediaItems = useCallback(async () => {
+    if (!id || !isAuthenticated) return;
+    setMediaLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/media/items?businessId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMediaItems(data.items ?? []);
+      }
+    } catch {}
+    finally { setMediaLoading(false); }
+  }, [id, isAuthenticated, getToken]);
+
+  useEffect(() => { loadMediaItems(); }, [loadMediaItems]);
+
+  const deleteMediaItem = async (itemId: number) => {
+    setDeletingMediaId(itemId);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/media/items/${itemId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setMediaItems(prev => prev.filter(i => i.id !== itemId));
+      toast({ title: "Image deleted from Media Library." });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete image", variant: "destructive" });
+    } finally {
+      setDeletingMediaId(null);
+    }
+  };
+
+  const useImageAs = async (url: string, field: "logoUrl" | "coverUrl") => {
+    try {
+      const payload: any = { [field]: url };
+      await updateBusiness({ id, data: payload });
+      refetch();
+      toast({ title: field === "logoUrl" ? "Logo updated!" : "Cover photo updated!", description: "Your listing has been updated." });
+    } catch {
+      toast({ title: "Error", description: "Failed to update", variant: "destructive" });
+    }
+  };
 
   // Redirect if not owner
   useEffect(() => {
@@ -489,11 +552,20 @@ export default function ManageBusiness() {
             <TabsTrigger value="ai" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
               <Bot className="w-4 h-4" /> AI Assistant
             </TabsTrigger>
+            <TabsTrigger value="image-studio" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-primary data-[state=active]:text-white gap-2 py-2">
+              <Sparkles className="w-4 h-4" /> Image Studio
+            </TabsTrigger>
+            <TabsTrigger value="media-library" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+              <LayoutGrid className="w-4 h-4" /> Media Library {mediaItems.length > 0 && `(${mediaItems.length})`}
+            </TabsTrigger>
+            <TabsTrigger value="social-planner" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white gap-2 py-2">
+              <Calendar className="w-4 h-4" /> Social Planner
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <BarChart3 className="w-4 h-4" /> Analytics
             </TabsTrigger>
             <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
-              <Globe className="w-4 h-4" /> Social
+              <Globe className="w-4 h-4" /> Social Links
             </TabsTrigger>
           </TabsList>
 
@@ -887,6 +959,108 @@ export default function ManageBusiness() {
 
           <TabsContent value="ai">
             <AIAssistant businessId={business.id} businessName={business.name} />
+          </TabsContent>
+
+          {/* ── IMAGE STUDIO ── */}
+          <TabsContent value="image-studio">
+            <ImageStudio
+              businessId={business.id}
+              businessName={business.name}
+              onImageSaved={loadMediaItems}
+            />
+          </TabsContent>
+
+          {/* ── MEDIA LIBRARY ── */}
+          <TabsContent value="media-library">
+            <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5 text-primary" /> Media Library
+                </h2>
+                <Badge variant="secondary" className="rounded-full">
+                  {mediaItems.length} {mediaItems.length === 1 ? "image" : "images"}
+                </Badge>
+              </div>
+
+              {mediaLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : mediaItems.length === 0 ? (
+                <div className="border border-dashed border-border rounded-2xl p-14 text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
+                    <ImageIcon className="w-8 h-8 text-primary/40" />
+                  </div>
+                  <h3 className="text-lg font-bold font-display mb-2">No images yet</h3>
+                  <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-4">
+                    Generate AI images in the Image Studio tab and save them here.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {mediaItems.map(item => (
+                    <div key={item.id} className="group relative rounded-xl overflow-hidden border border-border shadow-sm">
+                      <img src={item.url} alt={item.prompt ?? ""} className="w-full aspect-square object-cover" />
+
+                      {/* Overlay on hover */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                        {/* Download */}
+                        <a
+                          href={item.url}
+                          download={`ai-image-${item.id}.png`}
+                          className="flex items-center gap-1.5 text-xs bg-white text-foreground rounded-lg px-3 py-1.5 font-medium hover:bg-muted transition-colors"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <Download className="w-3 h-3" /> Download
+                        </a>
+                        {/* Use as Logo */}
+                        <button
+                          onClick={() => useImageAs(item.url, "logoUrl")}
+                          className="flex items-center gap-1.5 text-xs bg-primary text-white rounded-lg px-3 py-1.5 font-medium hover:bg-primary/90 transition-colors"
+                        >
+                          <Store className="w-3 h-3" /> Use as Logo
+                        </button>
+                        {/* Use as Cover */}
+                        <button
+                          onClick={() => useImageAs(item.url, "coverUrl")}
+                          className="flex items-center gap-1.5 text-xs bg-emerald-600 text-white rounded-lg px-3 py-1.5 font-medium hover:bg-emerald-700 transition-colors"
+                        >
+                          <ImageIcon className="w-3 h-3" /> Use as Cover
+                        </button>
+                        {/* Delete */}
+                        <button
+                          onClick={() => deleteMediaItem(item.id)}
+                          disabled={deletingMediaId === item.id}
+                          className="flex items-center gap-1.5 text-xs bg-destructive text-white rounded-lg px-3 py-1.5 font-medium hover:bg-destructive/90 transition-colors"
+                        >
+                          {deletingMediaId === item.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                          Delete
+                        </button>
+                      </div>
+
+                      {/* Prompt badge */}
+                      {item.prompt && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-2 py-1">
+                          <p className="text-xs text-white truncate">{item.prompt}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ── SOCIAL PLANNER ── */}
+          <TabsContent value="social-planner">
+            <SocialPlanner
+              businessId={business.id}
+              businessName={business.name}
+            />
           </TabsContent>
 
         </Tabs>

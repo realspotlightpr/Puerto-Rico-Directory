@@ -43,6 +43,7 @@ export const businessesTable = pgTable("businesses", {
   pageViews: integer("page_views").notNull().default(0),
   websiteClicks: integer("website_clicks").notNull().default(0),
   mapsClicks: integer("maps_clicks").notNull().default(0),
+  highlevelApiKey: text("highlevel_api_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -57,6 +58,15 @@ export const reviewsTable = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const mediaItemsTable = pgTable("media_items", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull().references(() => businessesTable.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  prompt: text("prompt"),
+  size: text("size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertCategorySchema = createInsertSchema(categoriesTable).omit({ id: true });
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categoriesTable.$inferSelect;
@@ -68,6 +78,10 @@ export type Business = typeof businessesTable.$inferSelect;
 export const insertReviewSchema = createInsertSchema(reviewsTable).omit({ id: true, createdAt: true });
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviewsTable.$inferSelect;
+
+export const insertMediaItemSchema = createInsertSchema(mediaItemsTable).omit({ id: true, createdAt: true });
+export type InsertMediaItem = z.infer<typeof insertMediaItemSchema>;
+export type MediaItem = typeof mediaItemsTable.$inferSelect;
 
 export const teamMemberTypeEnum = pgEnum("team_member_type", ["team_member", "affiliate"]);
 export const teamMemberStatusEnum = pgEnum("team_member_status", ["active", "inactive"]);

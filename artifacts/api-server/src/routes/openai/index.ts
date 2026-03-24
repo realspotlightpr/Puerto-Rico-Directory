@@ -5,6 +5,7 @@ import {
   messages,
   businessesTable,
   reviewsTable,
+  mediaItemsTable,
 } from "@workspace/db/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -378,9 +379,11 @@ router.post("/openai/generate-image", async (req, res) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const { prompt, size } = req.body as {
+  const { prompt, size, businessId, saveToLibrary } = req.body as {
     prompt: string;
-    size?: "1024x1024" | "512x512" | "256x256";
+    size?: "1024x1024" | "1792x1024" | "1024x1792" | "512x512" | "256x256";
+    businessId?: number;
+    saveToLibrary?: boolean;
   };
   if (!prompt?.trim()) {
     res.status(400).json({ error: "Prompt is required" });
@@ -388,7 +391,28 @@ router.post("/openai/generate-image", async (req, res) => {
   }
   try {
     const buffer = await generateImageBuffer(prompt, size ?? "1024x1024");
-    res.json({ b64_json: buffer.toString("base64") });
+    const b64 = buffer.toString("base64");
+    const dataUrl = `data:image/png;base64,${b64}`;
+
+    let savedItemId: number | undefined;
+
+    if (saveToLibrary && businessId) {
+      const [biz] = await db
+        .select({ ownerId: businessesTable.ownerId })
+        .from(businessesTable)
+        .where(eq(businessesTable.id, businessId))
+        .limit(1);
+
+      if (biz && biz.ownerId === req.user.id) {
+        const [saved] = await db
+          .insert(mediaItemsTable)
+          .values({ businessId, url: dataUrl, prompt, size: size ?? "1024x1024" })
+          .returning();
+        savedItemId = saved.id;
+      }
+    }
+
+    res.json({ b64_json: b64, savedItemId });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Image generation failed" });
