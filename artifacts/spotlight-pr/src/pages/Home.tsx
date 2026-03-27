@@ -111,11 +111,8 @@ const FEATURED_TOWNS = [
 ];
 
 const HERO_IMAGES = [
-  { city: "San Juan", region: "Metro", path: "hero-bg.png" },
-  { city: "Ponce", region: "South", path: "hero-ponce.png" },
-  { city: "Mayagüez", region: "West", path: "hero-mayaguez.png" },
-  { city: "Arecibo", region: "North", path: "hero-arecibo.png" },
-  { city: "Culebra", region: "Island", path: "hero-culebra.png" },
+  { city: "Aguadilla", region: "West", path: "hero-crash-boat.png" },
+  { city: "Rincon", region: "West", path: "hero-surfing.png" },
 ];
 
 export default function Home() {
