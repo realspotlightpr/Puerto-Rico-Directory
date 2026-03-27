@@ -1,4 +1,4 @@
-import { db, categoriesTable, usersTable } from "@workspace/db";
+import { db, categoriesTable, usersTable, sliderSettingsTable } from "@workspace/db";
 import { count, eq, inArray } from "drizzle-orm";
 
 const CATEGORIES = [
@@ -42,10 +42,24 @@ async function promoteAdminEmails(): Promise<void> {
   }
 }
 
+async function seedSliderSettings(): Promise<void> {
+  const [{ total }] = await db.select({ total: count() }).from(sliderSettingsTable);
+  if (total > 0) return;
+
+  const sliders = [
+    { imageUrl: "images/hero-crash-boat.png", city: "Aguadilla", region: "West", sortOrder: 0 },
+    { imageUrl: "images/hero-surfing.png", city: "Rincon", region: "West", sortOrder: 1 },
+  ];
+
+  await db.insert(sliderSettingsTable).values(sliders);
+  console.log(`Seeded ${sliders.length} slider settings`);
+}
+
 export async function runSeed(): Promise<void> {
   try {
     await seedCategories();
     await promoteAdminEmails();
+    await seedSliderSettings();
   } catch (err) {
     console.error("Seed error (non-fatal):", err);
   }

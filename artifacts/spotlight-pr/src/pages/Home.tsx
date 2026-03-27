@@ -9,6 +9,14 @@ import { useListBusinesses } from "@workspace/api-client-react";
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { motion } from "framer-motion";
 
+interface SliderImage {
+  id: number;
+  imageUrl: string;
+  city: string;
+  region: string;
+  sortOrder: number;
+}
+
 function TownTile({ town, index }: { town: typeof FEATURED_TOWNS[0]; index: number }) {
   const { data } = useListBusinesses({ municipality: town.name, limit: 1 });
   const count = data?.total ?? null;
@@ -110,37 +118,55 @@ const FEATURED_TOWNS = [
   { name: "Aguadilla", region: "West", emoji: "🏄" },
 ];
 
-const HERO_IMAGES = [
-  { city: "Aguadilla", region: "West", path: "hero-crash-boat.png" },
-  { city: "Rincon", region: "West", path: "hero-surfing.png" },
-];
-
 export default function Home() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [municipality, setMunicipality] = useState("");
   const [surpriseMeLoading, setSurpriseMeLoading] = useState(false);
   const [heroImageIndex, setHeroImageIndex] = useState(0);
+  const [sliderImages, setSliderImages] = useState<SliderImage[]>([]);
+  const [sliderLoading, setSliderLoading] = useState(true);
 
   const { data: featuredData, isLoading: featuredLoading } = useListBusinesses({ 
     featured: true, 
     limit: 6 
   });
 
-  // Cycle through hero images every 5 seconds
+  // Fetch slider settings
   useEffect(() => {
-    const interval = setInterval(() => {
-      setHeroImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
-    }, 5000);
-    return () => clearInterval(interval);
+    const fetchSliders = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.BASE_URL}api/slider-settings`);
+        if (res.ok) {
+          const { sliders } = await res.json();
+          setSliderImages(sliders);
+        }
+      } catch (err) {
+        console.error("Failed to fetch slider settings:", err);
+      } finally {
+        setSliderLoading(false);
+      }
+    };
+    fetchSliders();
   }, []);
 
+  // Cycle through hero images every 5 seconds
+  useEffect(() => {
+    if (sliderImages.length === 0) return;
+    const interval = setInterval(() => {
+      setHeroImageIndex(prev => (prev + 1) % sliderImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [sliderImages]);
+
   const nextHeroImage = () => {
-    setHeroImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
+    if (sliderImages.length === 0) return;
+    setHeroImageIndex(prev => (prev + 1) % sliderImages.length);
   };
 
   const prevHeroImage = () => {
-    setHeroImageIndex(prev => (prev - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
+    if (sliderImages.length === 0) return;
+    setHeroImageIndex(prev => (prev - 1 + sliderImages.length) % sliderImages.length);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -172,10 +198,10 @@ export default function Home() {
       <section className="relative w-full py-24 lg:py-32 overflow-hidden flex items-center justify-center group">
         <div className="absolute inset-0 z-0">
           {/* Image carousel */}
-          {HERO_IMAGES.map((img, idx) => (
+          {sliderImages.map((img, idx) => (
             <motion.img
               key={idx}
-              src={`${import.meta.env.BASE_URL}images/${img.path}`}
+              src={`${import.meta.env.BASE_URL}${img.imageUrl}`}
               alt={`${img.city}, ${img.region} - Puerto Rico`}
               initial={{ opacity: 0 }}
               animate={{ opacity: idx === heroImageIndex ? 0.9 : 0 }}
@@ -202,7 +228,7 @@ export default function Home() {
 
         {/* Indicator dots */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {HERO_IMAGES.map((_, idx) => (
+          {sliderImages.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setHeroImageIndex(idx)}
@@ -214,9 +240,11 @@ export default function Home() {
         </div>
 
         {/* City label */}
-        <div className="absolute top-6 right-6 z-20 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
-          {HERO_IMAGES[heroImageIndex].city}, {HERO_IMAGES[heroImageIndex].region}
-        </div>
+        {sliderImages[heroImageIndex] && (
+          <div className="absolute top-6 right-6 z-20 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
+            {sliderImages[heroImageIndex].city}, {sliderImages[heroImageIndex].region}
+          </div>
+        )}
 
         <div className="container relative z-10 px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">

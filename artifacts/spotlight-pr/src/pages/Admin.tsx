@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
@@ -36,7 +36,7 @@ import {
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
-  Upload, FileJson, CheckCircle, AlertTriangle,
+  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +57,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team";
+type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
@@ -841,6 +841,7 @@ export default function Admin() {
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
+    { id: "settings", label: "Page Settings", icon: Settings },
   ];
 
   const businessTabs: { id: BusinessTab; label: string; count: number; color: string; activeColor: string }[] = [
@@ -1550,6 +1551,10 @@ export default function Admin() {
           )}
 
           {/* ── TEAM & AFFILIATES ── */}
+          {section === "settings" && (
+            <SliderSettingsSection />
+          )}
+
           {section === "team" && (
             <div className="space-y-6">
               <div className="bg-teal-50 border border-teal-200 rounded-2xl px-5 py-4 flex items-start gap-3">
@@ -2078,6 +2083,187 @@ function LeadFormFields({ form, categories }: { form: any; categories: any[] }) 
           <FormMessage />
         </FormItem>
       )} />
+    </div>
+  );
+}
+
+// ── Slider Settings Section ──────────────────────────────────────────────────
+
+interface SliderImage {
+  id: number;
+  imageUrl: string;
+  city: string;
+  region: string;
+  sortOrder: number;
+}
+
+function SliderSettingsSection() {
+  const [sliders, setSliders] = useState<SliderImage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<SliderImage | null>(null);
+  const [editForm, setEditForm] = useState({ city: "", region: "", imageUrl: "" });
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    fetchSliders();
+  }, []);
+
+  const fetchSliders = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/slider-settings`);
+      if (res.ok) {
+        const { sliders: data } = await res.json();
+        setSliders(data.sort((a: SliderImage, b: SliderImage) => a.sortOrder - b.sortOrder));
+      }
+    } catch (err) {
+      console.error("Failed to fetch sliders:", err);
+      toast({ title: "Error loading slider settings", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editing || !editForm.city || !editForm.region || !editForm.imageUrl) {
+      toast({ title: "Please fill in all fields", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/slider-settings/${editing.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      if (res.ok) {
+        toast({ title: "Slider updated successfully" });
+        setEditing(null);
+        fetchSliders();
+      }
+    } catch (err) {
+      console.error("Failed to update slider:", err);
+      toast({ title: "Failed to update slider", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this slider image?")) return;
+
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/slider-settings/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok || res.status === 204) {
+        toast({ title: "Slider deleted successfully" });
+        fetchSliders();
+      }
+    } catch (err) {
+      console.error("Failed to delete slider:", err);
+      toast({ title: "Failed to delete slider", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+        <Settings className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="font-semibold text-sm text-blue-900">Homepage Slider Settings</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            Manage the hero image carousel displayed on the homepage. Edit city labels and image URLs.
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="bg-white border border-border rounded-2xl p-12 text-center shadow-sm">
+          <Loader2 className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40 animate-spin" />
+          <p className="text-muted-foreground">Loading slider settings...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sliders.map(slider => (
+            <div key={slider.id} className={`bg-white border-2 rounded-2xl p-5 shadow-sm ${editing?.id === slider.id ? "border-blue-400 bg-blue-50" : "border-border hover:border-border-light"}`}>
+              {editing?.id === slider.id ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2 block">City Name</label>
+                      <Input
+                        value={editForm.city}
+                        onChange={e => setEditForm({ ...editForm, city: e.target.value })}
+                        placeholder="e.g. Aguadilla"
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2 block">Region</label>
+                      <Input
+                        value={editForm.region}
+                        onChange={e => setEditForm({ ...editForm, region: e.target.value })}
+                        placeholder="e.g. West"
+                        className="rounded-xl"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2 block">Image URL (relative path)</label>
+                    <Input
+                      value={editForm.imageUrl}
+                      onChange={e => setEditForm({ ...editForm, imageUrl: e.target.value })}
+                      placeholder="e.g. images/hero-crash-boat.png"
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleUpdate} className="rounded-xl gap-2">
+                      <Check className="w-4 h-4" /> Save Changes
+                    </Button>
+                    <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4 flex-1">
+                    <img
+                      src={`${import.meta.env.BASE_URL}${slider.imageUrl}`}
+                      alt={`${slider.city}, ${slider.region}`}
+                      className="w-24 h-24 rounded-lg object-cover border border-border"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground mb-1">{slider.city}, {slider.region}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">{slider.imageUrl}</p>
+                      <p className="text-xs text-muted-foreground">Sort Order: {slider.sortOrder}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        setEditing(slider);
+                        setEditForm({ city: slider.city, region: slider.region, imageUrl: slider.imageUrl });
+                      }}
+                      variant="outline"
+                      className="rounded-xl gap-2"
+                    >
+                      <Edit2 className="w-4 h-4" /> Edit
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(slider.id)}
+                      variant="outline"
+                      className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

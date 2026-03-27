@@ -101,3 +101,17 @@ export const teamMembersTable = pgTable("team_members", {
 export const insertTeamMemberSchema = createInsertSchema(teamMembersTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembersTable.$inferSelect;
+
+export const sliderSettingsTable = pgTable("slider_settings", {
+  id: serial("id").primaryKey(),
+  imageUrl: text("image_url").notNull(),
+  city: text("city").notNull(),
+  region: text("region").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSliderSettingSchema = createInsertSchema(sliderSettingsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSliderSetting = z.infer<typeof insertSliderSettingSchema>;
+export type SliderSetting = typeof sliderSettingsTable.$inferSelect;

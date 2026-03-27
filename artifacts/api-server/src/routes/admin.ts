@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
-import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions } from "@workspace/db/schema";
+import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions, sliderSettingsTable } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
 import { sendWelcomeNewUserEmail } from "../lib/email";
 
@@ -1022,6 +1022,115 @@ router.delete("/admin/team/:id", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to remove team member" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Slider Settings Routes (public read, admin write)
+
+router.get("/slider-settings", async (req, res) => {
+  try {
+    const settings = await db
+      .select()
+      .from(sliderSettingsTable)
+      .orderBy(sliderSettingsTable.sortOrder);
+    res.json({ sliders: settings });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch slider settings" });
+  }
+});
+
+router.get("/admin/slider-settings", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const settings = await db
+      .select()
+      .from(sliderSettingsTable)
+      .orderBy(sliderSettingsTable.sortOrder);
+    res.json({ sliders: settings });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch slider settings" });
+  }
+});
+
+router.post("/admin/slider-settings", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { imageUrl, city, region, sortOrder } = req.body;
+
+    if (!imageUrl || !city || !region) {
+      res.status(400).json({ error: "imageUrl, city, and region are required" });
+      return;
+    }
+
+    const [created] = await db
+      .insert(sliderSettingsTable)
+      .values({ imageUrl, city, region, sortOrder: sortOrder ?? 0 })
+      .returning();
+
+    res.status(201).json(created);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create slider setting" });
+  }
+});
+
+router.patch("/admin/slider-settings/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+    const { imageUrl, city, region, sortOrder } = req.body;
+
+    const updateData: Record<string, any> = {};
+    if (imageUrl) updateData.imageUrl = imageUrl;
+    if (city) updateData.city = city;
+    if (region) updateData.region = region;
+    if (sortOrder !== undefined) updateData.sortOrder = sortOrder;
+    updateData.updatedAt = new Date();
+
+    const [updated] = await db
+      .update(sliderSettingsTable)
+      .set(updateData)
+      .where(eq(sliderSettingsTable.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Slider setting not found" });
+      return;
+    }
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update slider setting" });
+  }
+});
+
+router.delete("/admin/slider-settings/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const id = parseInt(req.params.id);
+
+    const [deleted] = await db
+      .delete(sliderSettingsTable)
+      .where(eq(sliderSettingsTable.id, id))
+      .returning();
+
+    if (!deleted) {
+      res.status(404).json({ error: "Slider setting not found" });
+      return;
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete slider setting" });
   }
 });
 
