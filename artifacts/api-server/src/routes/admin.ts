@@ -870,23 +870,55 @@ router.delete("/admin/leads/:id", async (req, res) => {
 /**
  * Extract a Google Place ID or search query from various GMB URL formats:
  * - maps.google.com/maps?place_id=...
- * - maps.google.com/maps?cid=...
- * - google.com/maps/place/...
- * - goo.gl/maps/...  (short links — we return the URL for fetch-redirect resolution)
+ * - www.google.com/maps/place/<business-name>/<coords>
+ * - maps.app.goo.gl/... (short links with place_id in params or data attribute)
  */
-async function resolvePlaceId(url: string): Promise<string | null> {
-  // Direct place_id param
+async function resolvePlaceId(urlInput: string): Promise<string | null> {
+  const trimmed = urlInput.trim();
+  
   try {
-    const u = new URL(url);
-    if (u.searchParams.get("place_id")) return u.searchParams.get("place_id");
+    // Normalize to full URL if it's just a path
+    let urlStr = trimmed;
+    if (!urlStr.includes("://")) {
+      urlStr = "https://" + urlStr;
+    }
+    
+    const u = new URL(urlStr);
 
-    // /maps/place/<encoded-name>/<coords>  — extract the name to text-search
-    const placeMatch = u.pathname.match(/\/maps\/place\/([^/]+)/);
+    // Try direct place_id parameter first
+    if (u.searchParams.get("place_id")) {
+      return u.searchParams.get("place_id");
+    }
+
+    // Try cid parameter (sometimes used instead of place_id)
+    if (u.searchParams.get("cid")) {
+      return u.searchParams.get("cid");
+    }
+
+    // Try to extract business name from /maps/place/<name>/<coords>
+    // URL format: https://www.google.com/maps/place/Restaurant+Name/@lat,lng,z/data=...
+    const placeMatch = u.pathname.match(/\/maps\/place\/([^/@]+)/);
     if (placeMatch) {
-      return `text:${decodeURIComponent(placeMatch[1])}`;
+      const encoded = placeMatch[1];
+      const decoded = decodeURIComponent(encoded)
+        .replace(/\+/g, " ")
+        .replace(/%20/g, " ")
+        .trim();
+      if (decoded.length > 2) {
+        return `text:${decoded}`;
+      }
+    }
+
+    // If this is a short link (goo.gl or maps.app.goo.gl), we'd need to follow redirects
+    // For now, try treating the whole URL as a search query
+    if (trimmed.length > 5) {
+      return `text:${trimmed}`;
     }
   } catch {
-    // Not a valid URL; treat as raw search text
+    // Invalid URL format — try as plain text search
+    if (trimmed.length > 2) {
+      return `text:${trimmed}`;
+    }
   }
   return null;
 }
