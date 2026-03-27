@@ -1,8 +1,15 @@
 import { Router, type IRouter } from "express";
+import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
 import { sendWelcomeNewUserEmail } from "../lib/email";
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://kfwyvzdeitmidkgkyjwb.supabase.co";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false }
+}) : null;
 
 function isValidSlug(slug: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) && slug.length >= 2 && slug.length <= 100;
@@ -536,28 +543,38 @@ router.delete("/admin/users/:id", async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Check if user exists
+    // Check if user exists in our DB
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
     }
 
-    // Get count of businesses owned by this user (for warning)
+    // Unclaim all businesses owned by this user (set userId to NULL)
     const ownedBusinesses = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(businessesTable)
       .where(eq(businessesTable.userId, userId))
       .then(r => r[0]?.count ?? 0);
 
-    // Unclaim all businesses owned by this user (set userId to NULL)
     if (ownedBusinesses > 0) {
       await db.update(businessesTable)
         .set({ userId: null })
         .where(eq(businessesTable.userId, userId));
     }
 
-    // Delete the user
+    // Delete from Supabase Auth (if service role key is available)
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        req.log.info({ userId }, "User deleted from Supabase Auth");
+      } catch (supabaseErr: any) {
+        req.log.warn({ userId, error: supabaseErr.message }, "Failed to delete user from Supabase Auth (non-fatal)");
+        // Continue deletion in our DB even if Supabase deletion fails
+      }
+    }
+
+    // Delete from our database
     await db.delete(usersTable).where(eq(usersTable.id, userId));
 
     res.status(204).send();
