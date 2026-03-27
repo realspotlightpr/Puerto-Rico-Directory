@@ -32,7 +32,7 @@ import {
 import type { Lead, TeamMember, ScraperRecord } from "@workspace/api-client-react";
 import {
   Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
-  LayoutDashboard, Edit2, ChevronRight, Search, Save, Loader2, TrendingUp,
+  LayoutDashboard, Edit2, Edit3, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
@@ -1580,6 +1580,9 @@ export default function Admin() {
                                 </Button>
                                 <Button size="icon" variant="outline" title="View Business" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}>
                                   <ExternalLink className="w-4 h-4" />
+                                </Button>
+                                <Button size="icon" variant="outline" title="Manage Listing" className="text-cyan-600 border-cyan-200 hover:bg-cyan-50" onClick={() => setLocation(`/manage/${b.id}`)}>
+                                  <Edit3 className="w-4 h-4" />
                                 </Button>
                                 <Button size="icon" variant="outline" title="Delete Business" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingBusiness({ id: b.id, name: b.name })}>
                                   <Trash2 className="w-4 h-4" />
