@@ -390,8 +390,12 @@ export default function ForBusiness() {
       </section>
 
       {/* ── Pricing Plans ──────────────────────────────────── */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 text-white">
-        <div className="container mx-auto px-4 max-w-6xl">
+      <section className="relative overflow-hidden py-20 text-white">
+        <div className="absolute inset-0"
+          style={{ backgroundImage: "url(/images/hero-business-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/85" />
+        <div className="container mx-auto px-4 max-w-6xl relative z-10">
           <div className="text-center mb-14">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
               <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
@@ -400,7 +404,7 @@ export default function ForBusiness() {
             </motion.div>
             <motion.h2
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
-              className="text-3xl md:text-4xl font-display font-bold leading-tight mb-4"
+              className="text-3xl md:text-4xl font-display font-bold leading-tight mb-4 text-white"
             >
               Upgrade to Premium Features
             </motion.h2>
