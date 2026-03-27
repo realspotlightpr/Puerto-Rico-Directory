@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
@@ -46,6 +47,7 @@ const detailsSchema = z.object({
   description: z.string().min(10, "Description is too short."),
   categoryId: z.coerce.number().min(1, "Please select a category."),
   municipality: z.string().min(1, "Please select a municipality."),
+  hasPhysicalLocation: z.boolean().default(true),
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
@@ -1161,7 +1163,7 @@ export default function ManageBusiness() {
   // ── Details form ──────────────────────────────────────
   const detailsForm = useForm({
     resolver: zodResolver(detailsSchema),
-    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", address: "", phone: "", email: "", website: "", specialOffer: "", slug: "" },
+    defaultValues: { name: "", description: "", categoryId: 0, municipality: "", hasPhysicalLocation: true, address: "", phone: "", email: "", website: "", specialOffer: "", slug: "" },
   });
 
   const mediaForm = useForm({
@@ -1183,6 +1185,7 @@ export default function ManageBusiness() {
       description: business.description ?? "",
       categoryId: business.categoryId ?? 0,
       municipality: business.municipality ?? "",
+      hasPhysicalLocation: !!business.address || true,
       address: business.address ?? "",
       phone: business.phone ?? "",
       email: business.email ?? "",
@@ -1454,13 +1457,33 @@ export default function ManageBusiness() {
                     )} />
                   </div>
 
-                  <FormField control={detailsForm.control} name="address" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Street Address</FormLabel>
-                      <FormControl><Input className="rounded-xl" placeholder="123 Calle Principal" {...field} /></FormControl>
-                      <FormMessage />
+                  <FormField control={detailsForm.control} name="hasPhysicalLocation" render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border border-border p-4 bg-muted/30">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="rounded"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>This business has a physical location</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          If unchecked, you can skip adding an address (e.g., for online-only businesses).
+                        </p>
+                      </div>
                     </FormItem>
                   )} />
+
+                  {detailsForm.watch("hasPhysicalLocation") && (
+                    <FormField control={detailsForm.control} name="address" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Street Address</FormLabel>
+                        <FormControl><Input className="rounded-xl" placeholder="123 Calle Principal" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={detailsForm.control} name="phone" render={({ field }) => (
