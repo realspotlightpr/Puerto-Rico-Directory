@@ -939,31 +939,56 @@ router.post("/admin/leads/gmb-import", async (req, res) => {
   }
 
   try {
+    // Puerto Rico center lat/lng and radius for biased search
+    const PR_LAT = 18.2208;
+    const PR_LNG = -66.5901;
+    const PR_RADIUS = 120000; // 120km covers whole island
+
+    let lastGoogleStatus = "UNKNOWN";
+
+    async function textSearch(query: string): Promise<string | null> {
+      // 1st attempt: search biased to Puerto Rico
+      const withBias = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${PR_LAT},${PR_LNG}&radius=${PR_RADIUS}&key=${apiKey}`;
+      const r1 = await fetch(withBias);
+      const d1 = await r1.json() as any;
+      lastGoogleStatus = d1.status;
+      req.log.info({ status: d1.status, count: d1.results?.length, query }, "GMB text search (PR biased)");
+      if (d1.results?.length > 0) return d1.results[0].place_id;
+
+      // 2nd attempt: global search (no bias)
+      const global = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
+      const r2 = await fetch(global);
+      const d2 = await r2.json() as any;
+      lastGoogleStatus = d2.status;
+      req.log.info({ status: d2.status, count: d2.results?.length, query }, "GMB text search (global)");
+      if (d2.results?.length > 0) return d2.results[0].place_id;
+
+      return null;
+    }
+
     // ── 1. Resolve place ID ──────────────────────────────────────────────────
     let placeId: string | null = null;
     const resolved = await resolvePlaceId(url);
+    req.log.info({ resolved, url }, "GMB resolvePlaceId result");
 
     if (resolved && resolved.startsWith("text:")) {
-      // Text search
-      const query = resolved.slice(5);
-      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
-      const searchRes = await fetch(searchUrl);
-      const searchData = await searchRes.json() as any;
-      placeId = searchData.results?.[0]?.place_id ?? null;
+      placeId = await textSearch(resolved.slice(5));
     } else if (resolved) {
       placeId = resolved;
     }
 
-    // If still no place_id, try text search using the raw URL as query
+    // If still no place_id, try text search with the raw URL
     if (!placeId) {
-      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(url)}&key=${apiKey}`;
-      const searchRes = await fetch(searchUrl);
-      const searchData = await searchRes.json() as any;
-      placeId = searchData.results?.[0]?.place_id ?? null;
+      placeId = await textSearch(url);
     }
 
     if (!placeId) {
-      res.status(422).json({ error: "Could not find a Google Maps business from that link. Try pasting the full business URL from Google Maps." });
+      const hint = lastGoogleStatus === "REQUEST_DENIED"
+        ? "Google Places API access was denied. Make sure the Places API is enabled for your API key in Google Cloud Console."
+        : lastGoogleStatus === "ZERO_RESULTS"
+          ? "No business was found for that link. Try a link directly from the Google Maps 'Share' button."
+          : `No business found (Google status: ${lastGoogleStatus}). Try a direct Google Maps link.`;
+      res.status(422).json({ error: hint });
       return;
     }
 
