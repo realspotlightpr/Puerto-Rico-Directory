@@ -118,7 +118,7 @@ export default function ForBusiness() {
         <div className="absolute inset-0"
           style={{ backgroundImage: "url(/images/hero-business-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/75 to-black/85" />
         <div className="container mx-auto px-4 relative z-10 text-center max-w-4xl">
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
             <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
