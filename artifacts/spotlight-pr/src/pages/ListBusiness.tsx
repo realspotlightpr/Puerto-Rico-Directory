@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Store, MapPin, Globe, User, Image as ImageIcon,
-  ChevronRight, ChevronLeft, CheckCircle2, Loader2, Mail, KeyRound,
+  ChevronRight, ChevronLeft, CheckCircle2, Loader2, Mail, KeyRound, MapOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   ownerName: z.string().min(2, "Please enter your full name."),
@@ -25,7 +26,8 @@ const formSchema = z.object({
   name: z.string().min(2, "Business name must be at least 2 characters."),
   description: z.string().min(10, "Please provide a slightly longer description."),
   categoryId: z.coerce.number().min(1, "Please select a category."),
-  municipality: z.string().min(1, "Please select a municipality."),
+  municipality: z.string().min(1, "Please select an operating municipality."),
+  hasPhysicalLocation: z.boolean().default(true),
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email("Invalid email address.").optional().or(z.literal("")),
@@ -37,11 +39,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const STEPS = [
-  { id: 1, title: "About You",      icon: User,         fields: ["ownerName", "ownerContactEmail", "ownerPhone"] as const },
-  { id: 2, title: "Business",       icon: Store,        fields: ["name", "categoryId", "description"] as const },
-  { id: 3, title: "Location",       icon: MapPin,       fields: ["municipality", "address", "phone", "email", "website"] as const },
-  { id: 4, title: "Photos",         icon: ImageIcon,    fields: ["logoUrl", "coverUrl"] as const },
-  { id: 5, title: "Review",         icon: CheckCircle2, fields: [] as const },
+  { id: 1, title: "About You",                icon: User,         fields: ["ownerName", "ownerContactEmail", "ownerPhone"] as const },
+  { id: 2, title: "Business",                 icon: Store,        fields: ["name", "categoryId", "description"] as const },
+  { id: 3, title: "Operating Municipality",  icon: MapPin,       fields: ["municipality"] as const },
+  { id: 4, title: "Physical Location",       icon: MapPin,       fields: ["address", "phone", "email", "website"] as const },
+  { id: 5, title: "Photos",                  icon: ImageIcon,    fields: ["logoUrl", "coverUrl"] as const },
+  { id: 6, title: "Review",                  icon: CheckCircle2, fields: [] as const },
 ];
 
 function StepIndicator({ current }: { current: number }) {
@@ -161,6 +164,7 @@ export default function ListBusiness() {
     defaultValues: {
       ownerName: "", ownerPhone: "", ownerContactEmail: "",
       name: "", description: "", categoryId: 0, municipality: "",
+      hasPhysicalLocation: true,
       address: "", phone: "", email: "", website: "", logoUrl: "", coverUrl: "",
     },
     mode: "onTouched",
@@ -367,44 +371,76 @@ export default function ListBusiness() {
               </div>
             )}
 
-            {/* ── STEP 3: Location & Contact ── */}
+            {/* ── STEP 3: Operating Municipality ── */}
             {step === 3 && (
               <div className="bg-white rounded-3xl shadow-xl border border-border p-6 md:p-8 space-y-6">
                 <div>
                   <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-1">
-                    <MapPin className="w-5 h-5 text-primary" /> Location & Contact
+                    <MapPin className="w-5 h-5 text-primary" /> Operating Municipality
                   </h2>
-                  <p className="text-sm text-muted-foreground">Help customers find and reach you. Only municipality is required.</p>
+                  <p className="text-sm text-muted-foreground">Select the main municipality where your business operates. This is how we organize listings in the directory.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField control={form.control} name="municipality" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Municipality <span className="text-destructive">*</span></FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-xl h-11">
-                            <SelectValue placeholder="Select town" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-[300px] rounded-xl">
-                          {MUNICIPALITIES.map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                <FormField control={form.control} name="municipality" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Operating Municipality <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-xl h-11">
+                          <SelectValue placeholder="Select a municipality" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-[300px] rounded-xl">
+                        {MUNICIPALITIES.map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+            )}
 
-                  <FormField control={form.control} name="address" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Street Address</FormLabel>
-                      <FormControl><Input placeholder="123 Calle Fortaleza" className="rounded-xl h-11" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+            {/* ── STEP 4: Physical Location ── */}
+            {step === 4 && (
+              <div className="bg-white rounded-3xl shadow-xl border border-border p-6 md:p-8 space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-1">
+                    <MapPin className="w-5 h-5 text-primary" /> Physical Location
+                  </h2>
+                  <p className="text-sm text-muted-foreground">Tell customers where to find you and how to contact your business. All fields below are optional.</p>
                 </div>
+
+                <FormField control={form.control} name="hasPhysicalLocation" render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border border-border p-4 bg-muted/30">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="rounded"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>This business has a physical location</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        If unchecked, you can skip adding an address (e.g., for online-only businesses).
+                      </p>
+                    </div>
+                  </FormItem>
+                )} />
+
+                {form.watch("hasPhysicalLocation") && (
+                  <>
+                    <FormField control={form.control} name="address" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Street Address</FormLabel>
+                        <FormControl><Input placeholder="123 Calle Fortaleza" className="rounded-xl h-11" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="phone" render={({ field }) => (
@@ -439,8 +475,8 @@ export default function ListBusiness() {
               </div>
             )}
 
-            {/* ── STEP 4: Photos ── */}
-            {step === 4 && (
+            {/* ── STEP 5: Photos ── */}
+            {step === 5 && (
               <div className="bg-white rounded-3xl shadow-xl border border-border p-6 md:p-8 space-y-6">
                 <div>
                   <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-1">
@@ -485,8 +521,8 @@ export default function ListBusiness() {
               </div>
             )}
 
-            {/* ── STEP 5: Review & Submit ── */}
-            {step === 5 && (
+            {/* ── STEP 6: Review & Submit ── */}
+            {step === 6 && (
               <div className="space-y-4">
                 <div className="bg-white rounded-3xl shadow-xl border border-border p-6 md:p-8">
                   <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-6">
