@@ -72,56 +72,56 @@ export async function sendWelcomeAndBusinessSubmissionEmail(
   businessName: string,
   tempPassword: string,
 ): Promise<void> {
-  const loginUrl = `${SITE_URL}`;
+  const firstName = name.split(" ")[0];
+  const verifyUrl = `${SITE_URL}/verify-email`;
   const html = emailWrapper(`
-    <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">Your Business Was Submitted! 🎉</h2>
+    <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">Welcome to Spotlight Puerto Rico 🇵🇷</h2>
     <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      Hi ${name}, thanks for adding <strong>${businessName}</strong> to Spotlight Puerto Rico. 
-      Your listing is now <strong>pending review</strong> — our team will approve it shortly.
+      Hi ${firstName},
     </p>
 
-    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
-      <h3 style="color:#0c4a6e;margin:0 0 12px;font-size:15px;font-weight:700;">🔐 Your New Account Credentials</h3>
-      <p style="color:#374151;font-size:14px;margin:0 0 8px;">
-        We created a Spotlight Puerto Rico account for you so you can manage your listing.
-      </p>
-      <table style="width:100%;background:#ffffff;border:1px solid #e0f2fe;border-radius:8px;padding:0;border-collapse:collapse;">
-        <tr>
-          <td style="padding:10px 16px;border-bottom:1px solid #e0f2fe;color:#6b7280;font-size:13px;width:40%;">Email</td>
-          <td style="padding:10px 16px;border-bottom:1px solid #e0f2fe;color:#111827;font-size:14px;font-weight:600;">${to}</td>
-        </tr>
-        <tr>
-          <td style="padding:10px 16px;color:#6b7280;font-size:13px;">Temporary Password</td>
-          <td style="padding:10px 16px;color:#111827;font-size:14px;font-weight:700;letter-spacing:1px;font-family:monospace;">${tempPassword}</td>
-        </tr>
-      </table>
-    </div>
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      We're excited to have your business on the platform and help you get discovered by more locals and visitors across the island.
+    </p>
 
-    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="color:#92400e;font-size:14px;margin:0;">
-        ⚠️ <strong>Important:</strong> Please log in and change your password as soon as possible. 
-        You will also need to verify your email address.
-      </p>
-    </div>
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      To get started and make sure everything is set up properly, please take a moment to verify your account:
+    </p>
 
-    <div style="text-align:center;margin-bottom:24px;">
-      <a href="${loginUrl}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
-        Log In to Your Dashboard →
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${verifyUrl}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
+        👉 Verify Your Account
       </a>
     </div>
 
-    <div style="border-top:1px solid #e5e7eb;padding-top:20px;">
-      <h4 style="color:#374151;font-size:14px;margin:0 0 12px;">Next Steps:</h4>
-      <ol style="color:#6b7280;font-size:14px;line-height:1.8;padding-left:20px;margin:0;">
-        <li>Log in at <a href="${loginUrl}" style="color:${BRAND_COLOR};">spotlightpuertorico.com</a> using the credentials above</li>
-        <li>Change your temporary password in your account settings</li>
-        <li>Verify your email address (check for a separate verification email)</li>
-        <li>Once approved, your business will appear in the public directory</li>
-      </ol>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h3 style="color:#0c4a6e;margin:0 0 12px;font-size:15px;font-weight:700;">Once verified, you'll be able to:</h3>
+      <ul style="color:#374151;font-size:14px;line-height:1.8;padding-left:20px;margin:0;">
+        <li>Manage your business listing</li>
+        <li>Update your information, photos, and offers</li>
+        <li>Start getting discovered by customers in your area</li>
+      </ul>
+    </div>
+
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      If you need help at any point, just reply to this email — we're here to help you grow.
+    </p>
+
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 8px;">
+      Welcome again, and we're excited to spotlight your business!
+    </p>
+
+    <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:32px;">
+      <p style="color:#6b7280;font-size:14px;margin:0;">
+        —<br/>
+        Colby<br/>
+        Spotlight Puerto Rico<br/>
+        <strong>Helping Local Businesses Get Seen 🇵🇷</strong>
+      </p>
     </div>
   `);
 
-  await sendEmail(to, name, `Your Business "${businessName}" Has Been Submitted — Spotlight PR`, html);
+  await sendEmail(to, name, `Welcome to Spotlight Puerto Rico – Verify Your Business 🚀`, html);
 }
 
 export async function sendInquiryEmail(
