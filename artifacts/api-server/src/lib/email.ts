@@ -71,44 +71,62 @@ export async function sendWelcomeAndBusinessSubmissionEmail(
   name: string,
   businessName: string,
   tempPassword: string,
+  verificationLink: string,
 ): Promise<void> {
   const firstName = name.split(" ")[0];
-  const verifyUrl = `${SITE_URL}/verify-email`;
   const html = emailWrapper(`
     <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">Welcome to Spotlight Puerto Rico 🇵🇷</h2>
-    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 8px;">
       Hi ${firstName},
     </p>
-
     <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      We're excited to have your business on the platform and help you get discovered by more locals and visitors across the island.
-    </p>
-
-    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      To get started and make sure everything is set up properly, please take a moment to verify your account:
-    </p>
-
-    <div style="text-align:center;margin:32px 0;">
-      <a href="${verifyUrl}" style="background:${BRAND_COLOR};color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
-        👉 Verify Your Account
-      </a>
-    </div>
-
-    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
-      <h3 style="color:#0c4a6e;margin:0 0 12px;font-size:15px;font-weight:700;">Once verified, you'll be able to:</h3>
-      <ul style="color:#374151;font-size:14px;line-height:1.8;padding-left:20px;margin:0;">
-        <li>Manage your business listing</li>
-        <li>Update your information, photos, and offers</li>
-        <li>Start getting discovered by customers in your area</li>
-      </ul>
-    </div>
-
-    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      If you need help at any point, just reply to this email — we're here to help you grow.
+      Your business <strong style="color:#111827;">${businessName}</strong> has been submitted and is pending review. We'll notify you as soon as it goes live.
     </p>
 
     <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 8px;">
-      Welcome again, and we're excited to spotlight your business!
+      We've created a free account for you so you can manage your listing. <strong>Click the button below to verify your email and access your dashboard:</strong>
+    </p>
+
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${verificationLink}" style="background:${BRAND_COLOR};color:white;padding:16px 36px;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;display:inline-block;">
+        ✅ Verify My Email &amp; Access Dashboard
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0 0 24px;">
+      This link expires in 24 hours. If it doesn't work, copy and paste it into your browser:<br/>
+      <span style="word-break:break-all;color:${BRAND_COLOR};">${verificationLink}</span>
+    </p>
+
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h3 style="color:#111827;margin:0 0 12px;font-size:14px;font-weight:700;">Your Login Credentials</h3>
+      <table style="width:100%;font-size:14px;color:#374151;">
+        <tr>
+          <td style="padding:4px 0;font-weight:600;width:80px;">Email:</td>
+          <td style="padding:4px 0;">${to}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-weight:600;">Password:</td>
+          <td style="padding:4px 0;font-family:monospace;background:#f3f4f6;padding:4px 8px;border-radius:4px;">${tempPassword}</td>
+        </tr>
+      </table>
+      <p style="color:#9ca3af;font-size:12px;margin:12px 0 0;">
+        You can change your password any time from your dashboard settings.
+      </p>
+    </div>
+
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h3 style="color:#0c4a6e;margin:0 0 12px;font-size:14px;font-weight:700;">After verifying you unlock:</h3>
+      <ul style="color:#374151;font-size:14px;line-height:1.8;padding-left:20px;margin:0;">
+        <li>Full dashboard to manage your listing</li>
+        <li>"Verified" and "Claimed" badges on your profile</li>
+        <li>AI Business Assistant</li>
+        <li>Photo uploads, offers, and analytics</li>
+      </ul>
+    </div>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 8px;">
+      Questions? Just reply to this email — we're here to help.
     </p>
 
     <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:32px;">
@@ -121,7 +139,7 @@ export async function sendWelcomeAndBusinessSubmissionEmail(
     </div>
   `);
 
-  await sendEmail(to, name, `Welcome to Spotlight Puerto Rico – Verify Your Business 🚀`, html);
+  await sendEmail(to, name, `Welcome to Spotlight Puerto Rico – Verify Your Email to Get Started 🚀`, html);
 }
 
 export async function sendInquiryEmail(

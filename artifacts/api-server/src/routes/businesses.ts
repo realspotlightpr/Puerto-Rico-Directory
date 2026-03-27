@@ -267,35 +267,55 @@ router.post("/businesses", async (req, res) => {
           .set({ role: "business_owner" })
           .where(eq(usersTable.id, ownerId));
       } else {
-        // Brand-new guest — create a Supabase account and seed locally
+        // Brand-new guest — create a Supabase account and seed locally.
+        // Use the SERVICE ROLE key so we:
+        //   1. Don't trigger Supabase's own verification email (avoids duplicate / confusing emails)
+        //   2. Can generate a real magic-link to embed in our Brevo email
         const tempPassword = generateTempPassword();
 
-        const supabase = createClient(
+        const supabaseAdmin = createClient(
           process.env.SUPABASE_URL!,
-          process.env.SUPABASE_ANON_KEY!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } },
         );
 
         const firstName = ownerName ? ownerName.split(" ")[0] : null;
         const lastName = ownerName ? ownerName.split(" ").slice(1).join(" ") || null : null;
 
-        const { data: supabaseData, error: supabaseError } = await supabase.auth.signUp({
+        // Create the user without triggering Supabase's own email
+        const { data: supabaseData, error: supabaseError } = await supabaseAdmin.auth.admin.createUser({
           email: ownerContactEmail,
           password: tempPassword,
-          options: {
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-            },
+          email_confirm: false,         // stays unconfirmed until they click our link
+          user_metadata: {
+            first_name: firstName,
+            last_name: lastName,
           },
         });
 
         if (supabaseError || !supabaseData.user) {
-          req.log.error({ supabaseError }, "Supabase signUp failed");
+          req.log.error({ supabaseError }, "Supabase admin.createUser failed");
           res.status(500).json({ error: "Failed to create account. Please try again." });
           return;
         }
 
         ownerId = supabaseData.user.id;
+
+        // Generate a real Supabase verification magic-link to embed in our email
+        const siteUrl = process.env.VITE_PUBLIC_URL || "https://spotlightpuertorico.com";
+        let verificationLink: string | null = null;
+        try {
+          const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+            type: "signup",
+            email: ownerContactEmail,
+            options: { redirectTo: `${siteUrl}/dashboard` },
+          });
+          if (!linkError && linkData?.properties?.action_link) {
+            verificationLink = linkData.properties.action_link;
+          }
+        } catch (linkErr) {
+          req.log.warn({ linkErr }, "Could not generate Supabase magic link (non-fatal)");
+        }
 
         // Pre-seed the local user record with the Supabase UUID
         const username = ownerContactEmail.split("@")[0].replace(/[^a-z0-9_]/gi, "").toLowerCase().slice(0, 30) || `user_${crypto.randomBytes(4).toString("hex")}`;
@@ -313,13 +333,14 @@ router.post("/businesses", async (req, res) => {
           })
           .onConflictDoNothing();
 
-        // Send the combined welcome + credentials email via Brevo
+        // Send our single welcome email with credentials + the real verification link
         try {
           await sendWelcomeAndBusinessSubmissionEmail(
             ownerContactEmail,
             firstName ?? ownerContactEmail.split("@")[0],
             name,
             tempPassword,
+            verificationLink ?? `${siteUrl}/verify-email`,
           );
         } catch (emailErr) {
           req.log.error({ emailErr }, "Failed to send welcome email (non-fatal)");
