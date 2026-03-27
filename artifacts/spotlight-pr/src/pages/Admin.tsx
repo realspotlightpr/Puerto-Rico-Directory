@@ -926,6 +926,24 @@ export default function Admin() {
     },
   });
 
+  const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+  const handleSendPasswordReset = async () => {
+    if (!editingUser) return;
+    setSendingPasswordReset(true);
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/users/${editingUser.id}/send-password-reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to send password reset");
+      toast({ title: "Password reset email sent", description: `Temporary password sent to ${editingUser.email}` });
+    } catch (err: any) {
+      toast({ title: "Failed to send password reset", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingPasswordReset(false);
+    }
+  };
+
   const { mutate: adminCreateUser, isPending: isCreatingUser } = useAdminCreateUser({
     mutation: {
       onSuccess: () => {
@@ -2197,9 +2215,10 @@ export default function Admin() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                   {editingUser?.profileImage ? <img src={editingUser.profileImage} alt="" className="w-full h-full object-cover" /> : <span className="font-bold text-primary">{(editingUser?.firstName?.[0] ?? editingUser?.username?.[0] ?? "?").toUpperCase()}</span>}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{editingUser?.firstName} {editingUser?.lastName}</p>
-                  <p className="text-xs text-muted-foreground">@{editingUser?.username}</p>
+                  <p className="text-xs text-muted-foreground truncate">@{editingUser?.username}</p>
+                  <p className="text-xs text-muted-foreground truncate">{editingUser?.email}</p>
                 </div>
                 {(editingUser as any).emailVerified ? (
                   <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 gap-1 shrink-0">
@@ -2229,11 +2248,24 @@ export default function Admin() {
                   <FormControl><Switch checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl>
                 </FormItem>
               )} />
-              <DialogFooter className="pt-4 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setEditingUser(null)} className="rounded-xl">Cancel</Button>
-                <Button type="submit" disabled={isSavingUser} className="rounded-xl gap-2">
-                  {isSavingUser ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Changes</>}
-                </Button>
+              <DialogFooter className="pt-4 border-t border-border flex flex-col sm:flex-row gap-2">
+                <div className="flex gap-2 sm:mr-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSendPasswordReset}
+                    disabled={sendingPasswordReset}
+                    className="rounded-xl gap-1.5 text-amber-600 border-amber-300/50 hover:bg-amber-50"
+                  >
+                    {sendingPasswordReset ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : <>📧 Send Password Reset</>}
+                  </Button>
+                </div>
+                <div className="flex gap-2 ml-auto w-full sm:w-auto">
+                  <Button type="button" variant="outline" onClick={() => setEditingUser(null)} className="rounded-xl flex-1 sm:flex-none">Cancel</Button>
+                  <Button type="submit" disabled={isSavingUser} className="rounded-xl gap-2 flex-1 sm:flex-none">
+                    {isSavingUser ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Changes</>}
+                  </Button>
+                </div>
               </DialogFooter>
             </form>
           </Form>

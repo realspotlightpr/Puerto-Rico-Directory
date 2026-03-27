@@ -277,3 +277,62 @@ export async function sendVerificationEmail(
 
   await sendEmail(to, name, "Verify Your Email — Spotlight Puerto Rico", html);
 }
+
+export async function sendPasswordResetEmail(
+  to: string,
+  name: string,
+  tempPassword: string,
+): Promise<void> {
+  const firstName = name.split(" ")[0];
+  const loginUrl = `${SITE_URL}`;
+  const html = emailWrapper(`
+    <h2 style="color:#111827;margin:0 0 8px;font-size:22px;">Your Password Has Been Reset</h2>
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      Hi ${firstName},
+    </p>
+    <p style="color:#6b7280;font-size:15px;line-height:1.6;margin:0 0 24px;">
+      An administrator has reset your Spotlight Puerto Rico password. Here are your new login credentials:
+    </p>
+
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h3 style="color:#111827;margin:0 0 12px;font-size:14px;font-weight:700;">Your Temporary Password</h3>
+      <table style="width:100%;font-size:14px;color:#374151;">
+        <tr>
+          <td style="padding:4px 0;font-weight:600;width:100px;">Email:</td>
+          <td style="padding:4px 0;">${escapeHtml(to)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-weight:600;">Password:</td>
+          <td style="padding:4px 0;font-family:monospace;background:#f3f4f6;padding:4px 8px;border-radius:4px;letter-spacing:0.5px;font-size:13px;">${escapeHtml(tempPassword)}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${loginUrl}" style="background:${BRAND_COLOR};color:white;padding:12px 28px;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;display:inline-block;">
+        Sign In With New Password
+      </a>
+    </div>
+
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+      <p style="color:#92400e;font-size:13px;font-weight:600;margin:0 0 6px;">⚠️ Important: Change Your Password</p>
+      <p style="color:#b45309;font-size:13px;line-height:1.5;margin:0;">
+        When you log in, you'll be asked to create a new password. This temporary password will work for your first login only. For security, please set a strong password that only you know.
+      </p>
+    </div>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 8px;">
+      If you didn't request this password reset or have questions, contact your administrator.
+    </p>
+
+    <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:32px;">
+      <p style="color:#6b7280;font-size:14px;margin:0;">
+        —<br/>
+        Spotlight Puerto Rico Team<br/>
+        <strong>Admin Password Reset</strong>
+      </p>
+    </div>
+  `);
+
+  await sendEmail(to, name, "Your Password Has Been Reset — Spotlight Puerto Rico", html);
+}

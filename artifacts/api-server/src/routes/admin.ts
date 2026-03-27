@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions, sliderSettingsTable } from "@workspace/db/schema";
 import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
-import { sendWelcomeNewUserEmail } from "../lib/email";
+import { sendWelcomeNewUserEmail, sendPasswordResetEmail } from "../lib/email";
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://kfwyvzdeitmidkgkyjwb.supabase.co";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -16,6 +16,11 @@ function isValidSlug(slug: string): boolean {
 }
 
 const router: IRouter = Router();
+
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
 
 function requireAdmin(req: any, res: any): boolean {
   if (!req.isAuthenticated()) {
@@ -534,6 +539,60 @@ router.put("/admin/users/:id/role", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update role" });
+  }
+});
+
+router.post("/admin/users/:id/send-password-reset", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const userId = req.params.id;
+    const [user] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (!user || !user.email) {
+      res.status(404).json({ error: "User not found or has no email" });
+      return;
+    }
+
+    const tempPassword = generateTempPassword();
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username || "User";
+
+    // Update Supabase password
+    if (supabaseAdmin) {
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password: tempPassword,
+        user_metadata: {
+          ...(user.firstName && { first_name: user.firstName }),
+          ...(user.lastName && { last_name: user.lastName }),
+        },
+      });
+
+      if (updateError) {
+        req.log.error({ updateError }, "Failed to update Supabase password");
+        res.status(500).json({ error: "Failed to update password in authentication system" });
+        return;
+      }
+    }
+
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail(user.email, userName, tempPassword);
+    } catch (emailErr) {
+      req.log.error({ emailErr }, "Failed to send password reset email");
+      // Don't fail the request if email fails
+    }
+
+    res.json({
+      message: "Password reset email sent successfully",
+      email: user.email,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to send password reset" });
   }
 });
 
