@@ -946,24 +946,21 @@ router.post("/admin/leads/gmb-import", async (req, res) => {
 
     let lastGoogleStatus = "UNKNOWN";
 
+    // Search strictly within Puerto Rico (120km radius from PR center)
     async function textSearch(query: string): Promise<string | null> {
-      // 1st attempt: search biased to Puerto Rico
-      const withBias = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${PR_LAT},${PR_LNG}&radius=${PR_RADIUS}&key=${apiKey}`;
-      const r1 = await fetch(withBias);
-      const d1 = await r1.json() as any;
-      lastGoogleStatus = d1.status;
-      req.log.info({ status: d1.status, count: d1.results?.length, query }, "GMB text search (PR biased)");
-      if (d1.results?.length > 0) return d1.results[0].place_id;
+      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query + " Puerto Rico")}&location=${PR_LAT},${PR_LNG}&radius=${PR_RADIUS}&key=${apiKey}`;
+      const r = await fetch(searchUrl);
+      const d = await r.json() as any;
+      lastGoogleStatus = d.status;
+      req.log.info({ status: d.status, count: d.results?.length, query }, "GMB text search (Puerto Rico only)");
 
-      // 2nd attempt: global search (no bias)
-      const global = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
-      const r2 = await fetch(global);
-      const d2 = await r2.json() as any;
-      lastGoogleStatus = d2.status;
-      req.log.info({ status: d2.status, count: d2.results?.length, query }, "GMB text search (global)");
-      if (d2.results?.length > 0) return d2.results[0].place_id;
+      // Validate results are actually in Puerto Rico
+      const prResult = (d.results ?? []).find((result: any) => {
+        const addr: string = result.formatted_address ?? result.vicinity ?? "";
+        return addr.includes("Puerto Rico") || addr.includes(", PR ");
+      });
 
-      return null;
+      return prResult?.place_id ?? null;
     }
 
     // ── 1. Resolve place ID ──────────────────────────────────────────────────
@@ -985,9 +982,9 @@ router.post("/admin/leads/gmb-import", async (req, res) => {
     if (!placeId) {
       const hint = lastGoogleStatus === "REQUEST_DENIED"
         ? "Google Places API access was denied. Make sure the Places API is enabled for your API key in Google Cloud Console."
-        : lastGoogleStatus === "ZERO_RESULTS"
-          ? "No business was found for that link. Try a link directly from the Google Maps 'Share' button."
-          : `No business found (Google status: ${lastGoogleStatus}). Try a direct Google Maps link.`;
+        : lastGoogleStatus === "ZERO_RESULTS" || lastGoogleStatus === "OK"
+          ? "No Puerto Rico business was found for that link. Make sure the business is listed on Google Maps in Puerto Rico, then paste the link from the Google Maps 'Share' button."
+          : `No Puerto Rico business found (Google status: ${lastGoogleStatus}). Paste a direct Google Maps link for a Puerto Rico business.`;
       res.status(422).json({ error: hint });
       return;
     }
@@ -1012,6 +1009,14 @@ router.post("/admin/leads/gmb-import", async (req, res) => {
     }
 
     const place = detailData.result;
+
+    // ── Puerto Rico validation ─────────────────────────────────────────────
+    const placeAddress: string = place.formatted_address ?? place.vicinity ?? "";
+    const isInPuertoRico = placeAddress.includes("Puerto Rico") || placeAddress.includes(", PR ");
+    if (!isInPuertoRico) {
+      res.status(422).json({ error: "Only Puerto Rico businesses can be imported. The business found at that link does not appear to be located in Puerto Rico." });
+      return;
+    }
 
     // ── 3. Resolve photo URLs (top 3) ────────────────────────────────────────
     const photoRefs: string[] = (place.photos ?? []).slice(0, 3).map((p: any) => p.photo_reference);
