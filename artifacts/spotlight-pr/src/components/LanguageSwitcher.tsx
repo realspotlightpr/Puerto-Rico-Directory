@@ -19,22 +19,5 @@ export function LanguageSwitcher() {
     }
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      <Globe className="w-4 h-4 text-muted-foreground" />
-      <Select value={language} onValueChange={handleChange}>
-        <SelectTrigger className="w-[120px] rounded-lg border-border bg-transparent text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="en">
-            <span className="flex items-center gap-2">{t("nav.english")}</span>
-          </SelectItem>
-          <SelectItem value="es">
-            <span className="flex items-center gap-2">{t("nav.spanish")}</span>
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
+  return null;
 }
