@@ -147,11 +147,6 @@ export default function ForBusiness() {
                 <Rocket className="w-5 h-5 ml-2" />
               </Button>
             </Link>
-            <Link href="/directory">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent">
-                Browse the Directory
-              </Button>
-            </Link>
           </motion.div>
         </div>
       </section>
