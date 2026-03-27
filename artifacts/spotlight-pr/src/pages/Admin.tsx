@@ -154,6 +154,257 @@ function parseCSV(text: string): Record<string, string>[] {
   });
 }
 
+// ── GmbImportDialog ───────────────────────────────────────────────────────────
+
+type GmbPreview = {
+  placeId: string;
+  name: string;
+  address: string;
+  municipality: string;
+  phone: string | null;
+  website: string | null;
+  description: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  extraPhotos: string[];
+  hours: Record<string, string> | null;
+  mapsUrl: string;
+  rating: number | null;
+  reviewCount: number | null;
+  types: string[];
+};
+
+function GmbImportDialog({
+  open, onClose, onSave, categories,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSave: (data: any) => void;
+  categories: { id: number; name: string }[];
+}) {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<GmbPreview | null>(null);
+  const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
+  const [selectedCover, setSelectedCover] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  function reset() {
+    setUrl("");
+    setError(null);
+    setPreview(null);
+    setSelectedLogo(null);
+    setSelectedCover(null);
+    setCategoryId("");
+    setSaving(false);
+  }
+
+  async function handleFetch() {
+    if (!url.trim()) return;
+    setLoading(true);
+    setError(null);
+    setPreview(null);
+    try {
+      const { customFetch } = await import("@workspace/api-client-react");
+      const data = await customFetch<GmbPreview>("/api/admin/leads/gmb-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+        credentials: "include",
+      });
+      setPreview(data);
+      setSelectedLogo(data.logoUrl);
+      setSelectedCover(data.coverUrl);
+    } catch (e: any) {
+      setError(e.message || "Failed to fetch business data.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!preview) return;
+    setSaving(true);
+    try {
+      onSave({
+        name: preview.name,
+        description: preview.description,
+        municipality: preview.municipality,
+        address: preview.address,
+        phone: preview.phone,
+        website: preview.website,
+        logoUrl: selectedLogo,
+        coverUrl: selectedCover,
+        categoryId: categoryId ? parseInt(categoryId) : undefined,
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const allPhotos = preview
+    ? [preview.logoUrl, preview.coverUrl, ...preview.extraPhotos].filter(Boolean) as string[]
+    : [];
+
+  return (
+    <Dialog open={open} onOpenChange={o => { if (!o) { reset(); onClose(); } }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-emerald-600" />
+            Import from Google My Business
+          </DialogTitle>
+          <DialogDescription>
+            Paste a Google Maps or Google My Business link and we'll automatically pull in all the business details including photos, hours, and contact info.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          {/* URL input */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="https://maps.google.com/maps?place_id=... or https://goo.gl/maps/..."
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleFetch()}
+              className="flex-1 rounded-xl"
+              disabled={loading}
+            />
+            <Button onClick={handleFetch} disabled={loading || !url.trim()} className="rounded-xl gap-2 shrink-0">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {loading ? "Fetching…" : "Lookup"}
+            </Button>
+          </div>
+
+          {/* Hint */}
+          {!preview && !error && !loading && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 space-y-1">
+              <p className="font-semibold">How to get the link:</p>
+              <ol className="list-decimal list-inside space-y-0.5 text-emerald-700">
+                <li>Search for the business on Google Maps</li>
+                <li>Click "Share" → "Copy link"</li>
+                <li>Paste the link above and click Lookup</li>
+              </ol>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3 items-start">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Could not fetch business</p>
+                <p className="text-xs text-red-600 mt-0.5">{error}</p>
+                <Button size="sm" variant="outline" className="mt-2 rounded-lg h-7 text-xs" onClick={() => setError(null)}>Try again</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Preview */}
+          {preview && (
+            <div className="space-y-4">
+              {/* Business header */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-4">
+                {selectedLogo && (
+                  <img src={selectedLogo} alt={preview.name} className="w-16 h-16 rounded-xl object-cover border border-border flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base">{preview.name}</p>
+                  {preview.address && <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><MapPin className="w-3 h-3" />{preview.address}</p>}
+                  {preview.phone && <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Phone className="w-3 h-3" />{preview.phone}</p>}
+                  {preview.website && <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Globe className="w-3 h-3" />{preview.website}</p>}
+                  {preview.rating && <p className="text-xs text-amber-600 mt-1 flex items-center gap-1"><Star className="w-3 h-3 fill-current" />{preview.rating} ({preview.reviewCount} reviews)</p>}
+                </div>
+              </div>
+
+              {/* Description */}
+              {preview.description && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Description</p>
+                  <p className="text-sm text-foreground leading-relaxed bg-muted/30 rounded-xl p-3">{preview.description}</p>
+                </div>
+              )}
+
+              {/* Photo picker */}
+              {allPhotos.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Photos from Google Maps</p>
+                  <p className="text-xs text-muted-foreground mb-2">Click to select logo photo and cover photo (first click = logo, second click on different = cover)</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {allPhotos.map((photo, i) => {
+                      const isLogo = selectedLogo === photo;
+                      const isCover = selectedCover === photo;
+                      return (
+                        <div
+                          key={i}
+                          className={`relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${isLogo ? "border-emerald-500" : isCover ? "border-blue-500" : "border-transparent hover:border-border"}`}
+                          onClick={() => {
+                            if (isLogo) { setSelectedLogo(null); }
+                            else if (isCover) { setSelectedCover(null); }
+                            else if (!selectedLogo) { setSelectedLogo(photo); }
+                            else if (!selectedCover) { setSelectedCover(photo); }
+                            else { setSelectedLogo(photo); }
+                          }}
+                        >
+                          <img src={photo} alt="" className="w-full h-24 object-cover" />
+                          {isLogo && <span className="absolute top-1 left-1 bg-emerald-500 text-white text-[10px] font-bold rounded-md px-1.5 py-0.5">Logo</span>}
+                          {isCover && <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] font-bold rounded-md px-1.5 py-0.5">Cover</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Category */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Category</p>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Select a category (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Hours preview */}
+              {preview.hours && Object.keys(preview.hours).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Business Hours</p>
+                  <div className="bg-muted/30 rounded-xl p-3 grid grid-cols-2 gap-x-4 gap-y-1">
+                    {Object.entries(preview.hours).map(([day, time]) => (
+                      <div key={day} className="flex justify-between text-xs">
+                        <span className="font-medium text-foreground">{day}</span>
+                        <span className="text-muted-foreground">{time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {preview && (
+          <DialogFooter className="gap-2 mt-2">
+            <Button variant="outline" onClick={() => { reset(); onClose(); }} className="rounded-xl">Cancel</Button>
+            <Button onClick={handleSave} disabled={saving} className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Save to Directory
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function GoogleMapsImportDialog({
   open, onClose, onImport, isImporting,
 }: {
@@ -579,6 +830,7 @@ export default function Admin() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [addingLead, setAddingLead] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showGmbDialog, setShowGmbDialog] = useState(false);
   const [statsBusinessId, setStatsBusinessId] = useState<number | null>(null);
 
   const [addingUser, setAddingUser] = useState(false);
@@ -937,6 +1189,9 @@ export default function Admin() {
             )}
             {section === "leads" && (
               <>
+                <Button variant="outline" onClick={() => setShowGmbDialog(true)} className="rounded-xl gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                  <Globe className="w-4 h-4" /> Import from GMB Link
+                </Button>
                 <Button variant="outline" onClick={() => setShowImportDialog(true)} className="rounded-xl gap-2 border-violet-200 text-violet-700 hover:bg-violet-50">
                   <Upload className="w-4 h-4" /> Import from Google Maps
                 </Button>
@@ -1745,6 +2000,17 @@ export default function Admin() {
           isSaving={isUpdatingTeamMember}
         />
       )}
+
+      {/* ── GMB Link Import Dialog ── */}
+      <GmbImportDialog
+        open={showGmbDialog}
+        onClose={() => setShowGmbDialog(false)}
+        categories={categoriesData?.categories ?? []}
+        onSave={(data) => {
+          createLead({ data });
+          setShowGmbDialog(false);
+        }}
+      />
 
       {/* ── Google Maps Import Dialog ── */}
       <GoogleMapsImportDialog

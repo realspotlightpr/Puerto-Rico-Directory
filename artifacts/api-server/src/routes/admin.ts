@@ -865,6 +865,155 @@ router.delete("/admin/leads/:id", async (req, res) => {
   }
 });
 
+// ── GMB (Google My Business) Import ───────────────────────────────────────────
+
+/**
+ * Extract a Google Place ID or search query from various GMB URL formats:
+ * - maps.google.com/maps?place_id=...
+ * - maps.google.com/maps?cid=...
+ * - google.com/maps/place/...
+ * - goo.gl/maps/...  (short links — we return the URL for fetch-redirect resolution)
+ */
+async function resolvePlaceId(url: string): Promise<string | null> {
+  // Direct place_id param
+  try {
+    const u = new URL(url);
+    if (u.searchParams.get("place_id")) return u.searchParams.get("place_id");
+
+    // /maps/place/<encoded-name>/<coords>  — extract the name to text-search
+    const placeMatch = u.pathname.match(/\/maps\/place\/([^/]+)/);
+    if (placeMatch) {
+      return `text:${decodeURIComponent(placeMatch[1])}`;
+    }
+  } catch {
+    // Not a valid URL; treat as raw search text
+  }
+  return null;
+}
+
+router.post("/admin/leads/gmb-import", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    res.status(503).json({ error: "Google Maps API key not configured" });
+    return;
+  }
+
+  const { url } = req.body as { url?: string };
+  if (!url) {
+    res.status(400).json({ error: "url is required" });
+    return;
+  }
+
+  try {
+    // ── 1. Resolve place ID ──────────────────────────────────────────────────
+    let placeId: string | null = null;
+    const resolved = await resolvePlaceId(url);
+
+    if (resolved && resolved.startsWith("text:")) {
+      // Text search
+      const query = resolved.slice(5);
+      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json() as any;
+      placeId = searchData.results?.[0]?.place_id ?? null;
+    } else if (resolved) {
+      placeId = resolved;
+    }
+
+    // If still no place_id, try text search using the raw URL as query
+    if (!placeId) {
+      const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(url)}&key=${apiKey}`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json() as any;
+      placeId = searchData.results?.[0]?.place_id ?? null;
+    }
+
+    if (!placeId) {
+      res.status(422).json({ error: "Could not find a Google Maps business from that link. Try pasting the full business URL from Google Maps." });
+      return;
+    }
+
+    // ── 2. Fetch Place Details ────────────────────────────────────────────────
+    const fields = [
+      "place_id", "name", "formatted_address", "international_phone_number",
+      "website", "business_status", "editorial_summary",
+      "opening_hours", "photos", "url",
+      "rating", "user_ratings_total",
+      "types", "vicinity",
+      // social media / other data not directly available via basic Places API
+    ].join(",");
+
+    const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${encodeURIComponent(fields)}&key=${apiKey}`;
+    const detailRes = await fetch(detailUrl);
+    const detailData = await detailRes.json() as any;
+
+    if (detailData.status !== "OK") {
+      res.status(422).json({ error: `Google Places API error: ${detailData.status}` });
+      return;
+    }
+
+    const place = detailData.result;
+
+    // ── 3. Resolve photo URLs (top 3) ────────────────────────────────────────
+    const photoRefs: string[] = (place.photos ?? []).slice(0, 3).map((p: any) => p.photo_reference);
+    const photoUrls = photoRefs.map(
+      ref => `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photoreference=${ref}&key=${apiKey}`
+    );
+
+    // First photo as logo, second as cover if available
+    const logoUrl = photoUrls[0] ?? null;
+    const coverUrl = photoUrls[1] ?? null;
+    const extraPhotos = photoUrls.slice(2);
+
+    // ── 4. Detect municipality ─────────────────────────────────────────────
+    const address = place.formatted_address ?? place.vicinity ?? "";
+    const municipality = detectMunicipality(address);
+
+    // ── 5. Build description ───────────────────────────────────────────────
+    const description = place.editorial_summary?.overview
+      ?? `${place.name} is located at ${address}.`;
+
+    // ── 6. Parse hours ────────────────────────────────────────────────────
+    let hours: Record<string, string> | null = null;
+    if (place.opening_hours?.weekday_text) {
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      hours = {};
+      for (const line of place.opening_hours.weekday_text as string[]) {
+        for (const day of days) {
+          if (line.startsWith(day)) {
+            const timepart = line.slice(day.length + 2).trim();
+            hours[day.slice(0, 3)] = timepart;
+          }
+        }
+      }
+    }
+
+    // ── 7. Respond with preview payload ──────────────────────────────────
+    res.json({
+      placeId,
+      name: place.name ?? "",
+      address,
+      municipality,
+      phone: place.international_phone_number ?? null,
+      website: place.website ?? null,
+      description,
+      logoUrl,
+      coverUrl,
+      extraPhotos,
+      hours,
+      mapsUrl: place.url ?? url,
+      rating: place.rating ?? null,
+      reviewCount: place.user_ratings_total ?? null,
+      types: place.types ?? [],
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch business data from Google Maps" });
+  }
+});
+
 // ── Team Members Management ────────────────────────────────────────────────────
 
 router.get("/admin/team", async (req, res) => {
