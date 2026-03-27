@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
 import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions, sliderSettingsTable } from "@workspace/db/schema";
-import { eq, desc, sql, and, ilike, gt } from "drizzle-orm";
+import { eq, desc, sql, and, or, ilike, gt } from "drizzle-orm";
 import { sendWelcomeNewUserEmail, sendPasswordResetEmail } from "../lib/email";
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://kfwyvzdeitmidkgkyjwb.supabase.co";
@@ -611,32 +611,43 @@ router.delete("/admin/users/:id", async (req, res) => {
       return;
     }
 
-    // Unclaim all businesses owned by this user (set userId to NULL)
-    const ownedBusinesses = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(businessesTable)
-      .where(eq(businessesTable.userId, userId))
-      .then(r => r[0]?.count ?? 0);
-
-    if (ownedBusinesses > 0) {
-      await db.update(businessesTable)
-        .set({ userId: null })
-        .where(eq(businessesTable.userId, userId));
+    // Prevent admins from deleting themselves
+    if (userId === req.user.id) {
+      res.status(400).json({ error: "You cannot delete your own account" });
+      return;
     }
 
-    // Delete from Supabase Auth (if service role key is available)
+    await db.transaction(async (tx) => {
+      // 1. Delete impersonation sessions (has FK constraints to usersTable)
+      await tx.delete(adminImpersonationSessions)
+        .where(
+          or(
+            eq(adminImpersonationSessions.adminId, userId),
+            eq(adminImpersonationSessions.impersonatedUserId, userId)
+          )
+        );
+
+      // 2. Remove team membership if any
+      await tx.delete(teamMembersTable).where(eq(teamMembersTable.userId, userId));
+
+      // 3. Mark businesses as unclaimed (ownerId is notNull, so we can't null it — just unclaim)
+      await tx.update(businessesTable)
+        .set({ isClaimed: false })
+        .where(eq(businessesTable.ownerId, userId));
+
+      // 4. Delete the user from our database
+      await tx.delete(usersTable).where(eq(usersTable.id, userId));
+    });
+
+    // 5. Delete from Supabase Auth (after local DB deletion succeeds)
     if (supabaseAdmin) {
       try {
         await supabaseAdmin.auth.admin.deleteUser(userId);
         req.log.info({ userId }, "User deleted from Supabase Auth");
       } catch (supabaseErr: any) {
-        req.log.warn({ userId, error: supabaseErr.message }, "Failed to delete user from Supabase Auth (non-fatal)");
-        // Continue deletion in our DB even if Supabase deletion fails
+        req.log.warn({ userId, error: supabaseErr.message }, "Deleted from local DB but failed to delete from Supabase Auth");
       }
     }
-
-    // Delete from our database
-    await db.delete(usersTable).where(eq(usersTable.id, userId));
 
     res.status(204).send();
   } catch (err) {
