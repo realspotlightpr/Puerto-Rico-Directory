@@ -931,11 +931,16 @@ export default function Admin() {
     if (!editingUser) return;
     setSendingPasswordReset(true);
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/users/${editingUser.id}/send-password-reset`, {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/admin/users/${editingUser.id}/send-password-reset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to send password reset");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to send password reset");
+      }
       toast({ title: "Password reset email sent", description: `Temporary password sent to ${editingUser.email}` });
     } catch (err: any) {
       toast({ title: "Failed to send password reset", description: err.message, variant: "destructive" });
@@ -1056,36 +1061,44 @@ export default function Admin() {
 
   const loginAsUser = async (userId: string, userData: any) => {
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/users/${userId}/impersonate`, {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/admin/users/${userId}/impersonate`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
       });
-      if (!res.ok) throw new Error("Failed to impersonate user");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to impersonate user");
+      }
       const session = await res.json();
       setImpersonationSession(session);
       setImpersonatedUser(userData);
       toast({ title: `Logged in as ${userData.firstName || userData.username}` });
-    } catch (err) {
-      toast({ title: "Failed to login as user", variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Failed to login as user", description: err.message, variant: "destructive" });
     }
   };
 
   const switchBackToAdmin = async () => {
     if (!impersonationSession) return;
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/impersonate/exit`, {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/admin/impersonate/exit`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: impersonationSession.sessionId }),
       });
-      if (!res.ok) throw new Error("Failed to exit impersonation");
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to exit impersonation");
+      }
       setImpersonationSession(null);
       setImpersonatedUser(null);
       toast({ title: "Switched back to admin account" });
-    } catch (err) {
-      toast({ title: "Failed to switch back", variant: "destructive" });
+    } catch (err: any) {
+      toast({ title: "Failed to switch back", description: err.message, variant: "destructive" });
     }
   };
 
