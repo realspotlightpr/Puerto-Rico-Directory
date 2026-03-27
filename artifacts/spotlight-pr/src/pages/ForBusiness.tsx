@@ -127,7 +127,7 @@ export default function ForBusiness() {
           </motion.div>
           <motion.h1
             variants={fadeUp} initial="hidden" animate="visible" custom={1}
-            className="text-4xl md:text-6xl font-display font-bold leading-tight mb-6"
+            className="text-4xl md:text-6xl font-display font-bold leading-tight mb-6 text-white"
           >
             Put Your Business on the{" "}
             <span className="text-orange-400">Spotlight</span>
