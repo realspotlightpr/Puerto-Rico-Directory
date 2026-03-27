@@ -530,6 +530,43 @@ router.put("/admin/users/:id/role", async (req, res) => {
   }
 });
 
+router.delete("/admin/users/:id", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const userId = req.params.id;
+
+    // Check if user exists
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Get count of businesses owned by this user (for warning)
+    const ownedBusinesses = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(businessesTable)
+      .where(eq(businessesTable.userId, userId))
+      .then(r => r[0]?.count ?? 0);
+
+    // Unclaim all businesses owned by this user (set userId to NULL)
+    if (ownedBusinesses > 0) {
+      await db.update(businessesTable)
+        .set({ userId: null })
+        .where(eq(businessesTable.userId, userId));
+    }
+
+    // Delete the user
+    await db.delete(usersTable).where(eq(usersTable.id, userId));
+
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
+
 // ── Leads (Spotlight Rep Scouted Businesses) ──────────────────────────────────
 
 function generateSlug(name: string): string {
