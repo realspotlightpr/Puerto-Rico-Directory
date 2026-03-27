@@ -94,6 +94,324 @@ function sanitizeHtml(html: string): string {
   });
 }
 
+// ── Page Builder types & helpers ──────────────────────────────────────────────
+type BuilderBlockType = "heading" | "text" | "highlight" | "columns" | "list" | "cta" | "divider" | "image";
+
+interface BuilderBlock {
+  id: string;
+  type: BuilderBlockType;
+  data: Record<string, any>;
+}
+
+const BLOCK_PALETTE: { type: BuilderBlockType; label: string; icon: string; defaults: Record<string, any> }[] = [
+  { type: "heading",   label: "Heading",     icon: "H",  defaults: { text: "Our Story", level: "h2", align: "left" } },
+  { type: "text",      label: "Paragraph",   icon: "¶",  defaults: { content: "Write something about your business…", align: "left" } },
+  { type: "highlight", label: "Callout",     icon: "💡", defaults: { content: "A key point or highlight about your business.", color: "blue" } },
+  { type: "list",      label: "List",        icon: "☰",  defaults: { items: ["First item", "Second item", "Third item"], style: "bullet" } },
+  { type: "columns",   label: "2 Columns",   icon: "⊞",  defaults: { left: "Left column content", right: "Right column content" } },
+  { type: "cta",       label: "CTA Button",  icon: "↗",  defaults: { text: "Contact Us", url: "", align: "center", color: "primary" } },
+  { type: "image",     label: "Image",       icon: "🖼", defaults: { url: "", alt: "", width: "full", caption: "" } },
+  { type: "divider",   label: "Divider",     icon: "—",  defaults: { style: "solid" } },
+];
+
+const HIGHLIGHT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  blue:   { bg: "#eff6ff", border: "#3b82f6", text: "#1e40af" },
+  green:  { bg: "#f0fdf4", border: "#22c55e", text: "#15803d" },
+  orange: { bg: "#fff7ed", border: "#f97316", text: "#c2410c" },
+  purple: { bg: "#faf5ff", border: "#a855f7", text: "#7e22ce" },
+  yellow: { bg: "#fefce8", border: "#eab308", text: "#854d0e" },
+};
+
+const CTA_COLORS: Record<string, { bg: string; text: string }> = {
+  primary: { bg: "#0ea5e9", text: "#ffffff" },
+  green:   { bg: "#16a34a", text: "#ffffff" },
+  orange:  { bg: "#ea580c", text: "#ffffff" },
+  dark:    { bg: "#1f2937", text: "#ffffff" },
+};
+
+function blockToHtml(block: BuilderBlock): string {
+  const { type, data } = block;
+  switch (type) {
+    case "heading": {
+      const tag = data.level || "h2";
+      const size = tag === "h2" ? "1.5rem" : tag === "h3" ? "1.25rem" : "1rem";
+      const weight = "700";
+      return `<${tag} style="font-size:${size};font-weight:${weight};color:#111827;margin:0 0 0.75rem;text-align:${data.align || "left"}">${data.text || ""}</${tag}>`;
+    }
+    case "text": {
+      const align = data.align || "left";
+      return `<p style="color:#374151;line-height:1.75;margin:0 0 1rem;text-align:${align}">${(data.content || "").replace(/\n/g, "<br/>")}</p>`;
+    }
+    case "highlight": {
+      const c = HIGHLIGHT_COLORS[data.color || "blue"] || HIGHLIGHT_COLORS.blue;
+      return `<div style="background:${c.bg};border-left:4px solid ${c.border};padding:1rem 1.25rem;border-radius:0.5rem;margin:0 0 1rem"><p style="color:${c.text};margin:0;line-height:1.65">${(data.content || "").replace(/\n/g, "<br/>")}</p></div>`;
+    }
+    case "list": {
+      const isNum = data.style === "numbered";
+      const tag = isNum ? "ol" : "ul";
+      const items = (data.items || []).map((item: string) => `<li style="color:#374151;margin-bottom:0.25rem">${item}</li>`).join("");
+      return `<${tag} style="${isNum ? "list-style:decimal" : "list-style:disc"};padding-left:1.5rem;margin:0 0 1rem;line-height:1.75">${items}</${tag}>`;
+    }
+    case "columns": {
+      return `<div style="display:flex;gap:1.5rem;margin:0 0 1rem"><div style="flex:1;color:#374151;line-height:1.75">${(data.left || "").replace(/\n/g, "<br/>")}</div><div style="flex:1;color:#374151;line-height:1.75">${(data.right || "").replace(/\n/g, "<br/>")}</div></div>`;
+    }
+    case "cta": {
+      const c = CTA_COLORS[data.color || "primary"] || CTA_COLORS.primary;
+      const align = data.align || "center";
+      const href = data.url ? ` href="${data.url}"` : "";
+      return `<div style="text-align:${align};margin:0 0 1.5rem"><a${href} style="display:inline-block;background:${c.bg};color:${c.text};padding:0.65rem 2rem;border-radius:0.5rem;font-weight:600;text-decoration:none;font-size:0.95rem">${data.text || "Learn More"}</a></div>`;
+    }
+    case "image": {
+      if (!data.url) return "";
+      const width = data.width === "half" ? "50%" : data.width === "small" ? "33%" : "100%";
+      const caption = data.caption ? `<p style="text-align:center;color:#6b7280;font-size:0.8rem;margin:0.5rem 0 0">${data.caption}</p>` : "";
+      return `<div style="margin:0 0 1.25rem;text-align:center"><img src="${data.url}" alt="${data.alt || ""}" style="width:${width};border-radius:0.75rem;max-width:100%"/>${caption}</div>`;
+    }
+    case "divider": {
+      const style = data.style === "dashed" ? "dashed" : data.style === "dotted" ? "dotted" : "solid";
+      return `<hr style="border:none;border-top:1px ${style} #e5e7eb;margin:1.5rem 0"/>`;
+    }
+    default:
+      return "";
+  }
+}
+
+function blocksToHtml(blocks: BuilderBlock[]): string {
+  return blocks.map(blockToHtml).join("\n");
+}
+
+function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: {
+  block: BuilderBlock;
+  onChange: (data: Record<string, any>) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  const { type, data } = block;
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white";
+  const textareaCls = `${inputCls} resize-none`;
+  const labelCls = "text-xs font-medium text-muted-foreground block mb-1";
+
+  return (
+    <div className="rounded-xl border border-border bg-white shadow-sm">
+      {/* Block header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 rounded-t-xl">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex-1">
+          {BLOCK_PALETTE.find(p => p.type === type)?.label || type}
+        </span>
+        <button type="button" onClick={onMoveUp} disabled={isFirst} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-1">
+          <GripVertical className="w-3.5 h-3.5 rotate-90" />
+        </button>
+        <button type="button" onClick={onMoveDown} disabled={isLast} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-1 rotate-180">
+          <GripVertical className="w-3.5 h-3.5 rotate-90" />
+        </button>
+        <button type="button" onClick={onRemove} className="text-muted-foreground hover:text-destructive p-1">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Block fields */}
+      <div className="p-4 space-y-3">
+        {type === "heading" && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Heading Text</label>
+                <input type="text" className={inputCls} value={data.text || ""} onChange={e => onChange({ ...data, text: e.target.value })} placeholder="Enter heading…" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={labelCls}>Size</label>
+                  <select className={inputCls} value={data.level || "h2"} onChange={e => onChange({ ...data, level: e.target.value })}>
+                    <option value="h2">Large</option>
+                    <option value="h3">Medium</option>
+                    <option value="h4">Small</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Align</label>
+                  <select className={inputCls} value={data.align || "left"} onChange={e => onChange({ ...data, align: e.target.value })}>
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === "text" && (
+          <div className="space-y-2">
+            <div>
+              <label className={labelCls}>Content</label>
+              <textarea className={textareaCls} rows={4} value={data.content || ""} onChange={e => onChange({ ...data, content: e.target.value })} placeholder="Write your paragraph…" />
+            </div>
+            <div>
+              <label className={labelCls}>Align</label>
+              <select className={`${inputCls} max-w-[140px]`} value={data.align || "left"} onChange={e => onChange({ ...data, align: e.target.value })}>
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {type === "highlight" && (
+          <div className="space-y-2">
+            <div>
+              <label className={labelCls}>Callout Text</label>
+              <textarea className={textareaCls} rows={3} value={data.content || ""} onChange={e => onChange({ ...data, content: e.target.value })} placeholder="Key point or callout…" />
+            </div>
+            <div>
+              <label className={labelCls}>Color</label>
+              <div className="flex gap-2">
+                {Object.keys(HIGHLIGHT_COLORS).map(c => (
+                  <button key={c} type="button"
+                    className={`w-7 h-7 rounded-full border-2 transition-all ${data.color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                    style={{ background: HIGHLIGHT_COLORS[c].border }}
+                    onClick={() => onChange({ ...data, color: c })}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === "list" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <label className={labelCls + " !mb-0"}>Style</label>
+              <select className={`${inputCls} max-w-[140px]`} value={data.style || "bullet"} onChange={e => onChange({ ...data, style: e.target.value })}>
+                <option value="bullet">Bullet</option>
+                <option value="numbered">Numbered</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Items</label>
+              {(data.items || []).map((item: string, idx: number) => (
+                <div key={idx} className="flex gap-2">
+                  <input
+                    type="text"
+                    className={inputCls}
+                    value={item}
+                    onChange={e => {
+                      const items = [...(data.items || [])];
+                      items[idx] = e.target.value;
+                      onChange({ ...data, items });
+                    }}
+                    placeholder={`Item ${idx + 1}`}
+                  />
+                  <button type="button" onClick={() => {
+                    const items = (data.items || []).filter((_: any, i: number) => i !== idx);
+                    onChange({ ...data, items });
+                  }} className="text-muted-foreground hover:text-destructive shrink-0">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <button type="button"
+                className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium mt-1"
+                onClick={() => onChange({ ...data, items: [...(data.items || []), ""] })}
+              >
+                <Plus className="w-3.5 h-3.5" /> Add item
+              </button>
+            </div>
+          </div>
+        )}
+
+        {type === "columns" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Left Column</label>
+              <textarea className={textareaCls} rows={4} value={data.left || ""} onChange={e => onChange({ ...data, left: e.target.value })} placeholder="Left content…" />
+            </div>
+            <div>
+              <label className={labelCls}>Right Column</label>
+              <textarea className={textareaCls} rows={4} value={data.right || ""} onChange={e => onChange({ ...data, right: e.target.value })} placeholder="Right content…" />
+            </div>
+          </div>
+        )}
+
+        {type === "cta" && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Button Text</label>
+                <input type="text" className={inputCls} value={data.text || ""} onChange={e => onChange({ ...data, text: e.target.value })} placeholder="Contact Us" />
+              </div>
+              <div>
+                <label className={labelCls}>URL (optional)</label>
+                <input type="url" className={inputCls} value={data.url || ""} onChange={e => onChange({ ...data, url: e.target.value })} placeholder="https://…" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Align</label>
+                <select className={inputCls} value={data.align || "center"} onChange={e => onChange({ ...data, align: e.target.value })}>
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Color</label>
+                <select className={inputCls} value={data.color || "primary"} onChange={e => onChange({ ...data, color: e.target.value })}>
+                  {Object.keys(CTA_COLORS).map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {type === "image" && (
+          <div className="space-y-2">
+            <div>
+              <label className={labelCls}>Image URL</label>
+              <input type="url" className={inputCls} value={data.url || ""} onChange={e => onChange({ ...data, url: e.target.value })} placeholder="https://…" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Alt text</label>
+                <input type="text" className={inputCls} value={data.alt || ""} onChange={e => onChange({ ...data, alt: e.target.value })} placeholder="Describe the image…" />
+              </div>
+              <div>
+                <label className={labelCls}>Width</label>
+                <select className={inputCls} value={data.width || "full"} onChange={e => onChange({ ...data, width: e.target.value })}>
+                  <option value="full">Full width</option>
+                  <option value="half">Half width</option>
+                  <option value="small">Small (33%)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Caption (optional)</label>
+              <input type="text" className={inputCls} value={data.caption || ""} onChange={e => onChange({ ...data, caption: e.target.value })} placeholder="Image caption…" />
+            </div>
+            {data.url && (
+              <img src={data.url} alt={data.alt || ""} className="rounded-lg max-h-32 object-cover border border-border mt-1" />
+            )}
+          </div>
+        )}
+
+        {type === "divider" && (
+          <div>
+            <label className={labelCls}>Style</label>
+            <select className={`${inputCls} max-w-[140px]`} value={data.style || "solid"} onChange={e => onChange({ ...data, style: e.target.value })}>
+              <option value="solid">Solid</option>
+              <option value="dashed">Dashed</option>
+              <option value="dotted">Dotted</option>
+            </select>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function HtmlDescriptionEditor({
   value,
   onChange,
@@ -103,11 +421,13 @@ function HtmlDescriptionEditor({
   onChange: (v: string) => void;
   businessId: number;
 }) {
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mode, setMode] = useState<"builder" | "edit" | "preview">("builder");
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [brief, setBrief] = useState("");
   const [aiHtml, setAiHtml] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [builderBlocks, setBuilderBlocks] = useState<BuilderBlock[]>([]);
+  const [showPalette, setShowPalette] = useState(false);
   const { toast } = useToast();
   const { getToken } = useAuth();
 
@@ -140,21 +460,68 @@ function HtmlDescriptionEditor({
     setShowAiPanel(false);
     setAiHtml("");
     setBrief("");
+    setMode("preview");
     toast({ title: "Design applied!", description: "The AI-generated HTML has been placed in the editor." });
   };
 
+  const applyBuilder = useCallback(() => {
+    const html = blocksToHtml(builderBlocks);
+    onChange(html);
+    toast({ title: "Layout applied!", description: "Your page layout has been saved to the description." });
+  }, [builderBlocks, onChange, toast]);
+
+  function addBlock(type: BuilderBlockType) {
+    const palette = BLOCK_PALETTE.find(p => p.type === type);
+    const newBlock: BuilderBlock = {
+      id: `block_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      type,
+      data: { ...(palette?.defaults || {}) },
+    };
+    setBuilderBlocks(prev => [...prev, newBlock]);
+    setShowPalette(false);
+  }
+
+  function updateBlock(id: string, data: Record<string, any>) {
+    setBuilderBlocks(prev => prev.map(b => b.id === id ? { ...b, data } : b));
+  }
+
+  function removeBlock(id: string) {
+    setBuilderBlocks(prev => prev.filter(b => b.id !== id));
+  }
+
+  function moveBlock(id: string, dir: "up" | "down") {
+    setBuilderBlocks(prev => {
+      const idx = prev.findIndex(b => b.id === id);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      const swap = dir === "up" ? idx - 1 : idx + 1;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next;
+    });
+  }
+
   const sanitized = sanitizeHtml(value);
+  const builderPreview = sanitizeHtml(blocksToHtml(builderBlocks));
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
+      {/* Mode tabs + AI button */}
+      <div className="flex items-center gap-2 flex-wrap">
         <div className="flex rounded-lg border border-border overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setMode("builder")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${mode === "builder" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> Page Builder
+          </button>
           <button
             type="button"
             onClick={() => setMode("edit")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${mode === "edit" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}
           >
-            <Code className="w-3.5 h-3.5" /> Edit HTML
+            <Code className="w-3.5 h-3.5" /> HTML
           </button>
           <button
             type="button"
@@ -175,7 +542,85 @@ function HtmlDescriptionEditor({
         </Button>
       </div>
 
-      {mode === "edit" ? (
+      {/* ── BUILDER MODE ── */}
+      {mode === "builder" && (
+        <div className="space-y-3">
+          {/* Blocks */}
+          {builderBlocks.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 text-center py-10">
+              <LayoutGrid className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
+              <p className="text-sm font-medium text-muted-foreground">No blocks yet</p>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-4">Add blocks below to build your page layout</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {builderBlocks.map((block, idx) => (
+                <BlockEditor
+                  key={block.id}
+                  block={block}
+                  isFirst={idx === 0}
+                  isLast={idx === builderBlocks.length - 1}
+                  onChange={data => updateBlock(block.id, data)}
+                  onRemove={() => removeBlock(block.id)}
+                  onMoveUp={() => moveBlock(block.id, "up")}
+                  onMoveDown={() => moveBlock(block.id, "down")}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Block palette */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowPalette(v => !v)}
+              className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border border-dashed border-primary/40 text-primary text-sm font-medium hover:bg-primary/5 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {showPalette ? "Close Block Palette" : "Add Block"}
+            </button>
+            {showPalette && (
+              <div className="mt-2 grid grid-cols-4 gap-2">
+                {BLOCK_PALETTE.map(p => (
+                  <button
+                    key={p.type}
+                    type="button"
+                    onClick={() => addBlock(p.type)}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-center"
+                  >
+                    <span className="text-xl">{p.icon}</span>
+                    <span className="text-xs font-medium text-foreground">{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Builder actions */}
+          {builderBlocks.length > 0 && (
+            <div className="flex items-start gap-3 pt-1">
+              <div className="flex-1">
+                {/* Live preview of builder output */}
+                <details className="group">
+                  <summary className="text-xs text-muted-foreground cursor-pointer select-none hover:text-foreground flex items-center gap-1 mb-2">
+                    <Eye className="w-3.5 h-3.5" /> Preview layout output
+                  </summary>
+                  <div
+                    className="rounded-xl border border-border bg-white p-4 text-sm leading-relaxed overflow-auto max-h-48 about-html-preview"
+                    dangerouslySetInnerHTML={{ __html: builderPreview || "<p class='text-muted-foreground italic'>Nothing to preview yet…</p>" }}
+                  />
+                </details>
+              </div>
+              <Button type="button" size="sm" className="rounded-xl gap-1.5 bg-emerald-600 hover:bg-emerald-700 shrink-0" onClick={applyBuilder}>
+                <Check className="w-3.5 h-3.5" /> Apply to Description
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── HTML EDIT MODE ── */}
+      {mode === "edit" && (
         <textarea
           className="w-full min-h-[160px] rounded-xl border border-input bg-background px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           value={value}
@@ -183,13 +628,17 @@ function HtmlDescriptionEditor({
           placeholder="Enter your description here. You can type plain text or use HTML with inline styles."
           spellCheck={false}
         />
-      ) : (
+      )}
+
+      {/* ── PREVIEW MODE ── */}
+      {mode === "preview" && (
         <div
           className="min-h-[160px] rounded-xl border border-border bg-white p-4 text-sm leading-relaxed text-foreground overflow-auto about-html-preview"
           dangerouslySetInnerHTML={{ __html: sanitized || "<p class='text-muted-foreground italic'>Preview will appear here…</p>" }}
         />
       )}
 
+      {/* ── AI PANEL ── */}
       {showAiPanel && (
         <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-emerald-500/5 p-5 space-y-4">
           <div className="flex items-center justify-between">
