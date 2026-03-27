@@ -318,11 +318,13 @@ router.get("/admin/users", async (req, res) => {
 
     const userList = users.map(u => ({
       id: u.id,
+      email: u.email,
       username: u.username,
       firstName: u.firstName,
       lastName: u.lastName,
       profileImage: u.profileImageUrl,
       role: u.role ?? "user",
+      emailVerified: u.emailVerified ?? false,
       createdAt: u.createdAt,
     }));
 
