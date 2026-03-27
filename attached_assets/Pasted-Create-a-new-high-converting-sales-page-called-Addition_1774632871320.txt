@@ -1,0 +1,48 @@
+Create a new high-converting sales page called “Additional Services” and add a footer link to it labeled exactly: Additional Services.
+
+Goal:
+Make this page feel premium, clear, persuasive, and built to convert service-based businesses in Puerto Rico and beyond. Keep the design modern, mobile-first, fast, and visually strong without overcomplicating the build.
+
+Services to feature:
+1. Website Design & Development
+- Starting at $1200
+- Position this as custom, professional, conversion-focused website design for businesses that want to look credible and get more leads
+
+2. Social Media Management
+- Starting at $495/month
+- Position this as consistent, strategic content and management that helps businesses stay active, look professional, and build awareness
+
+Page requirements:
+- Strong hero section with a headline focused on growth, professionalism, and getting more customers
+- Short supporting subheadline
+- Clear CTA buttons throughout the page
+- Sections should be designed to increase conversions, trust, and clarity
+- Include a section for Website Design & Development
+- Include a section for Social Media Management
+- Include a “why work with us” / benefits section
+- Include a simple pricing starting point section
+- Include a process section explaining how easy it is to get started
+- Include a final CTA section that encourages visitors to contact us or get started
+
+Copy direction:
+- Keep it direct, benefit-focused, and persuasive
+- Avoid fluff
+- Make it sound like a real sales page, not a generic info page
+- Emphasize outcomes like credibility, more leads, stronger online presence, and saving time
+- Use “Starting at $1200” for websites
+- Use “Starting at $495/month” for social media management
+
+Design direction:
+- Match the current website styling and branding
+- Make it look polished and premium
+- Use strong section spacing, clean cards, nice icons if already used in the project, and modern CTA styling
+- Fully responsive on desktop, tablet, and mobile
+- Do not make the page cluttered
+- Keep the structure lean and effective
+
+Technical tasks:
+- Add the new footer link so it routes properly to the new Additional Services page
+- Build the full page and connect navigation correctly
+- Reuse existing components/styles where possible to save tokens and keep consistency
+- Keep code clean and minimal
+- Do not rewrite unrelated pages

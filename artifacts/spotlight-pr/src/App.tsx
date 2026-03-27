@@ -18,6 +18,7 @@ import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
 import ForBusiness from "@/pages/ForBusiness";
 import AdvertiseWithUs from "@/pages/AdvertiseWithUs";
+import AdditionalServices from "@/pages/AdditionalServices";
 import ManageBusiness from "@/pages/ManageBusiness";
 import UserProfile from "@/pages/UserProfile";
 import VerifyEmail from "@/pages/VerifyEmail";
@@ -102,6 +103,7 @@ function Router() {
           <Route path="/team" component={TeamDashboard} />
           <Route path="/business" component={ForBusiness} />
           <Route path="/advertise" component={AdvertiseWithUs} />
+          <Route path="/services" component={AdditionalServices} />
           <Route path="/manage/:id" component={ManageBusiness} />
           <Route path="/profile" component={UserProfile} />
           <Route path="/profile/:id" component={UserProfile} />
