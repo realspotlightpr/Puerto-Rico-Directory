@@ -114,10 +114,11 @@ export default function ForBusiness() {
     <div className="w-full">
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-900 via-teal-800 to-emerald-900 text-white py-24 lg:py-36">
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #f97316 0%, transparent 50%), radial-gradient(circle at 80% 20%, #14b8a6 0%, transparent 50%)" }}
+      <section className="relative overflow-hidden text-white py-24 lg:py-36">
+        <div className="absolute inset-0"
+          style={{ backgroundImage: "url(/images/hero-business-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }}
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/70" />
         <div className="container mx-auto px-4 relative z-10 text-center max-w-4xl">
           <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0}>
             <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
