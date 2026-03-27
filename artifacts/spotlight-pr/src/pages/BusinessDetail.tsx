@@ -15,8 +15,9 @@ import {
   useClaimBusiness,
   useSubmitBusinessInquiry,
   useGetSimilarBusinesses,
+  useGetBusinessFormConfig,
 } from "@workspace/api-client-react";
-import type { BusinessDetail, Business } from "@workspace/api-client-react";
+import type { BusinessDetail, Business, FormFieldConfig } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { StarRating } from "@/components/ui/star-rating";
 import { format } from "date-fns";
@@ -222,28 +223,61 @@ function SharePopover({ businessName, url }: { businessName: string; url: string
 }
 
 // Contact inquiry form
+const inputCls = "w-full px-3 py-2 rounded-xl border border-border text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary";
+
+function DynamicField({ field, value, onChange }: { field: FormFieldConfig; value: string; onChange: (v: string) => void }) {
+  if (field.type === "textarea") {
+    return (
+      <textarea
+        required={field.required}
+        placeholder={field.placeholder ?? field.label}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        rows={4}
+        className={`${inputCls} resize-none`}
+      />
+    );
+  }
+  if (field.type === "select" && field.options?.length) {
+    return (
+      <select
+        required={field.required}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className={inputCls}
+      >
+        <option value="">{field.placeholder ?? `Select ${field.label}`}</option>
+        {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+      </select>
+    );
+  }
+  return (
+    <input
+      required={field.required}
+      type={field.type}
+      placeholder={field.placeholder ?? field.label}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={inputCls}
+    />
+  );
+}
+
 function InquiryForm({ businessId, businessName }: { businessId: number; businessName: string }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-
-  const { mutate: sendInquiry, isPending, isSuccess } = useSubmitBusinessInquiry({
-    mutation: {
-      onError: () => {
-        // error handled via isSuccess/isError state below
-      },
-    },
-  });
-
+  const { data: formConfig, isLoading: configLoading } = useGetBusinessFormConfig(businessId);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const { mutate: sendInquiry, isPending, isSuccess } = useSubmitBusinessInquiry();
   const { toast } = useToast();
+
+  const enabledFields = (formConfig?.fields ?? []).filter(f => f.enabled);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendInquiry(
-      { id: businessId, data: { name, email, message } },
+      { id: businessId, data: fieldValues as any },
       {
         onError: (err: Error) => {
-          toast({ title: "Error", description: err.message || "Failed to send message.", variant: "destructive" });
+          toast({ title: "Error", description: (err as any)?.message || "Failed to send message.", variant: "destructive" });
         },
       }
     );
@@ -262,38 +296,31 @@ function InquiryForm({ businessId, businessName }: { businessId: number; busines
   return (
     <div className="bg-card rounded-2xl shadow-sm border border-border p-5">
       <h3 className="font-bold text-sm mb-4 font-display flex items-center gap-2">
-        <MessageSquare className="w-4 h-4 text-primary" /> Send a Message
+        <MessageSquare className="w-4 h-4 text-primary" />
+        {formConfig?.title ?? "Send a Message"}
       </h3>
-      <form onSubmit={handleSubmit} className="space-y-3" id="inquiry-form">
-        <input
-          required
-          type="text"
-          placeholder="Your Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="w-full px-3 py-2 rounded-xl border border-border text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        />
-        <input
-          required
-          type="email"
-          placeholder="Your Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full px-3 py-2 rounded-xl border border-border text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        />
-        <textarea
-          required
-          placeholder="How can we help you?"
-          value={message}
-          onChange={e => setMessage(e.target.value)}
-          rows={4}
-          className="w-full px-3 py-2 rounded-xl border border-border text-sm bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary resize-none"
-        />
-        <Button type="submit" disabled={isPending} className="w-full rounded-xl gap-2">
-          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {isPending ? "Sending…" : "Send Message"}
-        </Button>
-      </form>
+      {configLoading ? (
+        <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-3" id="inquiry-form">
+          {enabledFields.map(field => (
+            <div key={field.id}>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
+              </label>
+              <DynamicField
+                field={field}
+                value={fieldValues[field.id] ?? ""}
+                onChange={v => setFieldValues(prev => ({ ...prev, [field.id]: v }))}
+              />
+            </div>
+          ))}
+          <Button type="submit" disabled={isPending} className="w-full rounded-xl gap-2">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {isPending ? "Sending…" : (formConfig?.submitButtonText ?? "Send Message")}
+          </Button>
+        </form>
+      )}
     </div>
   );
 }

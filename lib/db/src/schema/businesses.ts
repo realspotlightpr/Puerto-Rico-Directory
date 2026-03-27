@@ -115,3 +115,48 @@ export const sliderSettingsTable = pgTable("slider_settings", {
 export const insertSliderSettingSchema = createInsertSchema(sliderSettingsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertSliderSetting = z.infer<typeof insertSliderSettingSchema>;
 export type SliderSetting = typeof sliderSettingsTable.$inferSelect;
+
+// ── Form Config ──────────────────────────────────────────────────────────────
+// Stores the custom contact form configuration for each business page
+export const formConfigsTable = pgTable("form_configs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull().unique().references(() => businessesTable.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("Send a Message"),
+  submitButtonText: text("submit_button_text").notNull().default("Send Message"),
+  // JSON array of field config objects
+  fields: jsonb("fields").$type<FormFieldConfig[]>().notNull().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type FormFieldConfig = {
+  id: string;
+  label: string;
+  type: "text" | "email" | "tel" | "textarea" | "select";
+  placeholder?: string;
+  required: boolean;
+  enabled: boolean;
+  options?: string[]; // for select type
+};
+
+export const insertFormConfigSchema = createInsertSchema(formConfigsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFormConfig = z.infer<typeof insertFormConfigSchema>;
+export type FormConfig = typeof formConfigsTable.$inferSelect;
+
+// ── Form Submissions (Messages Inbox) ────────────────────────────────────────
+// Stores inquiries submitted through each business's contact form
+export const formSubmissionsTable = pgTable("form_submissions", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull().references(() => businessesTable.id, { onDelete: "cascade" }),
+  senderName: text("sender_name").notNull(),
+  senderEmail: text("sender_email").notNull(),
+  // All form fields as submitted (dynamic)
+  data: jsonb("data").$type<Record<string, string>>().notNull().default({}),
+  isRead: boolean("is_read").notNull().default(false),
+  isArchived: boolean("is_archived").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertFormSubmissionSchema = createInsertSchema(formSubmissionsTable).omit({ id: true, createdAt: true });
+export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
+export type FormSubmission = typeof formSubmissionsTable.$inferSelect;

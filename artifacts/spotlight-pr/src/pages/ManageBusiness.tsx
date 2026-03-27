@@ -10,6 +10,7 @@ import {
   Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3, Tag, Youtube,
   Wand2, Eye, Code, RefreshCw, Check, X,
   Image as ImageIcon, Sparkles, Calendar, Download, Trash2, LayoutGrid,
+  Inbox, FormInput, Mail, MailOpen, Plus, GripVertical, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageStudio } from "@/components/dashboard/ImageStudio";
@@ -29,8 +30,14 @@ import {
   useUpdateBusiness,
   useListBusinessReviews,
   useListCategories,
+  useGetDashboardFormConfig,
+  useUpdateFormConfig,
+  useGetBusinessMessages,
+  useMarkMessageRead,
+  useDeleteMessage,
 } from "@workspace/api-client-react";
-import type { BusinessDetail, UpdateBusinessBody } from "@workspace/api-client-react";
+import type { BusinessDetail, UpdateBusinessBody, FormFieldConfig } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { MUNICIPALITIES } from "@/lib/constants";
 import { format } from "date-fns";
 
@@ -255,6 +262,365 @@ interface MediaItem {
   prompt?: string;
   size?: string;
   createdAt: string;
+}
+
+// ── Inbox Tab ─────────────────────────────────────────────────────────────────
+function InboxTab({ businessId }: { businessId: number }) {
+  const { toast } = useToast();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const { data, isLoading, refetch } = useGetBusinessMessages(businessId);
+  const { mutate: markRead } = useMarkMessageRead();
+  const { mutate: deleteMsg } = useDeleteMessage();
+
+  const messages = data?.messages ?? [];
+  const unread = data?.unreadCount ?? 0;
+
+  function handleExpand(id: number, isRead: boolean) {
+    setExpandedId(prev => (prev === id ? null : id));
+    if (!isRead) {
+      markRead(
+        { businessId, msgId: id },
+        { onSuccess: () => { refetch(); } }
+      );
+    }
+  }
+
+  function handleDelete(id: number) {
+    deleteMsg(
+      { businessId, msgId: id },
+      {
+        onSuccess: () => {
+          toast({ title: "Message deleted" });
+          refetch();
+          if (expandedId === id) setExpandedId(null);
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-bold font-display flex items-center gap-2">
+          <Inbox className="w-5 h-5 text-primary" /> Messages Inbox
+          {unread > 0 && (
+            <span className="ml-1 bg-primary text-white text-xs font-bold rounded-full px-2 py-0.5">{unread} new</span>
+          )}
+        </h2>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+      ) : messages.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <Mail className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No messages yet</p>
+          <p className="text-sm mt-1">Messages from your business page contact form will appear here.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {messages.map(msg => (
+            <div
+              key={msg.id}
+              className={`rounded-xl border transition-all ${msg.isRead ? "border-border bg-white" : "border-primary/30 bg-primary/5"}`}
+            >
+              <button
+                className="w-full text-left px-4 py-3 flex items-center gap-3"
+                onClick={() => handleExpand(msg.id, msg.isRead)}
+              >
+                <div className="shrink-0">
+                  {msg.isRead ? (
+                    <MailOpen className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <Mail className="w-5 h-5 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-semibold text-sm truncate ${!msg.isRead ? "text-foreground" : "text-muted-foreground"}`}>
+                      {msg.senderName}
+                    </span>
+                    {!msg.isRead && (
+                      <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground truncate block">
+                    {msg.senderEmail} · {format(new Date(msg.createdAt), "MMM d, yyyy h:mm a")}
+                  </span>
+                </div>
+                <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${expandedId === msg.id ? "rotate-90" : ""}`} />
+              </button>
+              {expandedId === msg.id && (
+                <div className="border-t border-border px-4 py-4 space-y-3">
+                  <div className="space-y-2">
+                    {Object.entries(msg.data).map(([key, val]) => (
+                      <div key={key}>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{key}</span>
+                        <p className="text-sm text-foreground mt-0.5 whitespace-pre-wrap">{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive gap-2"
+                      onClick={() => handleDelete(msg.id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Form Builder Tab ──────────────────────────────────────────────────────────
+const FIELD_TYPES = [
+  { value: "text", label: "Text" },
+  { value: "email", label: "Email" },
+  { value: "tel", label: "Phone" },
+  { value: "textarea", label: "Text Area" },
+  { value: "select", label: "Dropdown" },
+] as const;
+
+function FormBuilderTab({ businessId }: { businessId: number }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: config, isLoading } = useGetDashboardFormConfig(businessId);
+  const { mutate: saveConfig, isPending: saving } = useUpdateFormConfig();
+
+  const [title, setTitle] = useState("Send a Message");
+  const [submitText, setSubmitText] = useState("Send Message");
+  const [fields, setFields] = useState<FormFieldConfig[]>([]);
+
+  useEffect(() => {
+    if (config) {
+      setTitle(config.title);
+      setSubmitText(config.submitButtonText);
+      setFields(config.fields);
+    }
+  }, [config]);
+
+  function toggleEnabled(id: string) {
+    setFields(prev => prev.map(f => f.id === id ? { ...f, enabled: !f.enabled } : f));
+  }
+
+  function toggleRequired(id: string) {
+    setFields(prev => prev.map(f => f.id === id ? { ...f, required: !f.required } : f));
+  }
+
+  function updateLabel(id: string, label: string) {
+    setFields(prev => prev.map(f => f.id === id ? { ...f, label } : f));
+  }
+
+  function updatePlaceholder(id: string, placeholder: string) {
+    setFields(prev => prev.map(f => f.id === id ? { ...f, placeholder } : f));
+  }
+
+  function addCustomField() {
+    const newField: FormFieldConfig = {
+      id: `custom_${Date.now()}`,
+      label: "New Field",
+      type: "text",
+      placeholder: "",
+      required: false,
+      enabled: true,
+    };
+    setFields(prev => [...prev, newField]);
+  }
+
+  function removeField(id: string) {
+    setFields(prev => prev.filter(f => f.id !== id));
+  }
+
+  function updateFieldType(id: string, type: FormFieldConfig["type"]) {
+    setFields(prev => prev.map(f => f.id === id ? { ...f, type } : f));
+  }
+
+  function moveField(index: number, direction: "up" | "down") {
+    setFields(prev => {
+      const next = [...prev];
+      const swap = direction === "up" ? index - 1 : index + 1;
+      if (swap < 0 || swap >= next.length) return prev;
+      [next[index], next[swap]] = [next[swap], next[index]];
+      return next;
+    });
+  }
+
+  function handleSave() {
+    saveConfig(
+      { id: businessId, data: { title, submitButtonText: submitText, fields } },
+      {
+        onSuccess: () => {
+          toast({ title: "Form saved!", description: "Your contact form has been updated." });
+          queryClient.invalidateQueries({ queryKey: [`/api/dashboard/businesses/${businessId}/form-config`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/form-config`] });
+        },
+        onError: () => {
+          toast({ title: "Failed to save", variant: "destructive" });
+        },
+      }
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Form Settings */}
+      <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
+        <h2 className="text-lg font-bold font-display mb-6 flex items-center gap-2">
+          <FormInput className="w-5 h-5 text-primary" /> Contact Form Settings
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">Form Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              placeholder="Send a Message"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">Submit Button Text</label>
+            <input
+              type="text"
+              value={submitText}
+              onChange={e => setSubmitText(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              placeholder="Send Message"
+            />
+          </div>
+        </div>
+
+        {/* Fields List */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-foreground">Form Fields</h3>
+            <Button size="sm" variant="outline" onClick={addCustomField} className="gap-1.5 rounded-lg h-8 text-xs">
+              <Plus className="w-3.5 h-3.5" /> Add Field
+            </Button>
+          </div>
+
+          {fields.map((field, idx) => (
+            <div
+              key={field.id}
+              className={`rounded-xl border p-4 space-y-3 transition-all ${field.enabled ? "border-border bg-white" : "border-border/50 bg-muted/30 opacity-60"}`}
+            >
+              {/* Header row */}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => moveField(idx, "up")} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30">
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Toggle enabled */}
+                <button onClick={() => toggleEnabled(field.id)} className="shrink-0">
+                  {field.enabled
+                    ? <ToggleRight className="w-7 h-7 text-primary" />
+                    : <ToggleLeft className="w-7 h-7 text-muted-foreground" />}
+                </button>
+
+                {/* Label input */}
+                <input
+                  type="text"
+                  value={field.label}
+                  onChange={e => updateLabel(field.id, e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-border text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+
+                {/* Type select */}
+                <select
+                  value={field.type}
+                  onChange={e => updateFieldType(field.id, e.target.value as FormFieldConfig["type"])}
+                  className="px-2 py-1.5 rounded-lg border border-border text-xs focus:outline-none focus:border-primary"
+                >
+                  {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+
+                {/* Required toggle */}
+                <button
+                  onClick={() => toggleRequired(field.id)}
+                  className={`text-xs px-2.5 py-1 rounded-lg border transition-colors font-medium ${field.required ? "bg-amber-50 border-amber-300 text-amber-700" : "border-border text-muted-foreground hover:border-primary hover:text-primary"}`}
+                >
+                  {field.required ? "Required" : "Optional"}
+                </button>
+
+                {/* Delete (only custom fields) */}
+                {!["name", "email", "message"].includes(field.id) && (
+                  <button onClick={() => removeField(field.id)} className="text-muted-foreground hover:text-destructive">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Placeholder input */}
+              {field.enabled && (
+                <input
+                  type="text"
+                  value={field.placeholder ?? ""}
+                  onChange={e => updatePlaceholder(field.id, e.target.value)}
+                  placeholder={`Placeholder text for "${field.label}"…`}
+                  className="w-full px-3 py-1.5 rounded-lg border border-border/60 text-xs text-muted-foreground focus:outline-none focus:border-primary bg-muted/20"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Preview */}
+        <div className="border border-dashed border-border rounded-xl p-4 mb-6 bg-muted/20">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Live Preview</p>
+          <div className="bg-card rounded-xl border border-border p-4 max-w-sm">
+            <p className="font-bold text-sm mb-3 font-display flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-primary" /> {title || "Send a Message"}
+            </p>
+            <div className="space-y-2">
+              {fields.filter(f => f.enabled).map(field => (
+                <div key={field.id}>
+                  <label className="text-xs text-muted-foreground block mb-0.5">
+                    {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
+                  </label>
+                  {field.type === "textarea" ? (
+                    <div className="w-full h-12 px-2 py-1 rounded-lg border border-border text-xs text-muted-foreground/50 bg-white">
+                      {field.placeholder || "…"}
+                    </div>
+                  ) : (
+                    <div className="w-full h-7 px-2 py-1 rounded-lg border border-border text-xs text-muted-foreground/50 bg-white">
+                      {field.placeholder || "…"}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button className="w-full bg-primary text-white text-xs font-semibold rounded-lg py-2 mt-1">
+                {submitText || "Send Message"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <Button onClick={handleSave} disabled={saving} className="gap-2 rounded-xl">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? "Saving…" : "Save Form"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function ManageBusiness() {
@@ -566,6 +932,12 @@ export default function ManageBusiness() {
             </TabsTrigger>
             <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Globe className="w-4 h-4" /> Social Links
+            </TabsTrigger>
+            <TabsTrigger value="inbox" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+              <Inbox className="w-4 h-4" /> Inbox
+            </TabsTrigger>
+            <TabsTrigger value="form-builder" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+              <FormInput className="w-4 h-4" /> Form Builder
             </TabsTrigger>
           </TabsList>
 
@@ -1061,6 +1433,16 @@ export default function ManageBusiness() {
               businessId={business.id}
               businessName={business.name}
             />
+          </TabsContent>
+
+          {/* ── INBOX ── */}
+          <TabsContent value="inbox">
+            <InboxTab businessId={business.id} />
+          </TabsContent>
+
+          {/* ── FORM BUILDER ── */}
+          <TabsContent value="form-builder">
+            <FormBuilderTab businessId={business.id} />
           </TabsContent>
 
         </Tabs>

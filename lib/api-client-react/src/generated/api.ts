@@ -58,6 +58,10 @@ import type {
   UploadUrlResponse,
   User,
   UserListResponse,
+  BusinessFormConfig,
+  UpdateFormConfigBody,
+  MessagesResponse,
+  FormSubmission,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -3442,4 +3446,117 @@ export const useRequestUploadUrl = <
   TContext
 > => {
   return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+// ── Form Config (Public) ─────────────────────────────────────────────────────
+
+export const getBusinessFormConfigUrl = (id: number) => `/api/businesses/${id}/form-config`;
+
+export const getBusinessFormConfig = async (id: number, options?: RequestInit): Promise<BusinessFormConfig> => {
+  return customFetch<BusinessFormConfig>(getBusinessFormConfigUrl(id), { ...options });
+};
+
+export const getBusinessFormConfigQueryKey = (id: number) => [`/api/businesses/${id}/form-config`] as const;
+
+export const useGetBusinessFormConfig = <TData = BusinessFormConfig, TError = ErrorType<ErrorResponse>>(
+  id: number,
+  options?: { query?: UseQueryOptions<BusinessFormConfig, TError, TData>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getBusinessFormConfigQueryKey(id);
+  const queryFn: QueryFunction<BusinessFormConfig> = () => getBusinessFormConfig(id, requestOptions);
+  const enabled = !!(id);
+  return useQuery({ queryKey, queryFn, enabled, ...queryOptions }) as UseQueryResult<TData, TError>;
+};
+
+// ── Form Config (Dashboard / Owner) ──────────────────────────────────────────
+
+export const getDashboardFormConfigUrl = (id: number) => `/api/dashboard/businesses/${id}/form-config`;
+
+export const getDashboardFormConfig = async (id: number, options?: RequestInit): Promise<BusinessFormConfig> => {
+  return customFetch<BusinessFormConfig>(getDashboardFormConfigUrl(id), { ...options });
+};
+
+export const getDashboardFormConfigQueryKey = (id: number) => [`/api/dashboard/businesses/${id}/form-config`] as const;
+
+export const useGetDashboardFormConfig = <TData = BusinessFormConfig, TError = ErrorType<ErrorResponse>>(
+  id: number,
+  options?: { query?: UseQueryOptions<BusinessFormConfig, TError, TData>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getDashboardFormConfigQueryKey(id);
+  const queryFn: QueryFunction<BusinessFormConfig> = () => getDashboardFormConfig(id, requestOptions);
+  const enabled = !!(id);
+  return useQuery({ queryKey, queryFn, enabled, ...queryOptions }) as UseQueryResult<TData, TError>;
+};
+
+export const updateFormConfig = async (id: number, body: UpdateFormConfigBody, options?: RequestInit): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(`/api/dashboard/businesses/${id}/form-config`, {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const useUpdateFormConfig = <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<{ success: boolean }, TError, { id: number; data: UpdateFormConfigBody }, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<{ success: boolean }, TError, { id: number; data: UpdateFormConfigBody }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn = ({ id, data }: { id: number; data: UpdateFormConfigBody }) => updateFormConfig(id, data, requestOptions);
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+// ── Messages Inbox (Dashboard / Owner) ───────────────────────────────────────
+
+export const getBusinessMessagesUrl = (id: number) => `/api/dashboard/businesses/${id}/messages`;
+
+export const getBusinessMessages = async (id: number, options?: RequestInit): Promise<MessagesResponse> => {
+  return customFetch<MessagesResponse>(getBusinessMessagesUrl(id), { ...options });
+};
+
+export const getBusinessMessagesQueryKey = (id: number) => [`/api/dashboard/businesses/${id}/messages`] as const;
+
+export const useGetBusinessMessages = <TData = MessagesResponse, TError = ErrorType<ErrorResponse>>(
+  id: number,
+  options?: { query?: UseQueryOptions<MessagesResponse, TError, TData>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getBusinessMessagesQueryKey(id);
+  const queryFn: QueryFunction<MessagesResponse> = () => getBusinessMessages(id, requestOptions);
+  const enabled = !!(id);
+  return useQuery({ queryKey, queryFn, enabled, ...queryOptions }) as UseQueryResult<TData, TError>;
+};
+
+export const markMessageRead = async (businessId: number, msgId: number, options?: RequestInit): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(`/api/dashboard/businesses/${businessId}/messages/${msgId}/read`, {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const useMarkMessageRead = <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<{ success: boolean }, TError, { businessId: number; msgId: number }, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<{ success: boolean }, TError, { businessId: number; msgId: number }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn = ({ businessId, msgId }: { businessId: number; msgId: number }) => markMessageRead(businessId, msgId, requestOptions);
+  return useMutation({ mutationFn, ...mutationOptions });
+};
+
+export const deleteMessage = async (businessId: number, msgId: number, options?: RequestInit): Promise<{ success: boolean }> => {
+  return customFetch<{ success: boolean }>(`/api/dashboard/businesses/${businessId}/messages/${msgId}`, {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const useDeleteMessage = <TError = ErrorType<ErrorResponse>, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<{ success: boolean }, TError, { businessId: number; msgId: number }, TContext>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<{ success: boolean }, TError, { businessId: number; msgId: number }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn = ({ businessId, msgId }: { businessId: number; msgId: number }) => deleteMessage(businessId, msgId, requestOptions);
+  return useMutation({ mutationFn, ...mutationOptions });
 };

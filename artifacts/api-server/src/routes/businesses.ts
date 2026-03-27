@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { businessesTable, categoriesTable, usersTable } from "@workspace/db/schema";
-import { eq, and, ilike, sql, desc, or, ne } from "drizzle-orm";
+import { businessesTable, categoriesTable, usersTable, formConfigsTable, formSubmissionsTable } from "@workspace/db/schema";
+import { eq, and, ilike, sql, desc, or, ne, isNull } from "drizzle-orm";
+import type { FormFieldConfig } from "@workspace/db/schema";
 import { createClient } from "@supabase/supabase-js";
 import { sendWelcomeAndBusinessSubmissionEmail, sendInquiryEmail } from "../lib/email.js";
 import crypto from "crypto";
@@ -515,7 +516,7 @@ router.post("/businesses/:id/claim", async (req, res) => {
   }
 });
 
-// Inquiry endpoint — sends a message to the business owner via Brevo
+// Inquiry endpoint — sends a message to the business owner and stores in inbox
 router.post("/businesses/:id/inquiry", async (req, res) => {
   try {
     const businessId = parseInt(req.params.id);
@@ -524,26 +525,24 @@ router.post("/businesses/:id/inquiry", async (req, res) => {
       return;
     }
 
-    const { name, email, message } = req.body;
+    const body = req.body as Record<string, string>;
+    const name: string = body.name ?? "";
+    const email: string = body.email ?? "";
+    const message: string = body.message ?? "";
 
-    if (!name || !email || !message) {
-      res.status(400).json({ error: "name, email, and message are required" });
+    if (!name || !email) {
+      res.status(400).json({ error: "name and email are required" });
       return;
     }
 
-    if (typeof name !== "string" || name.trim().length < 1 || name.length > 200) {
+    if (name.trim().length < 1 || name.length > 200) {
       res.status(400).json({ error: "name must be between 1 and 200 characters" });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (typeof email !== "string" || !emailRegex.test(email) || email.length > 254) {
+    if (!emailRegex.test(email) || email.length > 254) {
       res.status(400).json({ error: "A valid email address is required" });
-      return;
-    }
-
-    if (typeof message !== "string" || message.trim().length < 1 || message.length > 5000) {
-      res.status(400).json({ error: "message must be between 1 and 5000 characters" });
       return;
     }
 
@@ -558,18 +557,199 @@ router.post("/businesses/:id/inquiry", async (req, res) => {
       return;
     }
 
-    const recipientEmail = business.ownerContactEmail || business.email;
-    if (!recipientEmail) {
-      res.status(422).json({ error: "This business has no contact email configured" });
-      return;
+    // Build data payload — all non-empty fields from the body except name/email
+    const dataPayload: Record<string, string> = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (typeof v === "string" && v.trim().length > 0) dataPayload[k] = v.trim();
     }
 
-    await sendInquiryEmail(recipientEmail, business.name, name, email, message);
+    // Store submission in inbox
+    await db.insert(formSubmissionsTable).values({
+      businessId,
+      senderName: name.trim(),
+      senderEmail: email.trim(),
+      data: dataPayload,
+    });
+
+    // Also send email notification if business has a contact email
+    const recipientEmail = business.ownerContactEmail || business.email;
+    if (recipientEmail && message) {
+      try {
+        await sendInquiryEmail(recipientEmail, business.name, name, email, message);
+      } catch (emailErr) {
+        req.log.warn(emailErr, "Email notification failed but submission stored");
+      }
+    }
 
     res.json({ success: true });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to send inquiry" });
+  }
+});
+
+// ── Public: Get form config for a business ────────────────────────────────────
+const DEFAULT_FORM_FIELDS: FormFieldConfig[] = [
+  { id: "name",    label: "Your Name",    type: "text",     placeholder: "Jane Doe",                required: true,  enabled: true },
+  { id: "email",   label: "Email Address", type: "email",   placeholder: "you@example.com",         required: true,  enabled: true },
+  { id: "phone",   label: "Phone Number", type: "tel",      placeholder: "(787) 555-0123",           required: false, enabled: false },
+  { id: "message", label: "Message",      type: "textarea", placeholder: "How can we help you?",     required: true,  enabled: true },
+];
+
+router.get("/businesses/:id/form-config", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    if (isNaN(businessId)) { res.status(400).json({ error: "Invalid business ID" }); return; }
+
+    const [config] = await db.select().from(formConfigsTable).where(eq(formConfigsTable.businessId, businessId)).limit(1);
+
+    res.json({
+      title: config?.title ?? "Send a Message",
+      submitButtonText: config?.submitButtonText ?? "Send Message",
+      fields: config?.fields?.length ? config.fields : DEFAULT_FORM_FIELDS,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch form config" });
+  }
+});
+
+// ── Dashboard: Get form config (owner) ────────────────────────────────────────
+router.get("/dashboard/businesses/:id/form-config", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    if (isNaN(businessId)) { res.status(400).json({ error: "Invalid business ID" }); return; }
+    if (!req.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+    const [business] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!business) { res.status(404).json({ error: "Business not found" }); return; }
+    if (business.ownerId !== req.user.id && req.user.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" }); return;
+    }
+
+    const [config] = await db.select().from(formConfigsTable).where(eq(formConfigsTable.businessId, businessId)).limit(1);
+    res.json({
+      title: config?.title ?? "Send a Message",
+      submitButtonText: config?.submitButtonText ?? "Send Message",
+      fields: config?.fields?.length ? config.fields : DEFAULT_FORM_FIELDS,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch form config" });
+  }
+});
+
+// ── Dashboard: Update form config (owner) ────────────────────────────────────
+router.put("/dashboard/businesses/:id/form-config", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    if (isNaN(businessId)) { res.status(400).json({ error: "Invalid business ID" }); return; }
+    if (!req.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+    const [business] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!business) { res.status(404).json({ error: "Business not found" }); return; }
+    if (business.ownerId !== req.user.id && req.user.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" }); return;
+    }
+
+    const { title, submitButtonText, fields } = req.body as { title?: string; submitButtonText?: string; fields?: FormFieldConfig[] };
+
+    const [existing] = await db.select({ id: formConfigsTable.id }).from(formConfigsTable).where(eq(formConfigsTable.businessId, businessId)).limit(1);
+
+    if (existing) {
+      await db.update(formConfigsTable).set({
+        title: title ?? "Send a Message",
+        submitButtonText: submitButtonText ?? "Send Message",
+        fields: fields ?? DEFAULT_FORM_FIELDS,
+        updatedAt: new Date(),
+      }).where(eq(formConfigsTable.businessId, businessId));
+    } else {
+      await db.insert(formConfigsTable).values({
+        businessId,
+        title: title ?? "Send a Message",
+        submitButtonText: submitButtonText ?? "Send Message",
+        fields: fields ?? DEFAULT_FORM_FIELDS,
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update form config" });
+  }
+});
+
+// ── Dashboard: Get messages inbox (owner) ────────────────────────────────────
+router.get("/dashboard/businesses/:id/messages", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    if (isNaN(businessId)) { res.status(400).json({ error: "Invalid business ID" }); return; }
+    if (!req.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+    const [business] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!business) { res.status(404).json({ error: "Business not found" }); return; }
+    if (business.ownerId !== req.user.id && req.user.role !== "admin") {
+      res.status(403).json({ error: "Forbidden" }); return;
+    }
+
+    const messages = await db
+      .select()
+      .from(formSubmissionsTable)
+      .where(and(eq(formSubmissionsTable.businessId, businessId), eq(formSubmissionsTable.isArchived, false)))
+      .orderBy(desc(formSubmissionsTable.createdAt));
+
+    const unreadCount = messages.filter(m => !m.isRead).length;
+    res.json({ messages, unreadCount });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+// ── Dashboard: Mark message as read ────────────────────────────────────────
+router.patch("/dashboard/businesses/:id/messages/:msgId/read", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const msgId = parseInt(req.params.msgId);
+    if (isNaN(businessId) || isNaN(msgId)) { res.status(400).json({ error: "Invalid ID" }); return; }
+    if (!req.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+    const [business] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!business || (business.ownerId !== req.user.id && req.user.role !== "admin")) {
+      res.status(403).json({ error: "Forbidden" }); return;
+    }
+
+    await db.update(formSubmissionsTable)
+      .set({ isRead: true })
+      .where(and(eq(formSubmissionsTable.id, msgId), eq(formSubmissionsTable.businessId, businessId)));
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to mark message as read" });
+  }
+});
+
+// ── Dashboard: Archive (delete) a message ────────────────────────────────────
+router.delete("/dashboard/businesses/:id/messages/:msgId", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const msgId = parseInt(req.params.msgId);
+    if (isNaN(businessId) || isNaN(msgId)) { res.status(400).json({ error: "Invalid ID" }); return; }
+    if (!req.user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+    const [business] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!business || (business.ownerId !== req.user.id && req.user.role !== "admin")) {
+      res.status(403).json({ error: "Forbidden" }); return;
+    }
+
+    await db.delete(formSubmissionsTable)
+      .where(and(eq(formSubmissionsTable.id, msgId), eq(formSubmissionsTable.businessId, businessId)));
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete message" });
   }
 });
 

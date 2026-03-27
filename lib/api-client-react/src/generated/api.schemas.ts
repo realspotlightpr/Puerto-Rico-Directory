@@ -103,7 +103,8 @@ export type BusinessDetail = Business & {
 export interface BusinessInquiryBody {
   name: string;
   email: string;
-  message: string;
+  message?: string;
+  [key: string]: string | undefined;
 }
 
 export interface BusinessInquiryResponse {
@@ -417,3 +418,45 @@ export type AdminListUsersParams = {
   page?: number;
   limit?: number;
 };
+
+// ── Form Builder / Messages ────────────────────────────────────────────────────
+
+export type FormFieldType = "text" | "email" | "tel" | "textarea" | "select";
+
+export interface FormFieldConfig {
+  id: string;
+  label: string;
+  type: FormFieldType;
+  placeholder?: string;
+  required: boolean;
+  enabled: boolean;
+  options?: string[];
+}
+
+export interface BusinessFormConfig {
+  title: string;
+  submitButtonText: string;
+  fields: FormFieldConfig[];
+}
+
+export interface FormSubmission {
+  id: number;
+  businessId: number;
+  senderName: string;
+  senderEmail: string;
+  data: Record<string, string>;
+  isRead: boolean;
+  isArchived: boolean;
+  createdAt: string;
+}
+
+export interface MessagesResponse {
+  messages: FormSubmission[];
+  unreadCount: number;
+}
+
+export interface UpdateFormConfigBody {
+  title?: string;
+  submitButtonText?: string;
+  fields?: FormFieldConfig[];
+}
