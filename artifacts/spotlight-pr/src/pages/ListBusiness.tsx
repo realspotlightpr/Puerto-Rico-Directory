@@ -197,6 +197,10 @@ export default function ListBusiness() {
   };
 
   const onSubmit = async (data: FormValues) => {
+    // Only allow submission from step 5 (review page)
+    if (step !== STEPS.length) {
+      return;
+    }
     try {
       const result = await createBusiness({ data: data as any });
 
