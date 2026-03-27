@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Star, MapPin, BarChart2, MessageSquare, CheckCircle, TrendingUp,
   Users, Zap, Shield, Globe, ChevronRight, Building2, Eye, ThumbsUp,
-  Phone,
+  Phone, Clock, Rocket, Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@workspace/replit-auth-web";
@@ -142,9 +142,9 @@ export default function ForBusiness() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="/list-your-business">
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 shadow-lg shadow-orange-900/40 text-base font-semibold">
-                List Your Business — It's Free
-                <ChevronRight className="w-4 h-4 ml-1" />
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-12 py-6 shadow-xl shadow-orange-900/40 text-lg font-bold ring-4 ring-orange-400/30">
+                List Your Business for Free
+                <Rocket className="w-5 h-5 ml-2" />
               </Button>
             </Link>
             <Link href="/directory">
@@ -309,6 +309,66 @@ export default function ForBusiness() {
         </div>
       </section>
 
+      {/* ── Why Start with Free Listing ────────────────────── */}
+      <section className="py-20 bg-gradient-to-br from-orange-50 to-amber-50">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-14">
+            <motion.h2 variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className="text-3xl md:text-4xl font-display font-bold mb-4">
+              Get Found By Customers Today — Completely Free
+            </motion.h2>
+            <motion.p variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
+              className="text-muted-foreground text-lg max-w-3xl mx-auto">
+              No hidden fees. No credit card required. No long-term commitments. Just instant visibility across Puerto Rico.
+            </motion.p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {[
+              {
+                icon: <Rocket className="w-8 h-8 text-orange-500" />,
+                title: "Instant Visibility",
+                desc: "Go live within 24 hours. Your business appears in search results across all 78 municipalities."
+              },
+              {
+                icon: <Users className="w-8 h-8 text-orange-500" />,
+                title: "Real Customer Connections",
+                desc: "Connect directly with customers who are actively searching for your type of business."
+              },
+              {
+                icon: <TrendingUp className="w-8 h-8 text-orange-500" />,
+                title: "Track Your Impact",
+                desc: "See how many people view your listing, click your website, and reach out directly."
+              }
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i * 0.3}
+                className="bg-white rounded-2xl border border-border p-8 shadow-sm hover:shadow-md transition-shadow text-center"
+              >
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-xl bg-orange-100 flex items-center justify-center">
+                    {item.icon}
+                  </div>
+                </div>
+                <h3 className="font-bold text-lg font-display mb-2">{item.title}</h3>
+                <p className="text-muted-foreground text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+          <motion.div
+            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+          >
+            <Link href="/list-your-business">
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-10 py-6 text-lg font-semibold shadow-lg shadow-orange-900/30">
+                List Your Business Now
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ── FAQ ───────────────────────────────────────────── */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 max-w-3xl">
@@ -333,41 +393,204 @@ export default function ForBusiness() {
         </div>
       </section>
 
-      {/* ── Bottom CTA ────────────────────────────────────── */}
-      <section className="py-20 bg-gradient-to-r from-teal-800 to-emerald-800 text-white">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <motion.h2
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-bold mb-4"
-          >
-            Your Next Customer Is Already Searching for You
-          </motion.h2>
-          <motion.p
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
-            className="text-white/80 text-lg mb-10"
-          >
-            Don't let them find your competition instead. Add your business to Spotlight Puerto Rico today — it's free, it's fast, and it's built for this island.
-          </motion.p>
+      {/* ── Pricing Plans ──────────────────────────────────── */}
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-teal-900 to-emerald-900 text-white">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-14">
+            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+              <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
+                <Award className="w-3.5 h-3.5 text-orange-300" /> Ready to Grow Faster?
+              </span>
+            </motion.div>
+            <motion.h2
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
+              className="text-3xl md:text-4xl font-display font-bold leading-tight mb-4"
+            >
+              Upgrade to Premium Features
+            </motion.h2>
+            <motion.p
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}
+              className="text-white/80 text-lg max-w-2xl mx-auto"
+            >
+              Your free listing gets you discovered. Our paid plans help you dominate your market with AI tools, ads, and dedicated support.
+            </motion.p>
+          </div>
+
+          {/* Growth Plans */}
+          <div className="mb-16">
+            <p className="text-white/60 text-sm font-semibold uppercase tracking-wide text-center mb-8">Build Your Presence</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  price: "$147",
+                  title: "Starter Growth",
+                  tagline: "Everything you need to build a strong local presence and manage your reputation online.",
+                  features: [
+                    "Full CRM tool to manage your customer relationships",
+                    "Advanced Spotlight Business Page features",
+                    "Reputation management dashboard",
+                    "Priority listing in search results",
+                    "Access to customer review analytics",
+                  ],
+                  highlighted: false,
+                },
+                {
+                  price: "$297",
+                  title: "Growth Pro",
+                  tagline: "Everything in Starter Growth, plus cutting-edge AI tools to automate and accelerate your growth.",
+                  features: [
+                    "Everything in the Starter Growth plan",
+                    "AI-powered tools for content & customer engagement",
+                    "AI automations to save time and drive conversions",
+                    "Smart lead follow-up sequences",
+                    "Monthly performance reports",
+                  ],
+                  highlighted: true,
+                  badge: "Most Popular",
+                },
+              ].map((plan, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i * 0.2}
+                  className={`relative flex flex-col rounded-2xl border p-8 ${
+                    plan.highlighted
+                      ? "border-orange-400 bg-gradient-to-b from-orange-500/20 to-orange-600/10 ring-2 ring-orange-400/30"
+                      : "border-white/20 bg-white/5"
+                  }`}
+                >
+                  {plan.badge && (
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
+                      <Star className="w-3 h-3" /> {plan.badge}
+                    </span>
+                  )}
+                  <div className="mb-6">
+                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
+                    <div className="flex items-end gap-1 mb-2">
+                      <span className="text-4xl font-display font-bold text-white">{plan.price}</span>
+                      <span className="text-white/60 text-sm mb-1">/mo</span>
+                    </div>
+                    <p className="text-white/70 text-sm leading-relaxed">{plan.tagline}</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-3 text-sm text-white/90">
+                        <CheckCircle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/list-your-business">
+                    <Button
+                      className={`w-full rounded-xl text-base font-semibold py-5 ${
+                        plan.highlighted
+                          ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-900/30"
+                          : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                      }`}
+                    >
+                      Get Started
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dominate Plans */}
+          <div>
+            <p className="text-white/60 text-sm font-semibold uppercase tracking-wide text-center mb-8">Dominate Your Market</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  price: "$495",
+                  title: "Area Dominator",
+                  tagline: "Paid advertising promotion paired with full social media management — your brand everywhere your customers are.",
+                  features: [
+                    "Spotlight Business Page paid ads promotion",
+                    "Full social media management (posting, scheduling, engagement)",
+                    "Targeted local ad campaigns across Puerto Rico",
+                    "Monthly creative assets & copy",
+                    "Dedicated account support",
+                  ],
+                  highlighted: false,
+                },
+                {
+                  price: "$1,200",
+                  title: "Market Leader",
+                  tagline: "The flagship package — included ad spend, premium positioning, and everything we offer to make you the #1 business in your area.",
+                  features: [
+                    "Everything in Area Dominator",
+                    "Included monthly ad spend budget",
+                    "Premium homepage and category placement",
+                    "Dedicated account manager",
+                    "Advanced analytics & competitor tracking",
+                    "Custom landing page creation",
+                  ],
+                  highlighted: true,
+                  badge: "Premium",
+                },
+              ].map((plan, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={(i + 2) * 0.2}
+                  className={`relative flex flex-col rounded-2xl border p-8 ${
+                    plan.highlighted
+                      ? "border-orange-400 bg-gradient-to-b from-orange-500/20 to-orange-600/10 ring-2 ring-orange-400/30"
+                      : "border-white/20 bg-white/5"
+                  }`}
+                >
+                  {plan.badge && (
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
+                      <Star className="w-3 h-3" /> {plan.badge}
+                    </span>
+                  )}
+                  <div className="mb-6">
+                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
+                    <div className="flex items-end gap-1 mb-2">
+                      <span className="text-4xl font-display font-bold text-white">{plan.price}</span>
+                      <span className="text-white/60 text-sm mb-1">/mo</span>
+                    </div>
+                    <p className="text-white/70 text-sm leading-relaxed">{plan.tagline}</p>
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-3 text-sm text-white/90">
+                        <CheckCircle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href="/list-your-business">
+                    <Button
+                      className={`w-full rounded-xl text-base font-semibold py-5 ${
+                        plan.highlighted
+                          ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-900/30"
+                          : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                      }`}
+                    >
+                      Learn More
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
           <motion.div
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={4}
+            className="text-center mt-16"
           >
-            <Link href="/list-your-business">
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 text-base font-semibold shadow-lg shadow-orange-900/40">
-                Get Listed for Free
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-            {!isAuthenticated && (
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => openAuthModal()}
-                className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent"
-              >
-                Sign Up Now
-              </Button>
-            )}
+            <p className="text-white/60 text-base mb-6">Questions about our plans?</p>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent"
+              onClick={() => window.open("/advertise-with-us", "_blank")}
+            >
+              View Full Plan Details
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </motion.div>
         </div>
       </section>
