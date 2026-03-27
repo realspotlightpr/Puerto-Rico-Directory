@@ -417,9 +417,9 @@ export default function ForBusiness() {
           </div>
 
           {/* Growth Plans */}
-          <div className="mb-16">
-            <p className="text-white/60 text-sm font-semibold uppercase tracking-wide text-center mb-8">Build Your Presence</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="max-w-3xl mx-auto">
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-6">Optional Premium Features</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
                   price: "$147",
@@ -452,124 +452,43 @@ export default function ForBusiness() {
                 <motion.div
                   key={i}
                   variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i * 0.2}
-                  className={`relative flex flex-col rounded-2xl border p-8 ${
+                  className={`relative flex flex-col rounded-xl border p-5 ${
                     plan.highlighted
                       ? "border-orange-400 bg-gradient-to-b from-orange-500/20 to-orange-600/10 ring-2 ring-orange-400/30"
                       : "border-white/20 bg-white/5"
                   }`}
                 >
                   {plan.badge && (
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
-                      <Star className="w-3 h-3" /> {plan.badge}
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-3 py-0.5 rounded-full shadow text-nowrap">
+                      <Star className="w-2.5 h-2.5" /> {plan.badge}
                     </span>
                   )}
-                  <div className="mb-6">
-                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
-                    <div className="flex items-end gap-1 mb-2">
-                      <span className="text-4xl font-display font-bold text-white">{plan.price}</span>
-                      <span className="text-white/60 text-sm mb-1">/mo</span>
+                  <div className="mb-4">
+                    <p className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
+                    <div className="flex items-end gap-1 mb-1.5">
+                      <span className="text-3xl font-display font-bold text-white">{plan.price}</span>
+                      <span className="text-white/60 text-xs mb-0.5">/mo</span>
                     </div>
-                    <p className="text-white/70 text-sm leading-relaxed">{plan.tagline}</p>
+                    <p className="text-white/70 text-xs leading-relaxed">{plan.tagline}</p>
                   </div>
-                  <ul className="space-y-3 mb-8 flex-1">
+                  <ul className="space-y-2 mb-5 flex-1">
                     {plan.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-3 text-sm text-white/90">
-                        <CheckCircle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                      <li key={j} className="flex items-start gap-2 text-xs text-white/90">
+                        <CheckCircle className="w-3 h-3 text-orange-400 flex-shrink-0 mt-0.5" />
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
                   <Link href="/list-your-business">
                     <Button
-                      className={`w-full rounded-xl text-base font-semibold py-5 ${
+                      className={`w-full rounded-xl text-sm font-semibold py-2.5 ${
                         plan.highlighted
                           ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-900/30"
                           : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
                       }`}
                     >
                       Get Started
-                      <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dominate Plans */}
-          <div>
-            <p className="text-white/60 text-sm font-semibold uppercase tracking-wide text-center mb-8">Dominate Your Market</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                {
-                  price: "$495",
-                  title: "Area Dominator",
-                  tagline: "Paid advertising promotion paired with full social media management — your brand everywhere your customers are.",
-                  features: [
-                    "Spotlight Business Page paid ads promotion",
-                    "Full social media management (posting, scheduling, engagement)",
-                    "Targeted local ad campaigns across Puerto Rico",
-                    "Monthly creative assets & copy",
-                    "Dedicated account support",
-                  ],
-                  highlighted: false,
-                },
-                {
-                  price: "$1,200",
-                  title: "Market Leader",
-                  tagline: "The flagship package — included ad spend, premium positioning, and everything we offer to make you the #1 business in your area.",
-                  features: [
-                    "Everything in Area Dominator",
-                    "Included monthly ad spend budget",
-                    "Premium homepage and category placement",
-                    "Dedicated account manager",
-                    "Advanced analytics & competitor tracking",
-                    "Custom landing page creation",
-                  ],
-                  highlighted: true,
-                  badge: "Premium",
-                },
-              ].map((plan, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={(i + 2) * 0.2}
-                  className={`relative flex flex-col rounded-2xl border p-8 ${
-                    plan.highlighted
-                      ? "border-orange-400 bg-gradient-to-b from-orange-500/20 to-orange-600/10 ring-2 ring-orange-400/30"
-                      : "border-white/20 bg-white/5"
-                  }`}
-                >
-                  {plan.badge && (
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full shadow">
-                      <Star className="w-3 h-3" /> {plan.badge}
-                    </span>
-                  )}
-                  <div className="mb-6">
-                    <p className="text-white/60 text-sm font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
-                    <div className="flex items-end gap-1 mb-2">
-                      <span className="text-4xl font-display font-bold text-white">{plan.price}</span>
-                      <span className="text-white/60 text-sm mb-1">/mo</span>
-                    </div>
-                    <p className="text-white/70 text-sm leading-relaxed">{plan.tagline}</p>
-                  </div>
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-3 text-sm text-white/90">
-                        <CheckCircle className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/list-your-business">
-                    <Button
-                      className={`w-full rounded-xl text-base font-semibold py-5 ${
-                        plan.highlighted
-                          ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-900/30"
-                          : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
-                      }`}
-                    >
-                      Learn More
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      <ChevronRight className="w-3 h-3 ml-1" />
                     </Button>
                   </Link>
                 </motion.div>
@@ -578,17 +497,17 @@ export default function ForBusiness() {
           </div>
 
           <motion.div
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={4}
-            className="text-center mt-16"
+            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={3}
+            className="text-center mt-8"
           >
-            <p className="text-white/60 text-base mb-6">Questions about our plans?</p>
+            <p className="text-white/60 text-sm mb-4">Want premium features?</p>
             <Button
               size="lg"
               variant="outline"
               className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent"
               onClick={() => window.open("/advertise-with-us", "_blank")}
             >
-              View Full Plan Details
+              View All Plans
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </motion.div>
