@@ -373,9 +373,9 @@ export default function Home() {
                   >
                     <Link href={`/businesses/${biz.slug || biz.id}`}>
                       <div className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 rounded-2xl p-3 cursor-pointer transition-all duration-200 group">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white/10">
-                          {biz.imageUrl ? (
-                            <img src={biz.imageUrl} alt={biz.name} className="w-full h-full object-cover" />
+                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white/20">
+                          {biz.logoUrl ? (
+                            <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-2xl">🏢</div>
                           )}
@@ -384,11 +384,13 @@ export default function Home() {
                           <p className="text-white font-semibold text-sm leading-tight truncate group-hover:text-secondary transition-colors">
                             {biz.name}
                           </p>
-                          <p className="text-white/60 text-xs mt-0.5 truncate">{biz.category} · {biz.municipality}</p>
-                          {(biz.rating ?? 0) > 0 && (
+                          <p className="text-white/60 text-xs mt-0.5 truncate">
+                            {[biz.categoryName, biz.municipality].filter(Boolean).join(" · ")}
+                          </p>
+                          {(biz.averageRating ?? 0) > 0 && (
                             <div className="flex items-center gap-1 mt-1">
                               <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                              <span className="text-white/80 text-xs font-medium">{Number(biz.rating).toFixed(1)}</span>
+                              <span className="text-white/80 text-xs font-medium">{Number(biz.averageRating).toFixed(1)}</span>
                               <span className="text-white/40 text-xs">({biz.reviewCount})</span>
                             </div>
                           )}
