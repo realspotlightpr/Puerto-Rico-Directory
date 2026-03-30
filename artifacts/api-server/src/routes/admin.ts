@@ -1636,4 +1636,59 @@ router.get("/admin/impersonate/status", async (req, res) => {
   }
 });
 
+// Mark/unmark a review as official Spotlight review
+router.patch("/admin/reviews/:id/spotlight", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const reviewId = parseInt(req.params.id);
+    const { isSpotlightReview } = req.body;
+
+    if (typeof isSpotlightReview !== "boolean") {
+      res.status(400).json({ error: "isSpotlightReview must be a boolean" });
+      return;
+    }
+
+    // Check if review exists
+    const [review] = await db
+      .select()
+      .from(reviewsTable)
+      .where(eq(reviewsTable.id, reviewId))
+      .limit(1);
+
+    if (!review) {
+      res.status(404).json({ error: "Review not found" });
+      return;
+    }
+
+    // If marking as spotlight, ensure only one spotlight review per business
+    if (isSpotlightReview) {
+      const [existingSpotlight] = await db
+        .select()
+        .from(reviewsTable)
+        .where(and(eq(reviewsTable.businessId, review.businessId), eq(reviewsTable.isSpotlightReview, true)))
+        .limit(1);
+
+      if (existingSpotlight && existingSpotlight.id !== reviewId) {
+        // Unmark the previous spotlight review
+        await db
+          .update(reviewsTable)
+          .set({ isSpotlightReview: false })
+          .where(eq(reviewsTable.id, existingSpotlight.id));
+      }
+    }
+
+    // Update the review
+    await db
+      .update(reviewsTable)
+      .set({ isSpotlightReview })
+      .where(eq(reviewsTable.id, reviewId));
+
+    res.json({ success: true, isSpotlightReview });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update review spotlight status" });
+  }
+});
+
 export default router;

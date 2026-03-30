@@ -734,26 +734,34 @@ export default function BusinessDetail() {
                       <div className="space-y-4">{[1, 2].map(i => <div key={i} className="h-32 bg-muted rounded-xl animate-pulse" />)}</div>
                     ) : reviewsData?.reviews?.length ? (
                       <div className="space-y-6">
-                        {reviewsData.reviews.map(review => (
-                          <div key={review.id} className="border-b border-border/50 last:border-0 pb-6 last:pb-0">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold uppercase overflow-hidden">
-                                  {review.authorImage ? <img src={review.authorImage} alt="" className="w-full h-full object-cover" /> : review.authorName?.charAt(0) || "U"}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-sm text-foreground">{review.authorName || "Anonymous User"}</p>
-                                  <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt), "MMM d, yyyy")}</p>
+                        {(() => {
+                          const spotlightReview = reviewsData.reviews.find((r: any) => r.isSpotlightReview);
+                          const otherReviews = reviewsData.reviews.filter((r: any) => !r.isSpotlightReview);
+                          const orderedReviews = spotlightReview ? [spotlightReview, ...otherReviews] : reviewsData.reviews;
+                          return orderedReviews.map((review: any, idx: number) => (
+                            <div key={review.id} className={`${review.isSpotlightReview ? 'bg-amber-50 border-2 border-amber-200 rounded-xl p-5' : 'border-b border-border/50 last:border-0 pb-6'} ${idx === 0 && review.isSpotlightReview ? '' : idx > 0 ? 'pt-6' : ''}`}>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  {review.isSpotlightReview && (
+                                    <div className="px-2 py-0.5 bg-amber-500 text-white text-xs font-bold rounded-full">Spotlight</div>
+                                  )}
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold uppercase overflow-hidden">
+                                    {review.authorImage ? <img src={review.authorImage} alt="" className="w-full h-full object-cover" /> : review.authorName?.charAt(0) || "U"}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-sm text-foreground">{review.authorName || "Anonymous User"}</p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(review.createdAt), "MMM d, yyyy")}</p>
+                                  </div>
                                 </div>
                               </div>
+                              <div className="mt-3">
+                                <StarRating rating={review.rating} size={14} className="mb-2" />
+                                {review.title && <h4 className="font-bold text-foreground mb-1">{review.title}</h4>}
+                                <p className="text-muted-foreground text-sm leading-relaxed">{review.body}</p>
+                              </div>
                             </div>
-                            <div className="mt-3">
-                              <StarRating rating={review.rating} size={14} className="mb-2" />
-                              {review.title && <h4 className="font-bold text-foreground mb-1">{review.title}</h4>}
-                              <p className="text-muted-foreground text-sm leading-relaxed">{review.body}</p>
-                            </div>
-                          </div>
-                        ))}
+                          ));
+                        })()}
                       </div>
                     ) : (
                       <p className="text-muted-foreground italic text-center py-8">Be the first to review this business!</p>

@@ -1,11 +1,11 @@
 import { Link } from "wouter";
-import { MapPin, Phone, ShieldCheck, BadgeCheck } from "lucide-react";
+import { MapPin, Phone, ShieldCheck, BadgeCheck, Star } from "lucide-react";
 import { Business } from "@workspace/api-client-react";
 import { StarRating } from "@/components/ui/star-rating";
 import { Badge } from "@/components/ui/badge";
 
 interface BusinessCardProps {
-  business: Business;
+  business: Business & { hasSpotlightReview?: boolean };
   featured?: boolean;
 }
 
@@ -13,6 +13,7 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
   const isActuallyFeatured = featured || business.featured;
   const isVerified = business.status === "approved";
   const isClaimed = business.isClaimed;
+  const hasSpotlightReview = (business as any).hasSpotlightReview;
   
   return (
     <Link href={`/businesses/${(business as any).slug || business.id}`}>
@@ -23,6 +24,11 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
       `}>
         <div className="relative h-48 w-full overflow-hidden bg-muted">
           <div className="absolute top-4 left-4 z-10 flex gap-1.5 flex-wrap">
+            {hasSpotlightReview && (
+              <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-semibold shadow-lg flex items-center gap-1">
+                <Star className="w-3 h-3 fill-amber-300" /> Spotlight
+              </Badge>
+            )}
             {isActuallyFeatured && (
               <Badge className="bg-secondary hover:bg-secondary text-white font-semibold shadow-lg">
                 Featured

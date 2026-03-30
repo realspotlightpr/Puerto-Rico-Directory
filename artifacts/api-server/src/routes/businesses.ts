@@ -38,7 +38,7 @@ async function uniqueSlug(base: string): Promise<string> {
   }
 }
 
-function buildBusinessResponse(b: any, category?: any, owner?: any) {
+function buildBusinessResponse(b: any, category?: any, owner?: any, hasSpotlightReview?: boolean) {
   return {
     id: b.id,
     name: b.name,
@@ -67,6 +67,7 @@ function buildBusinessResponse(b: any, category?: any, owner?: any) {
     specialOffer: b.specialOffer ?? null,
     menuTitle: b.menuTitle ?? null,
     menuUrl: b.menuUrl ?? null,
+    hasSpotlightReview: hasSpotlightReview ?? false,
     pageViews: b.pageViews ?? 0,
     websiteClicks: b.websiteClicks ?? 0,
     mapsClicks: b.mapsClicks ?? 0,
@@ -205,7 +206,17 @@ router.get("/businesses/:id", async (req, res) => {
       if (ownerRow.length > 0) owner = ownerRow[0];
     } catch { }
 
-    res.json(buildBusinessResponse(b.businesses, b.categories, owner));
+    let hasSpotlightReview = false;
+    try {
+      const spotlightReviewRow = await db
+        .select({ id: reviewsTable.id })
+        .from(reviewsTable)
+        .where(and(eq(reviewsTable.businessId, b.businesses.id), eq(reviewsTable.isSpotlightReview, true)))
+        .limit(1);
+      if (spotlightReviewRow.length > 0) hasSpotlightReview = true;
+    } catch { }
+
+    res.json(buildBusinessResponse(b.businesses, b.categories, owner, hasSpotlightReview));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch business" });

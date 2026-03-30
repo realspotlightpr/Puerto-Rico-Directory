@@ -57,6 +57,7 @@ export const reviewsTable = pgTable("reviews", {
   rating: integer("rating").notNull(),
   title: text("title"),
   body: text("body"),
+  isSpotlightReview: boolean("is_spotlight_review").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
