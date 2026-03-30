@@ -570,6 +570,22 @@ export default function BusinessDetail() {
           </div>
         )}
 
+        {detail.menuUrl && (
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-2">{detail.menuTitle || "Menu"}</p>
+              <a href={detail.menuUrl} target="_blank" rel="noopener noreferrer">
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Globe className="w-4 h-4" /> View Menu
+                </Button>
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Content Split */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 

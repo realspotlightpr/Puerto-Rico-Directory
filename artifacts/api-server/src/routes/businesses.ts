@@ -65,6 +65,8 @@ function buildBusinessResponse(b: any, category?: any, owner?: any) {
     hours: b.hours,
     socialLinks: b.socialLinks,
     specialOffer: b.specialOffer ?? null,
+    menuTitle: b.menuTitle ?? null,
+    menuUrl: b.menuUrl ?? null,
     pageViews: b.pageViews ?? 0,
     websiteClicks: b.websiteClicks ?? 0,
     mapsClicks: b.mapsClicks ?? 0,
@@ -407,7 +409,7 @@ router.put("/businesses/:id", async (req, res) => {
       return;
     }
 
-    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug, specialOffer } = req.body;
+    const { name, description, categoryId, municipality, address, phone, email, website, logoUrl, coverUrl, hours, socialLinks, slug, specialOffer, menuUrl, menuTitle } = req.body;
 
     if (specialOffer !== undefined && specialOffer !== null && typeof specialOffer === "string" && specialOffer.length > 160) {
       res.status(400).json({ error: "Special offer must be 160 characters or fewer" });
@@ -446,6 +448,8 @@ router.put("/businesses/:id", async (req, res) => {
         hours: hours ?? b.hours,
         socialLinks: socialLinks ?? b.socialLinks,
         specialOffer: specialOffer !== undefined ? (specialOffer || null) : b.specialOffer,
+        menuUrl: menuUrl !== undefined ? (menuUrl || null) : b.menuUrl,
+        menuTitle: menuTitle !== undefined ? (menuTitle || null) : b.menuTitle,
         updatedAt: new Date(),
       })
       .where(eq(businessesTable.id, id))

@@ -44,6 +44,8 @@ export const businessesTable = pgTable("businesses", {
   websiteClicks: integer("website_clicks").notNull().default(0),
   mapsClicks: integer("maps_clicks").notNull().default(0),
   highlevelApiKey: text("highlevel_api_key"),
+  menuUrl: text("menu_url"),
+  menuTitle: text("menu_title"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

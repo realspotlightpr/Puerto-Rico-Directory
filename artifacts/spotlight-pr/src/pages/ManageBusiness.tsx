@@ -10,7 +10,7 @@ import {
   Facebook, Twitter, ChevronRight, Loader2, User, Bot, Link2, BarChart3, Tag, Youtube,
   Wand2, Eye, Code, RefreshCw, Check, X,
   Image as ImageIcon, Sparkles, Calendar, Download, Trash2, LayoutGrid,
-  Inbox, FormInput, Mail, MailOpen, Plus, GripVertical, ToggleLeft, ToggleRight,
+  Inbox, FormInput, Mail, MailOpen, Plus, GripVertical, ToggleLeft, ToggleRight, FileText,
 } from "lucide-react";
 import { AIAssistant } from "@/components/dashboard/AIAssistant";
 import { ImageStudio } from "@/components/dashboard/ImageStudio";
@@ -54,6 +54,8 @@ const detailsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
   specialOffer: z.string().max(160, "Special offer must be 160 characters or fewer.").optional().or(z.literal("")),
+  menuTitle: z.string().optional().or(z.literal("")),
+  menuUrl: z.string().url().optional().or(z.literal("")),
   slug: z.string()
     .min(2, "URL must be at least 2 characters.")
     .max(100, "URL is too long.")
@@ -1237,6 +1239,8 @@ export default function ManageBusiness() {
       email: business.email ?? "",
       website: business.website ?? "",
       specialOffer: detail.specialOffer ?? "",
+      menuTitle: detail.menuTitle ?? "",
+      menuUrl: detail.menuUrl ?? "",
       slug: business.slug ?? "",
     });
     mediaForm.reset({
@@ -1264,6 +1268,8 @@ export default function ManageBusiness() {
         email: data.email,
         website: data.website,
         specialOffer: data.specialOffer,
+        menuTitle: data.menuTitle || undefined,
+        menuUrl: data.menuUrl || undefined,
         slug: data.slug || undefined,
       };
       await updateBusiness({ id, data: payload });
@@ -1272,6 +1278,10 @@ export default function ManageBusiness() {
     } catch {
       toast({ title: "Error", description: "Failed to save. Please try again.", variant: "destructive" });
     }
+  };
+
+  const saveMenu = async (data: z.infer<typeof detailsSchema>) => {
+    await saveDetails(data);
   };
 
   const saveMedia = async (data: z.infer<typeof mediaSchema>) => {
@@ -1430,6 +1440,9 @@ export default function ManageBusiness() {
             </TabsTrigger>
             <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Globe className="w-4 h-4" /> Social Links
+            </TabsTrigger>
+            <TabsTrigger value="menu" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+              <FileText className="w-4 h-4" /> Menu
             </TabsTrigger>
             <TabsTrigger value="inbox" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Inbox className="w-4 h-4" /> Inbox
@@ -1858,6 +1871,52 @@ export default function ManageBusiness() {
                   <div className="flex justify-end pt-4 border-t border-border">
                     <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">
                       {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Links</>}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          </TabsContent>
+
+          {/* ── MENU ── */}
+          <TabsContent value="menu">
+            <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
+              <h2 className="text-lg font-bold font-display mb-6 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" /> Menu
+              </h2>
+              <Form {...detailsForm}>
+                <form onSubmit={detailsForm.handleSubmit(isSaveMenu ? saveMenu : async () => {})} className="space-y-6">
+                  <FormField control={detailsForm.control} name="menuTitle" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Menu Title (Optional)</FormLabel>
+                      <FormControl><Input className="rounded-xl" placeholder="e.g., Full Menu, Wine List, Desserts" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={detailsForm.control} name="menuUrl" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Menu URL (Optional)</FormLabel>
+                      <FormControl><Input className="rounded-xl" type="url" placeholder="https://example.com/menu.pdf" {...field} /></FormControl>
+                      <div className="text-xs text-muted-foreground mt-2">Link to a PDF, image, or webpage containing your menu</div>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  {detailsForm.watch("menuUrl") && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <p className="text-sm text-blue-900 mb-3">Menu Preview:</p>
+                      <a href={detailsForm.watch("menuUrl")} target="_blank" rel="noopener noreferrer" className="inline-block">
+                        <Button variant="outline" size="sm" className="rounded-xl gap-2">
+                          <Globe className="w-4 h-4" /> Open Menu
+                        </Button>
+                      </a>
+                    </div>
+                  )}
+                  <div className="flex justify-end pt-4 border-t border-border gap-3">
+                    <Button type="button" variant="outline" onClick={() => detailsForm.reset()} className="rounded-xl">
+                      Clear
+                    </Button>
+                    <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8" onClick={() => { (window as any).isSaveMenu = true; }}>
+                      {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Menu</>}
                     </Button>
                   </div>
                 </form>
