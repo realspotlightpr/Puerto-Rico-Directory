@@ -126,11 +126,20 @@ export default function Home() {
   const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [sliderImages, setSliderImages] = useState<SliderImage[]>([]);
   const [sliderLoading, setSliderLoading] = useState(true);
+  const [randomFeatured, setRandomFeatured] = useState<any[]>([]);
 
   const { data: featuredData, isLoading: featuredLoading } = useListBusinesses({ 
     featured: true, 
-    limit: 6 
+    limit: 20 
   });
+
+  // Randomize featured businesses for "Explore Your Town" section
+  useEffect(() => {
+    if (featuredData?.businesses && featuredData.businesses.length >= 4) {
+      const shuffled = [...featuredData.businesses].sort(() => Math.random() - 0.5);
+      setRandomFeatured(shuffled.slice(0, 4));
+    }
+  }, [featuredData?.businesses]);
 
   // Fetch slider settings
   useEffect(() => {
@@ -499,6 +508,48 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Explore Your Town - Random Featured Businesses */}
+      {randomFeatured.length > 0 && (
+        <section className="py-20 bg-gradient-to-b from-primary/5 to-secondary/5">
+          <div className="container px-4 mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Explore Your Town</h2>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto">Discover featured local businesses near you. New recommendations every visit.</p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {randomFeatured.map((business, i) => (
+                <motion.div
+                  key={business.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                >
+                  <BusinessCard business={business} featured={true} />
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="text-center mt-10">
+              <button
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold transition-colors border border-primary/20 hover:border-primary/40"
+              >
+                <Shuffle className="w-4 h-4" />
+                Show Different Businesses
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Businesses */}
       <section className="py-24 bg-muted/50 border-y border-border relative overflow-hidden">
