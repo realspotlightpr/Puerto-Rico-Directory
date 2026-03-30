@@ -33,7 +33,7 @@ export function SystemExplained() {
               </Link>
               <a href="mailto:info@spotlightpr.com">
                 <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/20 font-semibold text-lg px-8">
-                  Schedule Demo
+                  Claim Free Demo Now
                 </Button>
               </a>
             </div>
@@ -372,7 +372,7 @@ export function SystemExplained() {
               </Link>
               <a href="mailto:info@spotlightpr.com">
                 <Button size="lg" variant="outline" className="border-white/50 text-white hover:bg-white/20 font-semibold text-lg px-8">
-                  Schedule a Demo
+                  Claim Free Demo Now
                 </Button>
               </a>
             </div>
