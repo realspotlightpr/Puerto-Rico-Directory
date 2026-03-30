@@ -373,9 +373,17 @@ function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
         )}
 
         {type === "image" && (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <ImageUploadField
+              value={data.url || ""}
+              onChange={(url) => onChange({ ...data, url })}
+              label="Image"
+              hint="Upload an image from your computer or paste a URL"
+              aspectRatio="wide"
+              className="mb-2"
+            />
             <div>
-              <label className={labelCls}>Image URL</label>
+              <label className={labelCls}>Image URL (or paste a link)</label>
               <input type="url" className={inputCls} value={data.url || ""} onChange={e => onChange({ ...data, url: e.target.value })} placeholder="https://…" />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -396,9 +404,6 @@ function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
               <label className={labelCls}>Caption (optional)</label>
               <input type="text" className={inputCls} value={data.caption || ""} onChange={e => onChange({ ...data, caption: e.target.value })} placeholder="Image caption…" />
             </div>
-            {data.url && (
-              <img src={data.url} alt={data.alt || ""} className="rounded-lg max-h-32 object-cover border border-border mt-1" />
-            )}
           </div>
         )}
 
