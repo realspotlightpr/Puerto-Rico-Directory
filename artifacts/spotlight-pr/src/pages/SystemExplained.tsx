@@ -531,7 +531,11 @@ export function SystemExplained() {
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Try Spotlight for 30 days completely free. No credit card needed. If you're not happy with the results, we'll refund you 100%. We're that confident you'll love it.
             </p>
-            
+          </div>
+        </div>
+      </div>
+
+      {/* Final CTA Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-secondary text-white py-20 md:py-28">
         <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl" />
