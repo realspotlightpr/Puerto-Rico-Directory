@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
@@ -1095,6 +1096,13 @@ export default function ManageBusiness() {
   // Hours state
   const [hours, setHours] = useState<Record<string, string>>({});
 
+  // AI Image generation state
+  const [aiGenOpen, setAiGenOpen] = useState(false);
+  const [aiGenType, setAiGenType] = useState<"logo" | "cover">("logo");
+  const [aiGenStyle, setAiGenStyle] = useState("");
+  const [aiGenLoading, setAiGenLoading] = useState(false);
+  const [aiGenPreview, setAiGenPreview] = useState<string | null>(null);
+
   // Media Library state
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -1145,6 +1153,44 @@ export default function ManageBusiness() {
     } catch {
       toast({ title: "Error", description: "Failed to update", variant: "destructive" });
     }
+  };
+
+  const openAiGen = (type: "logo" | "cover") => {
+    setAiGenType(type);
+    setAiGenStyle("");
+    setAiGenPreview(null);
+    setAiGenOpen(true);
+  };
+
+  const generateAiImage = async () => {
+    if (!business?.id) return;
+    setAiGenLoading(true);
+    setAiGenPreview(null);
+    try {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/openai/generate-business-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ businessId: business.id, type: aiGenType, style: aiGenStyle || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Generation failed");
+      const fullUrl = `${baseUrl}${data.url}`;
+      setAiGenPreview(fullUrl);
+    } catch (err: any) {
+      toast({ title: "Generation failed", description: err.message, variant: "destructive" });
+    } finally {
+      setAiGenLoading(false);
+    }
+  };
+
+  const applyAiImage = () => {
+    if (!aiGenPreview) return;
+    const field = aiGenType === "logo" ? "logoUrl" : "coverUrl";
+    mediaForm.setValue(field, aiGenPreview);
+    setAiGenOpen(false);
+    toast({ title: aiGenType === "logo" ? "AI logo applied!" : "AI cover photo applied!", description: "Click Save Media to keep it." });
   };
 
   // Redirect if not owner
@@ -1678,6 +1724,15 @@ export default function ManageBusiness() {
                           />
                         </FormControl>
                         <FormMessage />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openAiGen("logo")}
+                          className="mt-2 w-full rounded-xl gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Generate Logo with AI
+                        </Button>
                       </FormItem>
                     )} />
                     <FormField control={mediaForm.control} name="coverUrl" render={({ field }) => (
@@ -1692,6 +1747,15 @@ export default function ManageBusiness() {
                           />
                         </FormControl>
                         <FormMessage />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openAiGen("cover")}
+                          className="mt-2 w-full rounded-xl gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Generate Cover Photo with AI
+                        </Button>
                       </FormItem>
                     )} />
                   </div>
@@ -1919,6 +1983,82 @@ export default function ManageBusiness() {
 
         </Tabs>
       </div>
+
+      {/* ── AI Image Generation Dialog ── */}
+      <Dialog open={aiGenOpen} onOpenChange={open => { if (!open) { setAiGenOpen(false); setAiGenPreview(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              Generate {aiGenType === "logo" ? "Logo" : "Cover Photo"} with AI
+            </DialogTitle>
+            <DialogDescription>
+              AI will create a professional {aiGenType === "logo" ? "logo" : "cover photo"} tailored to your business. You can add a style hint to customize it.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Style hint input */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">
+                Style hint <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Input
+                placeholder={aiGenType === "logo"
+                  ? "e.g. minimalist, blue and white, tropical vibes…"
+                  : "e.g. warm sunset, people dining, lush tropical greenery…"}
+                value={aiGenStyle}
+                onChange={e => setAiGenStyle(e.target.value)}
+                className="rounded-xl"
+                disabled={aiGenLoading}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your business name, category, and municipality are automatically included.
+              </p>
+            </div>
+
+            {/* Generate button */}
+            <Button
+              onClick={generateAiImage}
+              disabled={aiGenLoading}
+              className="w-full rounded-xl gap-2 bg-gradient-to-r from-purple-600 to-primary hover:opacity-90"
+            >
+              {aiGenLoading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating… (this may take ~20s)</>
+                : <><Sparkles className="w-4 h-4" /> {aiGenPreview ? "Regenerate" : "Generate"}</>
+              }
+            </Button>
+
+            {/* Preview */}
+            {aiGenPreview && (
+              <div className="space-y-3">
+                <div className={`overflow-hidden rounded-xl border border-border bg-muted/20 ${aiGenType === "logo" ? "aspect-square max-w-[200px] mx-auto" : "aspect-video"}`}>
+                  <img src={aiGenPreview} alt="AI generated" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={applyAiImage}
+                    className="flex-1 rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Check className="w-4 h-4" /> Use this {aiGenType === "logo" ? "Logo" : "Cover"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={generateAiImage}
+                    disabled={aiGenLoading}
+                    className="rounded-xl gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Try Again
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Click "Use this {aiGenType === "logo" ? "Logo" : "Cover"}" then save to apply it to your listing.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

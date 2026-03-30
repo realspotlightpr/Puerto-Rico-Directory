@@ -11,6 +11,7 @@ import { eq, and, desc, asc } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { generateImageBuffer } from "@workspace/integrations-openai-ai-server/image";
 import { z } from "zod";
+import { ObjectStorageService } from "../../lib/objectStorage";
 
 const router: IRouter = Router();
 
@@ -416,6 +417,71 @@ router.post("/openai/generate-image", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Image generation failed" });
+  }
+});
+
+// ── POST /openai/generate-business-image ────────────────────────────────────
+// Generates an AI logo or cover photo for a business and saves it to storage.
+router.post("/openai/generate-business-image", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const schema = z.object({
+    businessId: z.number().int().positive(),
+    type: z.enum(["logo", "cover"]),
+    style: z.string().max(200).optional(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "businessId, type (logo|cover) are required" });
+    return;
+  }
+
+  const { businessId, type, style } = parsed.data;
+
+  const [biz] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, businessId))
+    .limit(1);
+
+  if (!biz) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  if (biz.ownerId !== req.user.id && req.user.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const category = biz.categoryId ? `Category #${biz.categoryId}` : "local business";
+  const location = biz.municipality ?? "Puerto Rico";
+  const styleNote = style ? ` Style: ${style}.` : "";
+
+  let prompt: string;
+  let size: "1024x1024" | "1792x1024";
+
+  if (type === "logo") {
+    size = "1024x1024";
+    prompt = `Create a professional, modern business logo for "${biz.name}", a ${category} located in ${location}, Puerto Rico. The logo should be clean, memorable, and work on a white background. Include the business name or an iconic symbol that represents the business.${styleNote} No text other than the business name. High quality vector-like illustration style.`;
+  } else {
+    size = "1792x1024";
+    prompt = `Create a stunning, wide-format cover photo / hero banner for "${biz.name}", a ${category} in ${location}, Puerto Rico. The image should be vibrant, professional, and evoke the spirit of the business and Puerto Rican culture. Landscape orientation, cinematic composition, no text overlays.${styleNote}`;
+  }
+
+  try {
+    const buffer = await generateImageBuffer(prompt, size);
+    const storageService = new ObjectStorageService();
+    const objectPath = await storageService.uploadBuffer(buffer, "image/png");
+    const baseStorageUrl = `/api/storage${objectPath}`;
+    res.json({ url: baseStorageUrl, objectPath });
+  } catch (err) {
+    req.log.error(err, "generate-business-image error");
+    res.status(500).json({ error: "Image generation failed. Please try again." });
   }
 });
 
