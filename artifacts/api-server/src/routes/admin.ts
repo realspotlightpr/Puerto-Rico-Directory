@@ -995,6 +995,67 @@ async function resolvePlaceId(urlInput: string): Promise<string | null> {
   return null;
 }
 
+// ── Map Search (find PR businesses by text query) ─────────────────────────────
+router.get("/admin/leads/map-search", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    res.status(503).json({ error: "Google Maps API key not configured" });
+    return;
+  }
+
+  const { query, municipality } = req.query as { query?: string; municipality?: string };
+  if (!query || query.trim().length < 2) {
+    res.status(400).json({ error: "query is required (min 2 chars)" });
+    return;
+  }
+
+  try {
+    const PR_LAT = 18.2208;
+    const PR_LNG = -66.5901;
+    const PR_RADIUS = 120000;
+
+    const searchQuery = municipality
+      ? `${query} ${municipality} Puerto Rico`
+      : `${query} Puerto Rico`;
+
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&location=${PR_LAT},${PR_LNG}&radius=${PR_RADIUS}&key=${apiKey}`;
+
+    const r = await fetch(searchUrl);
+    const d = await r.json() as any;
+
+    req.log.info({ status: d.status, count: d.results?.length, query }, "Map search results");
+
+    if (d.status === "REQUEST_DENIED") {
+      res.status(503).json({ error: "Google Places API access denied. Check that Places API is enabled for your key." });
+      return;
+    }
+
+    const prResults = (d.results ?? [])
+      .filter((result: any) => {
+        const addr: string = result.formatted_address ?? result.vicinity ?? "";
+        return addr.includes("Puerto Rico") || addr.includes(", PR ");
+      })
+      .slice(0, 10)
+      .map((result: any) => ({
+        placeId: result.place_id,
+        name: result.name,
+        address: result.formatted_address ?? result.vicinity ?? "",
+        lat: result.geometry?.location?.lat ?? null,
+        lng: result.geometry?.location?.lng ?? null,
+        types: result.types ?? [],
+        rating: result.rating ?? null,
+        userRatingsTotal: result.user_ratings_total ?? 0,
+      }));
+
+    res.json({ results: prResults, total: prResults.length });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Map search failed" });
+  }
+});
+
 router.post("/admin/leads/gmb-import", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 

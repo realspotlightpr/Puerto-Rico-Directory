@@ -831,6 +831,12 @@ export default function Admin() {
   const [addingLead, setAddingLead] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showGmbDialog, setShowGmbDialog] = useState(false);
+  const [showMapSearchDialog, setShowMapSearchDialog] = useState(false);
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchMunicipality, setMapSearchMunicipality] = useState("");
+  const [mapSearchResults, setMapSearchResults] = useState<any[]>([]);
+  const [mapSearchLoading, setMapSearchLoading] = useState(false);
+  const [mapSelectedPlace, setMapSelectedPlace] = useState<any | null>(null);
   const [statsBusinessId, setStatsBusinessId] = useState<number | null>(null);
 
   const [addingUser, setAddingUser] = useState(false);
@@ -896,6 +902,48 @@ export default function Admin() {
     queryClient.invalidateQueries({ queryKey: [`/api/admin/stats`] });
   };
   const invalidateLeads = () => queryClient.invalidateQueries({ queryKey: [`/api/admin/leads`] });
+
+  const handleMapSearch = async () => {
+    if (!mapSearchQuery.trim()) return;
+    setMapSearchLoading(true);
+    setMapSearchResults([]);
+    setMapSelectedPlace(null);
+    try {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const params = new URLSearchParams({ query: mapSearchQuery });
+      if (mapSearchMunicipality) params.set("municipality", mapSearchMunicipality);
+      const res = await fetch(`${baseUrl}/api/admin/leads/map-search?${params}`);
+      const data = await res.json();
+      if (res.ok) {
+        setMapSearchResults(data.results ?? []);
+        if ((data.results ?? []).length === 0) {
+          toast({ title: "No results found", description: "Try a different search or municipality." });
+        }
+      } else {
+        toast({ title: "Search failed", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Search failed", variant: "destructive" });
+    } finally {
+      setMapSearchLoading(false);
+    }
+  };
+
+  const handleSelectMapPlace = (place: any) => {
+    const muniMatch = MUNICIPALITIES.find(m =>
+      place.address.toLowerCase().includes(m.toLowerCase())
+    );
+    addLeadForm.setValue("name", place.name ?? "");
+    addLeadForm.setValue("description", `${place.name} is a business located at ${place.address}.`);
+    addLeadForm.setValue("address", place.address ?? "");
+    addLeadForm.setValue("municipality", muniMatch ?? "San Juan");
+    setShowMapSearchDialog(false);
+    setMapSearchResults([]);
+    setMapSearchQuery("");
+    setMapSearchMunicipality("");
+    setMapSelectedPlace(null);
+    setAddingLead(true);
+  };
 
   const { mutate: approve } = useApproveBusiness({ mutation: { onSuccess: () => { toast({ title: "Business approved" }); invalidateBusinesses(); } } });
   const { mutate: reject } = useRejectBusiness({ mutation: { onSuccess: () => { toast({ title: "Business rejected" }); invalidateBusinesses(); } } });
@@ -1225,6 +1273,9 @@ export default function Admin() {
                 </Button>
                 <Button variant="outline" onClick={() => setShowImportDialog(true)} className="rounded-xl gap-2 border-violet-200 text-violet-700 hover:bg-violet-50">
                   <Upload className="w-4 h-4" /> Import from Google Maps
+                </Button>
+                <Button variant="outline" onClick={() => { setShowMapSearchDialog(true); setMapSearchResults([]); setMapSearchQuery(""); setMapSearchMunicipality(""); setMapSelectedPlace(null); }} className="rounded-xl gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
+                  <MapPin className="w-4 h-4" /> Search on Map
                 </Button>
                 <Button onClick={() => setAddingLead(true)} className="rounded-xl gap-2">
                   <Plus className="w-4 h-4" /> Scout a Business
@@ -2076,6 +2127,124 @@ export default function Admin() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Map Search Dialog ── */}
+      <Dialog open={showMapSearchDialog} onOpenChange={open => { if (!open) { setShowMapSearchDialog(false); setMapSearchResults([]); setMapSelectedPlace(null); } }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-500" /> Search Businesses on Map
+            </DialogTitle>
+            <DialogDescription>
+              Search for businesses in Puerto Rico using Google Maps. Select one to import it as a lead.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Search inputs */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Input
+                placeholder="e.g. bakery, restaurant, plumber…"
+                value={mapSearchQuery}
+                onChange={e => setMapSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleMapSearch()}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="w-44">
+              <Select value={mapSearchMunicipality} onValueChange={setMapSearchMunicipality}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Any municipality" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  <SelectItem value="">Any municipality</SelectItem>
+                  {MUNICIPALITIES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleMapSearch} disabled={mapSearchLoading || !mapSearchQuery.trim()} className="rounded-xl gap-2 shrink-0">
+              {mapSearchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Search
+            </Button>
+          </div>
+
+          {/* Results */}
+          {mapSearchResults.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground font-medium">{mapSearchResults.length} result{mapSearchResults.length !== 1 ? "s" : ""} found in Puerto Rico</p>
+
+              <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto pr-1">
+                {mapSearchResults.map((place) => (
+                  <div
+                    key={place.placeId}
+                    onClick={() => setMapSelectedPlace(mapSelectedPlace?.placeId === place.placeId ? null : place)}
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      mapSelectedPlace?.placeId === place.placeId
+                        ? "border-blue-400 bg-blue-50 shadow-sm"
+                        : "border-border hover:border-blue-200 hover:bg-blue-50/40"
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <MapPin className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{place.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{place.address}</p>
+                      {place.rating && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400 stroke-amber-400" />
+                          {place.rating.toFixed(1)}
+                          {place.userRatingsTotal > 0 && <span className="text-muted-foreground">({place.userRatingsTotal} reviews)</span>}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={e => { e.stopPropagation(); handleSelectMapPlace(place); }}
+                      className="rounded-lg shrink-0 gap-1 text-xs"
+                    >
+                      Import <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini Map Preview */}
+              {mapSelectedPlace?.lat && mapSelectedPlace?.lng && (
+                <div className="rounded-xl overflow-hidden border border-border shadow-sm">
+                  <div className="bg-muted/40 px-3 py-2 flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {mapSelectedPlace.name}
+                    </p>
+                    <a
+                      href={`https://maps.google.com/?q=${mapSelectedPlace.lat},${mapSelectedPlace.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      Open in Maps <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <iframe
+                    title="Location preview"
+                    src={`https://maps.google.com/maps?q=${mapSelectedPlace.lat},${mapSelectedPlace.lng}&z=16&output=embed`}
+                    className="w-full h-56 border-0"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {mapSearchResults.length === 0 && !mapSearchLoading && (
+            <div className="text-center py-12 text-muted-foreground">
+              <MapPin className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Enter a business name or type above and click Search</p>
+              <p className="text-xs mt-1 opacity-70">Results are filtered to Puerto Rico only</p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
