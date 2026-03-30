@@ -1890,7 +1890,7 @@ export default function ManageBusiness() {
                 <FileText className="w-5 h-5 text-primary" /> Menu
               </h2>
               <Form {...detailsForm}>
-                <form onSubmit={detailsForm.handleSubmit(isSaveMenu ? saveMenu : async () => {})} className="space-y-6">
+                <form onSubmit={detailsForm.handleSubmit(saveMenu)} className="space-y-6">
                   <FormField control={detailsForm.control} name="menuTitle" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Menu Title (Optional)</FormLabel>
@@ -1920,7 +1920,7 @@ export default function ManageBusiness() {
                     <Button type="button" variant="outline" onClick={() => detailsForm.reset()} className="rounded-xl">
                       Clear
                     </Button>
-                    <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8" onClick={() => { (window as any).isSaveMenu = true; }}>
+                    <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">
                       {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Menu</>}
                     </Button>
                   </div>
