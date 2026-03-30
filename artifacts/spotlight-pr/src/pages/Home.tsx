@@ -135,9 +135,9 @@ export default function Home() {
 
   // Randomize featured businesses for "Explore Your Town" section
   useEffect(() => {
-    if (featuredData?.businesses && featuredData.businesses.length >= 4) {
+    if (featuredData?.businesses && featuredData.businesses.length > 0) {
       const shuffled = [...featuredData.businesses].sort(() => Math.random() - 0.5);
-      setRandomFeatured(shuffled.slice(0, 4));
+      setRandomFeatured(shuffled.slice(0, Math.min(4, shuffled.length)));
     }
   }, [featuredData?.businesses]);
 
@@ -523,7 +523,7 @@ export default function Home() {
               <p className="text-muted-foreground text-lg max-w-xl mx-auto">Discover featured local businesses near you. New recommendations every visit.</p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className={`grid ${randomFeatured.length === 1 ? 'grid-cols-1 max-w-2xl' : randomFeatured.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl' : randomFeatured.length === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-5xl' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2 max-w-4xl'} gap-6 mx-auto`}>
               {randomFeatured.map((business, i) => (
                 <motion.div
                   key={business.id}
