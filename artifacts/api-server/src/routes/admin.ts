@@ -460,6 +460,53 @@ router.patch("/admin/businesses/:id", async (req, res) => {
   }
 });
 
+// ── Assign owner to a business (claims it for a user) ─────────────────────
+router.post("/admin/businesses/:id/assign-owner", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  const businessId = parseInt(req.params.id);
+  const { userId } = req.body as { userId?: string };
+
+  if (!userId) {
+    res.status(400).json({ error: "userId is required" });
+    return;
+  }
+
+  try {
+    // Verify business exists
+    const [biz] = await db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+    if (!biz) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+
+    // Verify user exists
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Assign the business to the user and mark as claimed
+    const [updated] = await db.update(businessesTable)
+      .set({ ownerId: userId, isClaimed: true, updatedAt: new Date() })
+      .where(eq(businessesTable.id, businessId))
+      .returning();
+
+    // Promote user to business_owner role if they are a regular user
+    if (user.role === "user") {
+      await db.update(usersTable)
+        .set({ role: "business_owner" })
+        .where(eq(usersTable.id, userId));
+    }
+
+    res.json({ business: updated, message: `Business assigned to ${user.firstName ?? user.username}` });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to assign owner" });
+  }
+});
+
 router.patch("/admin/users/:id", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 

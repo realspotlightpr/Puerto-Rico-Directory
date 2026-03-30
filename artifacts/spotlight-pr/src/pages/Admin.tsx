@@ -847,6 +847,9 @@ export default function Admin() {
 
   const [deletingBusiness, setDeletingBusiness] = useState<{ id: number; name: string } | null>(null);
   const [deletingUser, setDeletingUser] = useState<{ id: string; name: string; businessCount: number } | null>(null);
+  const [assigningOwner, setAssigningOwner] = useState<{ id: number; name: string } | null>(null);
+  const [assignOwnerSearch, setAssignOwnerSearch] = useState("");
+  const [assignOwnerLoading, setAssignOwnerLoading] = useState(false);
 
   const [impersonationSession, setImpersonationSession] = useState<any | null>(null);
   const [impersonatedUser, setImpersonatedUser] = useState<any | null>(null);
@@ -902,6 +905,31 @@ export default function Admin() {
     queryClient.invalidateQueries({ queryKey: [`/api/admin/stats`] });
   };
   const invalidateLeads = () => queryClient.invalidateQueries({ queryKey: [`/api/admin/leads`] });
+
+  const handleAssignOwner = async (userId: string) => {
+    if (!assigningOwner) return;
+    setAssignOwnerLoading(true);
+    try {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/admin/businesses/${assigningOwner.id}/assign-owner`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to assign owner");
+      toast({ title: "Owner assigned!", description: data.message });
+      invalidateBusinesses();
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/users`] });
+      setAssigningOwner(null);
+      setAssignOwnerSearch("");
+    } catch (err: any) {
+      toast({ title: "Failed to assign owner", description: err.message, variant: "destructive" });
+    } finally {
+      setAssignOwnerLoading(false);
+    }
+  };
 
   const handleMapSearch = async () => {
     if (!mapSearchQuery.trim()) return;
@@ -1610,6 +1638,11 @@ export default function Admin() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center justify-end gap-1">
+                                {!(b as any).isClaimed && (
+                                  <Button size="icon" variant="outline" title="Assign Business Owner" className="text-violet-600 border-violet-200 hover:bg-violet-50" onClick={() => { setAssigningOwner({ id: b.id, name: b.name }); setAssignOwnerSearch(""); }}>
+                                    <UserPlus className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button size="icon" variant="ghost" title="Toggle Featured" className={b.featured ? "text-amber-500" : "text-muted-foreground"} onClick={() => feature({ id: b.id })}>
                                   <Star className={`w-4 h-4 ${b.featured ? "fill-current" : ""}`} />
                                 </Button>
@@ -2513,6 +2546,85 @@ export default function Admin() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Assign Business Owner Dialog ── */}
+      <Dialog open={!!assigningOwner} onOpenChange={open => { if (!open) { setAssigningOwner(null); setAssignOwnerSearch(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-violet-600" /> Assign Business Owner
+            </DialogTitle>
+            <DialogDescription>
+              Search for a user to become the owner of <strong>{assigningOwner?.name}</strong>. The business will be marked as claimed and the user's role will be updated to Business Owner if needed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mt-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9 rounded-xl"
+                placeholder="Search by name or email…"
+                value={assignOwnerSearch}
+                onChange={e => setAssignOwnerSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="max-h-72 overflow-y-auto rounded-xl border divide-y">
+              {(() => {
+                const q = assignOwnerSearch.toLowerCase().trim();
+                const filtered = (usersData?.users ?? []).filter(u => {
+                  if (!q) return true;
+                  const fullName = `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase();
+                  return fullName.includes(q) || (u.email ?? "").toLowerCase().includes(q) || (u.username ?? "").toLowerCase().includes(q);
+                });
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      {assignOwnerSearch ? `No users found matching "${assignOwnerSearch}"` : "No users yet. Create one below."}
+                    </div>
+                  );
+                }
+                return filtered.slice(0, 20).map(u => (
+                  <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-blue-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      {(u.firstName?.[0] ?? u.username?.[0] ?? "?").toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username ?? "—"}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{u.email ?? "No email"}</p>
+                    </div>
+                    <RoleBadge role={u.role ?? undefined} />
+                    <Button
+                      size="sm"
+                      className="rounded-xl shrink-0"
+                      disabled={assignOwnerLoading}
+                      onClick={() => handleAssignOwner(u.id)}
+                    >
+                      {assignOwnerLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Assign"}
+                    </Button>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div className="border-t pt-3 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Can't find them?</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl gap-2"
+                onClick={() => { setAssigningOwner(null); setAddingUser(true); }}
+              >
+                <UserPlus className="w-4 h-4" /> Create New User
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
