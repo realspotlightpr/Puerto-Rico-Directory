@@ -70,6 +70,18 @@ export const mediaItemsTable = pgTable("media_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const menuItemsTable = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull().references(() => businessesTable.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  price: text("price"),
+  imageUrl: text("image_url"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertCategorySchema = createInsertSchema(categoriesTable).omit({ id: true });
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categoriesTable.$inferSelect;
@@ -85,6 +97,10 @@ export type Review = typeof reviewsTable.$inferSelect;
 export const insertMediaItemSchema = createInsertSchema(mediaItemsTable).omit({ id: true, createdAt: true });
 export type InsertMediaItem = z.infer<typeof insertMediaItemSchema>;
 export type MediaItem = typeof mediaItemsTable.$inferSelect;
+
+export const insertMenuItemSchema = createInsertSchema(menuItemsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
+export type MenuItem = typeof menuItemsTable.$inferSelect;
 
 export const teamMemberTypeEnum = pgEnum("team_member_type", ["team_member", "affiliate"]);
 export const teamMemberStatusEnum = pgEnum("team_member_status", ["active", "inactive"]);

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { businessesTable, categoriesTable, usersTable, formConfigsTable, formSubmissionsTable } from "@workspace/db/schema";
+import { businessesTable, categoriesTable, usersTable, formConfigsTable, formSubmissionsTable, menuItemsTable } from "@workspace/db/schema";
 import { eq, and, ilike, sql, desc, or, ne, isNull } from "drizzle-orm";
 import type { FormFieldConfig } from "@workspace/db/schema";
 import { createClient } from "@supabase/supabase-js";
@@ -900,6 +900,102 @@ router.post("/businesses/:id/track-maps-click", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to track maps click" });
+  }
+});
+
+// ── MENU ITEMS ──
+
+router.get("/dashboard/businesses/:id/menu-items", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const items = await db
+      .select()
+      .from(menuItemsTable)
+      .where(eq(menuItemsTable.businessId, businessId))
+      .orderBy(menuItemsTable.sortOrder);
+    res.json(items);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch menu items" });
+  }
+});
+
+router.post("/dashboard/businesses/:id/menu-items", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const { title, description, price, imageUrl, sortOrder } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    const [item] = await db
+      .insert(menuItemsTable)
+      .values({
+        businessId,
+        title,
+        description: description || null,
+        price: price || null,
+        imageUrl: imageUrl || null,
+        sortOrder: sortOrder ?? 0,
+      })
+      .returning();
+
+    res.status(201).json(item);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create menu item" });
+  }
+});
+
+router.put("/dashboard/businesses/:id/menu-items/:menuItemId", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const menuItemId = parseInt(req.params.menuItemId);
+    const { title, description, price, imageUrl, sortOrder } = req.body;
+
+    const [item] = await db
+      .update(menuItemsTable)
+      .set({
+        title: title || undefined,
+        description: description || null,
+        price: price || null,
+        imageUrl: imageUrl || null,
+        sortOrder: sortOrder ?? undefined,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(menuItemsTable.id, menuItemId), eq(menuItemsTable.businessId, businessId)))
+      .returning();
+
+    if (!item) {
+      return res.status(404).json({ error: "Menu item not found" });
+    }
+
+    res.json(item);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update menu item" });
+  }
+});
+
+router.delete("/dashboard/businesses/:id/menu-items/:menuItemId", async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.id);
+    const menuItemId = parseInt(req.params.menuItemId);
+
+    const result = await db
+      .delete(menuItemsTable)
+      .where(and(eq(menuItemsTable.id, menuItemId), eq(menuItemsTable.businessId, businessId)))
+      .returning();
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Menu item not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete menu item" });
   }
 });
 

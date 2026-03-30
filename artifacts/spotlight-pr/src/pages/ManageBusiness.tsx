@@ -1115,6 +1115,12 @@ export default function ManageBusiness() {
   const [mediaLoading, setMediaLoading] = useState(false);
   const [deletingMediaId, setDeletingMediaId] = useState<number | null>(null);
 
+  // Menu Items state
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [menuEditId, setMenuEditId] = useState<number | null>(null);
+  const [menuEditForm, setMenuEditForm] = useState({ title: "", price: "", description: "", imageUrl: "" });
+
   const loadMediaItems = useCallback(async () => {
     if (!id || !isAuthenticated) return;
     setMediaLoading(true);
@@ -1132,6 +1138,94 @@ export default function ManageBusiness() {
   }, [id, isAuthenticated, getToken]);
 
   useEffect(() => { loadMediaItems(); }, [loadMediaItems]);
+
+  const loadMenuItems = useCallback(async () => {
+    if (!id || !isAuthenticated) return;
+    setMenuLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}api/dashboard/businesses/${id}/menu-items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMenuItems(data);
+      }
+    } catch {}
+    finally { setMenuLoading(false); }
+  }, [id, isAuthenticated, getToken]);
+
+  useEffect(() => { loadMenuItems(); }, [loadMenuItems]);
+
+  const addMenuItem = async (title: string, price: string, description: string, imageUrl: string) => {
+    if (!id) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}api/dashboard/businesses/${id}/menu-items`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          price: price || null,
+          description: description || null,
+          imageUrl: imageUrl || null,
+          sortOrder: menuItems.length,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add menu item");
+      const newItem = await res.json();
+      setMenuItems(prev => [...prev, newItem]);
+      toast({ title: "Menu item added!" });
+    } catch {
+      toast({ title: "Error", description: "Failed to add menu item", variant: "destructive" });
+    }
+  };
+
+  const updateMenuItem = async (itemId: number, title: string, price: string, description: string, imageUrl: string) => {
+    if (!id) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}api/dashboard/businesses/${id}/menu-items/${itemId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          price: price || null,
+          description: description || null,
+          imageUrl: imageUrl || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update menu item");
+      const updated = await res.json();
+      setMenuItems(prev => prev.map(item => item.id === itemId ? updated : item));
+      setMenuEditId(null);
+      toast({ title: "Menu item updated!" });
+    } catch {
+      toast({ title: "Error", description: "Failed to update menu item", variant: "destructive" });
+    }
+  };
+
+  const deleteMenuItem = async (itemId: number) => {
+    if (!id) return;
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}api/dashboard/businesses/${id}/menu-items/${itemId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setMenuItems(prev => prev.filter(item => item.id !== itemId));
+      toast({ title: "Menu item deleted!" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete menu item", variant: "destructive" });
+    }
+  };
 
   const deleteMediaItem = async (itemId: number) => {
     setDeletingMediaId(itemId);
@@ -1883,49 +1977,163 @@ export default function ManageBusiness() {
             </div>
           </TabsContent>
 
-          {/* ── MENU ── */}
+          {/* ── MENU BUILDER ── */}
           <TabsContent value="menu">
             <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
-              <h2 className="text-lg font-bold font-display mb-6 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" /> Menu
-              </h2>
-              <Form {...detailsForm}>
-                <form onSubmit={detailsForm.handleSubmit(saveMenu)} className="space-y-6">
-                  <FormField control={detailsForm.control} name="menuTitle" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Menu Title (Optional)</FormLabel>
-                      <FormControl><Input className="rounded-xl" placeholder="e.g., Full Menu, Wine List, Desserts" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={detailsForm.control} name="menuUrl" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Menu URL (Optional)</FormLabel>
-                      <FormControl><Input className="rounded-xl" type="url" placeholder="https://example.com/menu.pdf" {...field} /></FormControl>
-                      <div className="text-xs text-muted-foreground mt-2">Link to a PDF, image, or webpage containing your menu</div>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  {detailsForm.watch("menuUrl") && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <p className="text-sm text-blue-900 mb-3">Menu Preview:</p>
-                      <a href={detailsForm.watch("menuUrl")} target="_blank" rel="noopener noreferrer" className="inline-block">
-                        <Button variant="outline" size="sm" className="rounded-xl gap-2">
-                          <Globe className="w-4 h-4" /> Open Menu
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold font-display flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" /> Menu Builder
+                </h2>
+                <Badge variant="secondary" className="rounded-full">
+                  {menuItems.length} {menuItems.length === 1 ? "item" : "items"}
+                </Badge>
+              </div>
+
+              {menuLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Add/Edit Menu Item Form */}
+                  <div className="bg-muted/30 rounded-xl border border-border p-6">
+                    <h3 className="font-semibold text-sm mb-4">
+                      {menuEditId ? "Edit Menu Item" : "Add New Menu Item"}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-2">Item Title *</label>
+                        <Input
+                          className="rounded-xl"
+                          placeholder="e.g., Grilled Salmon"
+                          value={menuEditForm.title}
+                          onChange={e => setMenuEditForm({ ...menuEditForm, title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-2">Price (Optional)</label>
+                        <Input
+                          className="rounded-xl"
+                          placeholder="e.g., $18.99"
+                          value={menuEditForm.price}
+                          onChange={e => setMenuEditForm({ ...menuEditForm, price: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="text-xs font-medium text-muted-foreground block mb-2">Description (Optional)</label>
+                      <Textarea
+                        className="rounded-xl resize-none"
+                        placeholder="e.g., Fresh Atlantic salmon with seasonal vegetables"
+                        value={menuEditForm.description}
+                        onChange={e => setMenuEditForm({ ...menuEditForm, description: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="mb-6">
+                      <label className="text-xs font-medium text-muted-foreground block mb-2">Image (Optional)</label>
+                      <ImageUploadField
+                        onImageUrl={url => setMenuEditForm({ ...menuEditForm, imageUrl: url })}
+                        currentImageUrl={menuEditForm.imageUrl}
+                        businessId={business.id}
+                      />
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                      {menuEditId && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setMenuEditId(null);
+                            setMenuEditForm({ title: "", price: "", description: "", imageUrl: "" });
+                          }}
+                          className="rounded-xl"
+                        >
+                          Cancel
                         </Button>
-                      </a>
+                      )}
+                      <Button
+                        onClick={async () => {
+                          if (!menuEditForm.title) {
+                            toast({ title: "Error", description: "Item title is required", variant: "destructive" });
+                            return;
+                          }
+                          if (menuEditId) {
+                            await updateMenuItem(menuEditId, menuEditForm.title, menuEditForm.price, menuEditForm.description, menuEditForm.imageUrl);
+                          } else {
+                            await addMenuItem(menuEditForm.title, menuEditForm.price, menuEditForm.description, menuEditForm.imageUrl);
+                            setMenuEditForm({ title: "", price: "", description: "", imageUrl: "" });
+                          }
+                        }}
+                        className="rounded-xl gap-2 px-8"
+                      >
+                        <Save className="w-4 h-4" /> {menuEditId ? "Update Item" : "Add Item"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Menu Items List */}
+                  {menuItems.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">No menu items yet</p>
+                      <p className="text-sm mt-1">Add your first menu item above to get started.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {menuItems.map(item => (
+                        <div key={item.id} className="rounded-xl border border-border bg-white p-4 flex gap-4">
+                          {item.imageUrl && (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="w-24 h-24 object-cover rounded-lg shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-semibold text-sm">{item.title}</h4>
+                                {item.price && (
+                                  <p className="text-primary font-medium text-sm mt-1">{item.price}</p>
+                                )}
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{item.description}</p>
+                                )}
+                              </div>
+                              <div className="flex gap-2 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="rounded-lg"
+                                  onClick={() => {
+                                    setMenuEditId(item.id);
+                                    setMenuEditForm({
+                                      title: item.title,
+                                      price: item.price || "",
+                                      description: item.description || "",
+                                      imageUrl: item.imageUrl || "",
+                                    });
+                                  }}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="rounded-lg text-destructive hover:text-destructive"
+                                  onClick={() => deleteMenuItem(item.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <div className="flex justify-end pt-4 border-t border-border gap-3">
-                    <Button type="button" variant="outline" onClick={() => detailsForm.reset()} className="rounded-xl">
-                      Clear
-                    </Button>
-                    <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">
-                      {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Save className="w-4 h-4" /> Save Menu</>}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+                </div>
+              )}
             </div>
           </TabsContent>
 
