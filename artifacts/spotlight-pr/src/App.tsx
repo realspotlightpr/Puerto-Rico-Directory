@@ -23,6 +23,7 @@ import ManageBusiness from "@/pages/ManageBusiness";
 import UserProfile from "@/pages/UserProfile";
 import VerifyEmail from "@/pages/VerifyEmail";
 import TeamDashboard from "@/pages/TeamDashboard";
+import { SystemExplained } from "@/pages/SystemExplained";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -105,6 +106,7 @@ function Router() {
           <Route path="/negocio" component={() => <Redirect to="/business" />} />
           <Route path="/advertise" component={AdvertiseWithUs} />
           <Route path="/services" component={AdditionalServices} />
+          <Route path="/spotlight-system" component={SystemExplained} />
           <Route path="/manage/:id" component={ManageBusiness} />
           <Route path="/profile" component={UserProfile} />
           <Route path="/profile/:id" component={UserProfile} />

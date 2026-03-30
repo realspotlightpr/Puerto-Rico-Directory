@@ -110,6 +110,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/spotlight-system" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Spotlight System Explained
+                </Link>
+              </li>
+              <li>
                 <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Business FAQs
                 </a>
