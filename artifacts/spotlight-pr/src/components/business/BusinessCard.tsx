@@ -62,6 +62,11 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
         </div>
         
         <div className="p-5 flex flex-col gap-3">
+          <div>
+            <h3 className="font-display font-bold text-lg text-foreground mb-1">{business.name}</h3>
+            <p className="text-sm text-muted-foreground">{business.categoryName}</p>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-muted-foreground text-sm font-medium bg-muted px-2.5 py-1 rounded-full w-fit">
               <MapPin className="w-3.5 h-3.5 text-primary" />
