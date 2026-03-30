@@ -348,7 +348,190 @@ export function SystemExplained() {
         </div>
       </div>
 
-      {/* CTA Section */}
+      {/* Benefit Section 1: Results */}
+      <div className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">
+                See Real Results <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">in Your First Month</span>
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                Our clients see an average of <strong className="text-primary">3-5x increase in customer inquiries</strong> within the first 30 days of using Spotlight. 
+              </p>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                The AI chatbot handles 80% of routine questions automatically, your team responds faster to leads, and your verified badge builds trust instantly. No more lost customers.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-secondary" />
+                  <span className="font-semibold text-foreground">More visibility on the directory</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-secondary" />
+                  <span className="font-semibold text-foreground">Faster customer response times</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-secondary" />
+                  <span className="font-semibold text-foreground">Better online reputation</span>
+                </li>
+              </ul>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-2xl" />
+              <div className="relative bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl p-8 border border-primary/20">
+                <div className="bg-white/80 rounded-2xl p-8 text-center">
+                  <div className="text-6xl font-display font-bold text-primary mb-2">+300%</div>
+                  <p className="text-lg text-muted-foreground mb-4">Average Inquiry Increase</p>
+                  <p className="text-sm text-muted-foreground italic">Based on client data from first 30 days</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Benefit Section 2: Simple Setup */}
+      <div className="py-16 md:py-24 bg-gradient-to-br from-secondary/5 to-primary/5">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            <div className="order-2 md:order-1 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-primary/20 rounded-3xl blur-2xl" />
+              <div className="relative bg-white rounded-3xl p-8 border border-border shadow-xl">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg">1</div>
+                    <div>
+                      <p className="font-bold text-foreground">Create Account</p>
+                      <p className="text-sm text-muted-foreground">Takes 2 minutes</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg">2</div>
+                    <div>
+                      <p className="font-bold text-foreground">Fill Your Info</p>
+                      <p className="text-sm text-muted-foreground">Business details & photos</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg">3</div>
+                    <div>
+                      <p className="font-bold text-foreground">Go Live</p>
+                      <p className="text-sm text-muted-foreground">Start getting customers</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">
+                Get Started in <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">3 Simple Steps</span>
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                We've made it dead simple to get your business online and start attracting customers. No technical knowledge required.
+              </p>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                Most businesses are set up and live within their first hour. Our onboarding team is here to help every step of the way.
+              </p>
+              <Link href="/list-your-business">
+                <Button size="lg" className="gap-2">
+                  Start Your Setup Now <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Benefit Section 3: Support */}
+      <div className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">
+                We're Here for <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Your Success</span>
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                Your success is our success. We don't just give you a tool — we give you a partner committed to growing your business.
+              </p>
+              <div className="space-y-4 mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground mb-1">Dedicated Onboarding</p>
+                    <p className="text-muted-foreground">We help set everything up perfectly</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground mb-1">Priority Support</p>
+                    <p className="text-muted-foreground">Email & phone support during business hours</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground mb-1">Regular Check-Ins</p>
+                    <p className="text-muted-foreground">Monthly calls to optimize your results</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground mb-1">Training & Resources</p>
+                    <p className="text-muted-foreground">Video guides, tips, and best practices</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-2xl" />
+              <div className="relative bg-gradient-to-br from-primary/10 to-secondary/10 rounded-3xl p-12 border border-primary/20">
+                <div className="text-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6">
+                    <Users className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-sm font-semibold text-primary mb-2">SPOTLIGHT TEAM</p>
+                  <p className="text-2xl font-display font-bold text-foreground mb-4">Always Ready to Help</p>
+                  <p className="text-muted-foreground mb-6">
+                    Our Puerto Rican team speaks your language and understands your business.
+                  </p>
+                  <a href="mailto:info@spotlightpr.com" className="inline-block">
+                    <Button variant="outline" className="gap-2">
+                      Contact Support <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Guarantee Section */}
+      <div className="py-16 md:py-24 bg-gradient-to-br from-primary/5 to-secondary/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 bg-white rounded-full px-6 py-3 border border-primary/20 mb-6">
+              <Shield className="w-5 h-5 text-primary" />
+              <span className="font-semibold text-foreground">100% Money-Back Guarantee</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-foreground">
+              Risk-Free Trial
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Try Spotlight for 30 days completely free. No credit card needed. If you're not happy with the results, we'll refund you 100%. We're that confident you'll love it.
+            </p>
+            
       <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-secondary text-white py-20 md:py-28">
         <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/20 rounded-full translate-x-1/3 translate-y-1/3 blur-3xl" />
