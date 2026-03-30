@@ -41,6 +41,62 @@ export function SystemExplained() {
         </div>
       </div>
 
+      {/* Video Section */}
+      <div className="py-16 md:py-24 bg-white border-b">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4 text-foreground">
+                See Spotlight in Action
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Watch how businesses like yours are transforming their online presence in minutes
+              </p>
+            </div>
+            
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl blur-2xl" />
+              <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl overflow-hidden aspect-video shadow-2xl border border-primary/20">
+                {/* Video Placeholder with Play Button */}
+                <div className="w-full h-full bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center relative group/video">
+                  <div className="absolute inset-0 bg-black/30 group-hover/video:bg-black/40 transition-colors" />
+                  <button className="relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-2xl transform group-hover/video:scale-110 transition-transform">
+                    <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </button>
+                  
+                  {/* Placeholder Text */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-8 pointer-events-none">
+                    <p className="text-white/60 text-sm mb-4">Click to watch demo</p>
+                    <p className="text-white/40 text-xs">(2 min 30 sec)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Video CTA */}
+            <div className="mt-12 text-center">
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                In this quick walkthrough, you'll see how easy it is to set up your business profile, activate the AI chatbot, and start receiving customer inquiries.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/list-your-business">
+                  <Button size="lg" className="gap-2">
+                    Ready to Get Started <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <a href="mailto:info@spotlightpr.com">
+                  <Button size="lg" variant="outline">
+                    Ask Questions First
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Stats */}
       <div className="py-12 md:py-16 bg-white">
         <div className="container mx-auto px-4">
