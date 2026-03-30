@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 import {
   MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2,
   BadgeCheck, AlertCircle, Loader2, Star, Clock, Send, Copy,
-  MessageSquare, ChevronDown, ChevronUp,
+  MessageSquare, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -400,11 +400,26 @@ export default function BusinessDetail() {
     }
   }, [businessId]);
 
+  useEffect(() => {
+    if (!businessId) return;
+    setMediaLoading(true);
+    fetch(`${API_BASE}api/media/items?businessId=${businessId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.items) setMediaItems(data.items);
+      })
+      .catch(() => {})
+      .finally(() => setMediaLoading(false));
+  }, [businessId]);
+
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [activeTab, setActiveTab] = useState<"about" | "reviews" | "claim">("about");
+  const [mediaItems, setMediaItems] = useState<any[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   const { mutateAsync: submitReview } = useCreateReview();
   const { mutate: claimBiz, isPending: isClaimingBusiness } = useClaimBusiness({
@@ -628,7 +643,7 @@ export default function BusinessDetail() {
                     <h2 className="text-xl font-bold mb-4 font-display">About</h2>
                     {business.description ? (
                       <div
-                        className="prose prose-sm max-w-none text-muted-foreground leading-relaxed about-html-content"
+                        className="prose prose-sm max-w-none text-muted-foreground leading-relaxed about-html-content mb-8"
                         dangerouslySetInnerHTML={{
                           __html: DOMPurify.sanitize(business.description, {
                             ALLOWED_TAGS: ["div", "p", "h1", "h2", "h3", "h4", "span", "ul", "ol", "li", "strong", "em", "br", "section", "article"],
@@ -639,8 +654,68 @@ export default function BusinessDetail() {
                         }}
                       />
                     ) : (
-                      <p className="text-muted-foreground italic">No description provided.</p>
+                      <p className="text-muted-foreground italic mb-8">No description provided.</p>
                     )}
+
+                    {/* Media Gallery */}
+                    {!mediaLoading && mediaItems.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-bold mb-4">Gallery</h3>
+                        <div className="relative rounded-2xl overflow-hidden bg-black">
+                          {/* Current Image */}
+                          <div className="aspect-video bg-muted">
+                            <img
+                              src={mediaItems[currentMediaIndex]?.url}
+                              alt={`Gallery image ${currentMediaIndex + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          {/* Navigation Arrows */}
+                          {mediaItems.length > 1 && (
+                            <>
+                              <button
+                                onClick={() => setCurrentMediaIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length)}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+                                aria-label="Previous image"
+                              >
+                                <ChevronLeft className="w-6 h-6" />
+                              </button>
+                              <button
+                                onClick={() => setCurrentMediaIndex((prev) => (prev + 1) % mediaItems.length)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+                                aria-label="Next image"
+                              >
+                                <ChevronRight className="w-6 h-6" />
+                              </button>
+
+                              {/* Image Counter */}
+                              <div className="absolute bottom-4 right-4 z-10 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                                {currentMediaIndex + 1} / {mediaItems.length}
+                              </div>
+                            </>
+                          )}
+
+                          {/* Thumbnail Strip */}
+                          {mediaItems.length > 1 && (
+                            <div className="bg-black/50 p-3 flex gap-2 overflow-x-auto">
+                              {mediaItems.map((item, idx) => (
+                                <button
+                                  key={item.id}
+                                  onClick={() => setCurrentMediaIndex(idx)}
+                                  className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                                    idx === currentMediaIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
+                                  }`}
+                                >
+                                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {Object.keys(hours).length > 0 && <HoursBlock hours={hours} />}
                   </section>
                 )}
