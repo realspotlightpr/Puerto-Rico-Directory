@@ -906,15 +906,19 @@ export default function Admin() {
   };
   const invalidateLeads = () => queryClient.invalidateQueries({ queryKey: [`/api/admin/leads`] });
 
+  const { getToken } = useAuth();
+
   const handleAssignOwner = async (userId: string) => {
     if (!assigningOwner) return;
     setAssignOwnerLoading(true);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/api/admin/businesses/${assigningOwner.id}/assign-owner`, {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/businesses/${assigningOwner.id}/assign-owner`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` }),
+        },
         body: JSON.stringify({ userId }),
       });
       const data = await res.json();
