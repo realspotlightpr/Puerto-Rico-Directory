@@ -559,9 +559,11 @@ export default function BusinessDetail() {
                   <SharePopover businessName={business.name} url={publicUrl} />
                   <Button variant="outline" size="icon" className="rounded-full shrink-0"><Heart className="w-4 h-4" /></Button>
                   {business.phone && (
-                    <Button onClick={() => window.location.href = `tel:${business.phone}`} className="flex-1 md:flex-none rounded-full gap-2 shadow-md">
-                      <Phone className="w-4 h-4" /> Call Now
-                    </Button>
+                    <a href={`tel:${business.phone}`} className="flex-1 md:flex-none">
+                      <Button className="w-full rounded-full gap-2 shadow-md">
+                        <Phone className="w-4 h-4" /> Call Now
+                      </Button>
+                    </a>
                   )}
                   <Button variant="outline" onClick={scrollToInquiry} className="flex-1 md:flex-none rounded-full gap-2 hidden md:flex">
                     <MessageSquare className="w-4 h-4" /> Message

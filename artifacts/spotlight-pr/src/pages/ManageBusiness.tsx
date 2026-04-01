@@ -2031,11 +2031,12 @@ export default function ManageBusiness() {
                       />
                     </div>
                     <div className="mb-6">
-                      <label className="text-xs font-medium text-muted-foreground block mb-2">Image (Optional)</label>
                       <ImageUploadField
-                        onImageUrl={url => setMenuEditForm({ ...menuEditForm, imageUrl: url })}
-                        currentImageUrl={menuEditForm.imageUrl}
-                        businessId={business.id}
+                        value={menuEditForm.imageUrl}
+                        onChange={url => setMenuEditForm({ ...menuEditForm, imageUrl: url })}
+                        label="Item Image (Optional)"
+                        hint="Upload a photo of the menu item"
+                        aspectRatio="square"
                       />
                     </div>
                     <div className="flex gap-3 justify-end">
