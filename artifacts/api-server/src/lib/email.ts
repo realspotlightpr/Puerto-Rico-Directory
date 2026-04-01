@@ -1,3 +1,6 @@
+import { db } from "@workspace/db";
+import { emailLogsTable } from "@workspace/db/schema";
+
 const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 const BRAND_COLOR = "#0891b2";
 const SITE_URL = process.env.VITE_PUBLIC_URL || "https://spotlightpuertorico.com";
@@ -39,30 +42,61 @@ function emailWrapper(content: string): string {
   `;
 }
 
-async function sendEmail(to: string, toName: string, subject: string, htmlContent: string): Promise<void> {
+async function sendEmail(
+  to: string,
+  toName: string,
+  subject: string,
+  htmlContent: string,
+  emailType: string = "general"
+): Promise<void> {
   const brevoApiKey = process.env.BREVO_API_KEY;
-  if (!brevoApiKey) {
-    console.warn("[email] BREVO_API_KEY not configured — skipping email send");
-    return;
-  }
+  let errorMessage: string | null = null;
+  let status: "sent" | "failed" = "sent";
 
-  const response = await fetch(BREVO_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": brevoApiKey,
-    },
-    body: JSON.stringify({
-      sender: { name: "Spotlight Puerto Rico", email: "noreply@spotlightpuertorico.com" },
-      to: [{ email: to, name: toName }],
-      subject,
-      htmlContent,
-    }),
-  });
+  try {
+    if (!brevoApiKey) {
+      console.warn("[email] BREVO_API_KEY not configured — skipping email send");
+      return;
+    }
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`Brevo API error: ${JSON.stringify(err)}`);
+    const response = await fetch(BREVO_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": brevoApiKey,
+      },
+      body: JSON.stringify({
+        sender: { name: "Spotlight Puerto Rico", email: "noreply@spotlightpuertorico.com" },
+        to: [{ email: to, name: toName }],
+        subject,
+        htmlContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      errorMessage = JSON.stringify(err);
+      status = "failed";
+      throw new Error(`Brevo API error: ${errorMessage}`);
+    }
+  } catch (err: any) {
+    status = "failed";
+    errorMessage = err?.message || "Unknown error";
+    throw err;
+  } finally {
+    // Log the email
+    try {
+      await db.insert(emailLogsTable).values({
+        recipientEmail: to,
+        recipientName: toName,
+        subject,
+        emailType,
+        status,
+        errorMessage: status === "failed" ? errorMessage : null,
+      });
+    } catch (logErr) {
+      console.error("[email-log] Failed to log email:", logErr);
+    }
   }
 }
 
@@ -139,7 +173,7 @@ export async function sendWelcomeAndBusinessSubmissionEmail(
     </div>
   `);
 
-  await sendEmail(to, name, `Welcome to Spotlight Puerto Rico – Verify Your Email to Get Started 🚀`, html);
+  await sendEmail(to, name, `Welcome to Spotlight Puerto Rico – Verify Your Email to Get Started 🚀`, html, "welcome");
 }
 
 export async function sendInquiryEmail(
@@ -189,7 +223,7 @@ export async function sendInquiryEmail(
     </p>
   `);
 
-  await sendEmail(to, businessName, `New inquiry for ${businessName} — Spotlight PR`, html);
+  await sendEmail(to, businessName, `New inquiry for ${businessName} — Spotlight PR`, html, "inquiry");
 }
 
 export async function sendWelcomeNewUserEmail(
@@ -252,7 +286,7 @@ export async function sendWelcomeNewUserEmail(
     admin: "Admin access granted — Spotlight Puerto Rico",
   };
 
-  await sendEmail(to, name, subjects[role], html);
+  await sendEmail(to, name, subjects[role], html, "welcome_new_user");
 }
 
 export async function sendVerificationEmail(
@@ -275,7 +309,7 @@ export async function sendVerificationEmail(
     </p>
   `);
 
-  await sendEmail(to, name, "Verify Your Email — Spotlight Puerto Rico", html);
+  await sendEmail(to, name, "Verify Your Email — Spotlight Puerto Rico", html, "verification");
 }
 
 export async function sendPasswordResetEmail(
@@ -334,5 +368,5 @@ export async function sendPasswordResetEmail(
     </div>
   `);
 
-  await sendEmail(to, name, "Your Password Has Been Reset — Spotlight Puerto Rico", html);
+  await sendEmail(to, name, "Your Password Has Been Reset — Spotlight Puerto Rico", html, "password_reset");
 }

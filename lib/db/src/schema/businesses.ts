@@ -179,3 +179,20 @@ export const formSubmissionsTable = pgTable("form_submissions", {
 export const insertFormSubmissionSchema = createInsertSchema(formSubmissionsTable).omit({ id: true, createdAt: true });
 export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
 export type FormSubmission = typeof formSubmissionsTable.$inferSelect;
+
+// ── Email Logs ──────────────────────────────────────────────────────────────
+// Tracks all outbound emails sent by the system
+export const emailLogsTable = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  recipientEmail: text("recipient_email").notNull(),
+  recipientName: text("recipient_name"),
+  subject: text("subject").notNull(),
+  emailType: text("email_type").notNull(), // "verification", "welcome", "inquiry", "password_reset", etc.
+  status: text("status").notNull(), // "sent", "failed"
+  errorMessage: text("error_message"), // null if sent, contains error if failed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertEmailLogSchema = createInsertSchema(emailLogsTable).omit({ id: true, createdAt: true });
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+export type EmailLog = typeof emailLogsTable.$inferSelect;

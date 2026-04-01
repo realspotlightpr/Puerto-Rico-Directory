@@ -57,7 +57,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings";
+type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
@@ -854,6 +854,13 @@ export default function Admin() {
   const [impersonationSession, setImpersonationSession] = useState<any | null>(null);
   const [impersonatedUser, setImpersonatedUser] = useState<any | null>(null);
 
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [emailLogsLoading, setEmailLogsLoading] = useState(false);
+  const [emailLogsTotal, setEmailLogsTotal] = useState(0);
+  const [emailLogsOffset, setEmailLogsOffset] = useState(0);
+  const [emailLogsStatusFilter, setEmailLogsStatusFilter] = useState<"" | "sent" | "failed">("");
+  const [emailLogsTypeFilter, setEmailLogsTypeFilter] = useState("");
+
   const isAdmin = isAuthenticated && user?.role === "admin";
 
   // ── Queries ──
@@ -1204,6 +1211,7 @@ export default function Admin() {
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
+    { id: "email-logs", label: "Email Logs", icon: Mail },
     { id: "settings", label: "Page Settings", icon: Settings },
   ];
 
@@ -1921,6 +1929,130 @@ export default function Admin() {
                         <RoleBadge role={u.role} />
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── EMAIL LOGS ── */}
+          {section === "email-logs" && (
+            <div className="space-y-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+                <Mail className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm text-blue-900">Email Activity Log</p>
+                  <p className="text-xs text-blue-700 mt-0.5">
+                    View all outbound emails sent by the system including verifications, notifications, and password resets.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Select value={emailLogsStatusFilter} onValueChange={(v: any) => { setEmailLogsStatusFilter(v); setEmailLogsOffset(0); }}>
+                  <SelectTrigger className="w-40 rounded-xl">
+                    <SelectValue placeholder="Filter by Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={emailLogsTypeFilter} onValueChange={(v: any) => { setEmailLogsTypeFilter(v); setEmailLogsOffset(0); }}>
+                  <SelectTrigger className="w-48 rounded-xl">
+                    <SelectValue placeholder="Filter by Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="welcome">Welcome</SelectItem>
+                    <SelectItem value="inquiry">Inquiry</SelectItem>
+                    <SelectItem value="verification">Verification</SelectItem>
+                    <SelectItem value="welcome_new_user">Welcome New User</SelectItem>
+                    <SelectItem value="password_reset">Password Reset</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {emailLogsLoading ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <Loader2 className="w-8 h-8 mx-auto mb-4 text-muted-foreground animate-spin" />
+                  <p className="text-muted-foreground">Loading email logs...</p>
+                </div>
+              ) : emailLogs.length === 0 ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <Mail className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+                  <h3 className="text-lg font-bold font-display mb-2">No Email Logs</h3>
+                  <p className="text-muted-foreground text-sm">No emails found matching your filters.</p>
+                </div>
+              ) : (
+                <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b border-border">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Recipient</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Type</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Subject</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Sent At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {emailLogs.map((log: any, idx: number) => (
+                          <tr key={idx} className="border-b border-border last:border-0 hover:bg-slate-50 transition-colors">
+                            <td className="px-5 py-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{log.recipientName || log.recipientEmail}</p>
+                                <p className="text-xs text-muted-foreground">{log.recipientEmail}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3">
+                              <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 text-xs" variant="secondary">
+                                {log.emailType.replace(/_/g, " ")}
+                              </Badge>
+                            </td>
+                            <td className="px-5 py-3">
+                              <p className="text-sm text-foreground">{log.subject}</p>
+                            </td>
+                            <td className="px-5 py-3">
+                              <Badge className={`text-xs ${log.status === "sent" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : "bg-red-100 text-red-700 hover:bg-red-100"}`}>
+                                {log.status === "sent" ? <CheckCircle className="w-3 h-3 mr-1" /> : <AlertCircle className="w-3 h-3 mr-1" />}
+                                {log.status}
+                              </Badge>
+                            </td>
+                            <td className="px-5 py-3 text-sm text-muted-foreground">
+                              {format(new Date(log.createdAt), "MMM d, yyyy HH:mm")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <div className="px-5 py-4 border-t border-border flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Showing {emailLogs.length} of {emailLogsTotal} emails</p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setEmailLogsOffset(Math.max(0, emailLogsOffset - 50))}
+                        disabled={emailLogsOffset === 0}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        onClick={() => setEmailLogsOffset(emailLogsOffset + 50)}
+                        disabled={emailLogsOffset + 50 >= emailLogsTotal}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2708,6 +2840,12 @@ function SliderSettingsSection() {
     fetchSliders();
   }, []);
 
+  useEffect(() => {
+    if (section === "email-logs" && isAdmin) {
+      fetchEmailLogs();
+    }
+  }, [section, emailLogsOffset, emailLogsStatusFilter, emailLogsTypeFilter]);
+
   const fetchSliders = async () => {
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}api/admin/slider-settings`);
@@ -2720,6 +2858,30 @@ function SliderSettingsSection() {
       toast({ title: "Error loading slider settings", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmailLogs = async () => {
+    setEmailLogsLoading(true);
+    try {
+      const token = useAuth().getToken ? await useAuth().getToken() : "";
+      const params = new URLSearchParams({ limit: "50", offset: emailLogsOffset.toString() });
+      if (emailLogsStatusFilter) params.append("status", emailLogsStatusFilter);
+      if (emailLogsTypeFilter) params.append("emailType", emailLogsTypeFilter);
+      
+      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/email-logs?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const { logs, total } = await res.json();
+        setEmailLogs(logs);
+        setEmailLogsTotal(total);
+      }
+    } catch (err) {
+      console.error("Failed to fetch email logs:", err);
+      toast({ title: "Error loading email logs", variant: "destructive" });
+    } finally {
+      setEmailLogsLoading(false);
     }
   };
 

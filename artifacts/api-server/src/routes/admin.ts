@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
-import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions, sliderSettingsTable } from "@workspace/db/schema";
+import { businessesTable, reviewsTable, usersTable, categoriesTable, teamMembersTable, adminImpersonationSessions, sliderSettingsTable, emailLogsTable } from "@workspace/db/schema";
 import { eq, desc, sql, and, or, ilike, gt } from "drizzle-orm";
 import { sendWelcomeNewUserEmail, sendPasswordResetEmail } from "../lib/email";
 
@@ -1688,6 +1688,55 @@ router.patch("/admin/reviews/:id/spotlight", async (req, res) => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update review spotlight status" });
+  }
+});
+
+// ── GET /admin/email-logs ───────────────────────────────────────────────
+// Fetch all outbound emails with their status
+router.get("/admin/email-logs", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  if (req.user.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const status = req.query.status as string | undefined;
+    const emailType = req.query.emailType as string | undefined;
+    const searchEmail = req.query.email as string | undefined;
+
+    let query = db.select().from(emailLogsTable);
+
+    // Apply filters
+    const conditions = [];
+    if (status) conditions.push(eq(emailLogsTable.status, status));
+    if (emailType) conditions.push(eq(emailLogsTable.emailType, emailType));
+    if (searchEmail) conditions.push(ilike(emailLogsTable.recipientEmail, `%${searchEmail}%`));
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const logs = await query
+      .orderBy(desc(emailLogsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const totalResult = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(emailLogsTable);
+    const total = totalResult[0]?.count || 0;
+
+    res.json({ logs, total, limit, offset });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch email logs" });
   }
 });
 
