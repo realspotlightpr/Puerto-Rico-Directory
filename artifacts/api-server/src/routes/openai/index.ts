@@ -485,4 +485,75 @@ router.post("/openai/generate-business-image", async (req, res) => {
   }
 });
 
+// ── POST /openai/enhance-logo ───────────────────────────────────────────────
+// Takes an uploaded logo image and enhances it with white background + 1:1 ratio
+router.post("/openai/enhance-logo", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { imageUrl, businessId } = req.body as {
+    imageUrl: string;
+    businessId?: number;
+  };
+
+  if (!imageUrl?.trim()) {
+    res.status(400).json({ error: "Image URL is required" });
+    return;
+  }
+
+  try {
+    // Use GPT-4V to analyze the logo and generate enhancement prompt
+    const analysisPrompt = `You are a logo design expert. Analyze this logo image and create a detailed description of what the logo looks like, its colors, style, and key elements. Then suggest how to enhance it with a white background (keeping the logo style clean and professional) and ensure it's in a perfect 1:1 square format.
+
+Based on your analysis, generate a DALL-E prompt that would create an enhanced version of this logo with:
+- Pure white background
+- 1:1 square aspect ratio
+- Professional appearance
+- Similar style and brand elements to the original
+
+Return ONLY the DALL-E prompt, nothing else.`;
+
+    const visionResponse = await openai.chat.completions.create({
+      model: "gpt-4-vision",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl,
+                detail: "high",
+              },
+            },
+            {
+              type: "text",
+              text: analysisPrompt,
+            },
+          ],
+        },
+      ],
+      max_tokens: 300,
+    });
+
+    const enhancePrompt = visionResponse.choices[0]?.message?.content?.toString() || "";
+
+    if (!enhancePrompt) {
+      res.status(500).json({ error: "Failed to analyze logo" });
+      return;
+    }
+
+    // Generate enhanced logo using DALL-E
+    const buffer = await generateImageBuffer(enhancePrompt, "1024x1024");
+    const b64 = buffer.toString("base64");
+
+    res.json({ b64_json: b64, prompt: enhancePrompt });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Logo enhancement failed" });
+  }
+});
+
 export default router;

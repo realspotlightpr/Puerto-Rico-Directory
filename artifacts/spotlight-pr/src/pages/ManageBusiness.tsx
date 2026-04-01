@@ -1110,6 +1110,10 @@ export default function ManageBusiness() {
   const [aiGenLoading, setAiGenLoading] = useState(false);
   const [aiGenPreview, setAiGenPreview] = useState<string | null>(null);
 
+  // Logo enhancement state
+  const [isEnhancingLogo, setIsEnhancingLogo] = useState(false);
+  const [enhancedLogoPreview, setEnhancedLogoPreview] = useState<string | null>(null);
+
   // Media Library state
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -1292,6 +1296,38 @@ export default function ManageBusiness() {
     mediaForm.setValue(field, aiGenPreview);
     setAiGenOpen(false);
     toast({ title: aiGenType === "logo" ? "AI logo applied!" : "AI cover photo applied!", description: "Click Save Media to keep it." });
+  };
+
+  const enhanceLogo = async () => {
+    const logoUrl = mediaForm.getValues("logoUrl");
+    if (!logoUrl) {
+      toast({ title: "Error", description: "Please upload a logo first", variant: "destructive" });
+      return;
+    }
+
+    setIsEnhancingLogo(true);
+    setEnhancedLogoPreview(null);
+    try {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const token = await getToken();
+      const res = await fetch(`${baseUrl}/api/openai/enhance-logo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ imageUrl: logoUrl, businessId: business?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Enhancement failed");
+      const b64Image = `data:image/png;base64,${data.b64_json}`;
+      setEnhancedLogoPreview(b64Image);
+      toast({ title: "Logo enhanced!", description: "Review and click 'Use Enhanced Logo' to apply it." });
+    } catch (err: any) {
+      toast({ title: "Enhancement failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsEnhancingLogo(false);
+    }
   };
 
   // Redirect if not owner
@@ -1836,15 +1872,70 @@ export default function ManageBusiness() {
                           />
                         </FormControl>
                         <FormMessage />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openAiGen("logo")}
-                          className="mt-2 w-full rounded-xl gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" /> Generate Logo with AI
-                        </Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openAiGen("logo")}
+                            className="flex-1 rounded-xl gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Generate
+                          </Button>
+                          {field.value && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={enhanceLogo}
+                              disabled={isEnhancingLogo}
+                              className="flex-1 rounded-xl gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                            >
+                              {isEnhancingLogo ? (
+                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enhancing...</>
+                              ) : (
+                                <><Wand2 className="w-3.5 h-3.5" /> Enhance</>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+
+                        {enhancedLogoPreview && (
+                          <div className="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-200 space-y-3">
+                            <p className="text-sm font-semibold text-blue-900">Enhanced Logo Preview</p>
+                            <div className="flex gap-3">
+                              <div className="w-24 h-24 rounded-lg bg-white overflow-hidden">
+                                <img src={enhancedLogoPreview} alt="Enhanced" className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 flex flex-col justify-between">
+                                <p className="text-xs text-blue-800">✓ White background added<br/>✓ 1:1 aspect ratio applied</p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => {
+                                      mediaForm.setValue("logoUrl", enhancedLogoPreview);
+                                      setEnhancedLogoPreview(null);
+                                      toast({ title: "Enhanced logo applied!", description: "Click Save Media to save." });
+                                    }}
+                                    className="rounded-lg flex-1"
+                                  >
+                                    Use Enhanced
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEnhancedLogoPreview(null)}
+                                    className="rounded-lg"
+                                  >
+                                    Dismiss
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </FormItem>
                     )} />
                     <FormField control={mediaForm.control} name="coverUrl" render={({ field }) => (
