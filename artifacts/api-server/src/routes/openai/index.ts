@@ -556,4 +556,64 @@ Return ONLY the DALL-E prompt, nothing else.`;
   }
 });
 
+// ── POST /openai/enhance-description ────────────────────────────────────────
+// Generate an enhanced business description based on user input
+router.post("/enhance-description", async (req, res) => {
+  try {
+    const {
+      businessName,
+      currentDescription,
+      targetAudience,
+      mainServices,
+      uniqueFeature,
+      yearsInBusiness,
+      staffSize,
+    } = req.body;
+
+    if (!businessName || !currentDescription || !targetAudience) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    const prompt = `You are a professional copywriter specializing in business descriptions. 
+    
+Business Name: ${businessName}
+Current Description: ${currentDescription}
+Target Audience: ${targetAudience}
+Main Services/Products: ${mainServices || "Not specified"}
+Unique Feature: ${uniqueFeature || "Not specified"}
+Years in Business: ${yearsInBusiness || "Not specified"}
+Team Size: ${staffSize || "Not specified"}
+
+Based on this information, create a compelling 2-3 sentence business description that:
+- Speaks directly to the target audience
+- Highlights key services and unique features
+- Creates an emotional connection
+- Is professional yet personable
+- Invites customers to engage
+
+Return ONLY the enhanced description, nothing else.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300,
+      temperature: 0.7,
+    });
+
+    const enhancedDescription =
+      response.choices[0]?.message?.content?.toString().trim() || "";
+
+    if (!enhancedDescription) {
+      res.status(500).json({ error: "Failed to generate description" });
+      return;
+    }
+
+    res.json({ description: enhancedDescription });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Description enhancement failed" });
+  }
+});
+
 export default router;

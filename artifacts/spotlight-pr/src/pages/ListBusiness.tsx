@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Store, MapPin, Globe, User, Image as ImageIcon,
-  ChevronRight, ChevronLeft, CheckCircle2, Loader2, Mail, KeyRound, MapOff,
+  ChevronRight, ChevronLeft, CheckCircle2, Loader2, Mail, KeyRound, MapOff, ChevronDown, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +155,14 @@ export default function ListBusiness() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [advancedAnswers, setAdvancedAnswers] = useState({
+    targetAudience: "",
+    mainServices: "",
+    uniqueFeature: "",
+    yearsInBusiness: "",
+    staffSize: "",
+  });
 
   const { data: categoriesData } = useListCategories();
   const { mutateAsync: createBusiness, isPending } = useCreateBusiness();
@@ -198,6 +206,46 @@ export default function ListBusiness() {
   const goBack = () => {
     setStep(s => Math.max(s - 1, 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const generateEnhancedDescription = async () => {
+    const currentDescription = form.getValues("description");
+    const businessName = form.getValues("name");
+    
+    if (!currentDescription || !businessName || !advancedAnswers.targetAudience) {
+      toast({ title: "Please fill in the questions first", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/api/openai/enhance-description`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName,
+          currentDescription,
+          targetAudience: advancedAnswers.targetAudience,
+          mainServices: advancedAnswers.mainServices,
+          uniqueFeature: advancedAnswers.uniqueFeature,
+          yearsInBusiness: advancedAnswers.yearsInBusiness,
+          staffSize: advancedAnswers.staffSize,
+        }),
+      });
+
+      if (res.ok) {
+        const { description } = await res.json();
+        form.setValue("description", description, { shouldValidate: true });
+        toast({ title: "Description enhanced! Review and adjust as needed." });
+        setAdvancedExpanded(false);
+      } else {
+        const error = await res.json();
+        toast({ title: "Error", description: error.error || "Failed to enhance description", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("Failed to enhance description:", err);
+      toast({ title: "Error", description: "Failed to enhance description. Try again.", variant: "destructive" });
+    }
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -368,6 +416,89 @@ export default function ListBusiness() {
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                {/* ── ADVANCED: Enhance Description ── */}
+                <div className="border border-border rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedExpanded(!advancedExpanded)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <span className="font-semibold text-sm text-foreground">Advanced: Generate Better Description</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${advancedExpanded ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {advancedExpanded && (
+                    <div className="border-t border-border px-4 py-4 bg-muted/30 space-y-4">
+                      <p className="text-xs text-muted-foreground">Answer these questions to help us generate a more compelling description for your business.</p>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1.5 block">Target Audience *</label>
+                          <Input
+                            placeholder="e.g., Families, young professionals, tourists, health-conscious people"
+                            value={advancedAnswers.targetAudience}
+                            onChange={(e) => setAdvancedAnswers({ ...advancedAnswers, targetAudience: e.target.value })}
+                            className="rounded-lg text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1.5 block">Main Services or Products</label>
+                          <Input
+                            placeholder="e.g., Coffee, pastries, WiFi, outdoor seating"
+                            value={advancedAnswers.mainServices}
+                            onChange={(e) => setAdvancedAnswers({ ...advancedAnswers, mainServices: e.target.value })}
+                            className="rounded-lg text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1.5 block">What Makes You Unique?</label>
+                          <Input
+                            placeholder="e.g., Locally sourced ingredients, award-winning chef, sustainable practices"
+                            value={advancedAnswers.uniqueFeature}
+                            onChange={(e) => setAdvancedAnswers({ ...advancedAnswers, uniqueFeature: e.target.value })}
+                            className="rounded-lg text-sm"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1.5 block">Years in Business</label>
+                            <Input
+                              type="number"
+                              placeholder="e.g., 5"
+                              value={advancedAnswers.yearsInBusiness}
+                              onChange={(e) => setAdvancedAnswers({ ...advancedAnswers, yearsInBusiness: e.target.value })}
+                              className="rounded-lg text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1.5 block">Team Size</label>
+                            <Input
+                              placeholder="e.g., 2-5 people"
+                              value={advancedAnswers.staffSize}
+                              onChange={(e) => setAdvancedAnswers({ ...advancedAnswers, staffSize: e.target.value })}
+                              className="rounded-lg text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={generateEnhancedDescription}
+                        className="w-full rounded-xl gap-2"
+                      >
+                        <Sparkles className="w-4 h-4" /> Generate Enhanced Description
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
