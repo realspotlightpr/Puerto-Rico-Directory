@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 import {
   MapPin, Phone, Globe, Mail, Share2, Heart, Flag, CheckCircle2,
   BadgeCheck, AlertCircle, Loader2, Star, Clock, Send, Copy,
-  MessageSquare, ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
+  MessageSquare, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -426,7 +426,8 @@ export default function BusinessDetail() {
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "claim" | "menu">("about");
+  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "menu">("about");
+  const [showClaimPanel, setShowClaimPanel] = useState(false);
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -648,18 +649,6 @@ export default function BusinessDetail() {
                     Menu
                   </button>
                 )}
-                {!detail.isClaimed && isAuthenticated && (
-                  <button
-                    onClick={() => setActiveTab("claim")}
-                    className={`shrink-0 flex-1 px-6 py-4 font-semibold transition-colors text-center ${
-                      activeTab === "claim"
-                        ? "text-primary border-b-2 border-primary bg-primary/5"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Claim Business
-                  </button>
-                )}
               </div>
 
               <div className="p-6 md:p-8">
@@ -743,36 +732,6 @@ export default function BusinessDetail() {
                     )}
 
                     {Object.keys(hours).length > 0 && <HoursBlock hours={hours} />}
-                  </section>
-                )}
-
-                {/* Claim Tab */}
-                {activeTab === "claim" && !detail.isClaimed && isAuthenticated && (
-                  <section>
-                    <h2 className="text-xl font-bold mb-4 font-display">Claim This Business</h2>
-                    <div className="space-y-6">
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-900">
-                          <p className="font-semibold mb-1">Own this business?</p>
-                          <p>Click the button below to claim it. You'll be able to manage the listing, update information, and respond to reviews.</p>
-                        </div>
-                      </div>
-                      <div className="space-y-4 pt-4">
-                        <div>
-                          <h3 className="font-semibold mb-2">Business Name</h3>
-                          <p className="text-muted-foreground">{business.name}</p>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold mb-2">Your Account</h3>
-                          <p className="text-muted-foreground">{user?.email || user?.username}</p>
-                        </div>
-                      </div>
-                      <Button onClick={() => claimBiz({ id: businessId })} disabled={isClaimingBusiness} size="lg" className="w-full">
-                        {isClaimingBusiness ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Claiming...</> : "Claim This Business"}
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center">By claiming, you confirm you are authorized to manage this business.</p>
-                    </div>
                   </section>
                 )}
 
@@ -1029,6 +988,45 @@ export default function BusinessDetail() {
                     )}
                   </div>
                 </>
+              )}
+
+              {!detail.isClaimed && isAuthenticated && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  {!showClaimPanel ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowClaimPanel(true)}
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 w-full justify-center transition-colors"
+                    >
+                      <Building2 className="w-3 h-3" /> Own this business? Claim it
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground text-center leading-relaxed">
+                        Claim <span className="font-semibold text-foreground">{business.name}</span> as{" "}
+                        <span className="font-medium">{user?.email || user?.username}</span>
+                      </p>
+                      <Button
+                        onClick={() => claimBiz({ id: businessId })}
+                        disabled={isClaimingBusiness}
+                        size="sm"
+                        className="w-full rounded-xl"
+                      >
+                        {isClaimingBusiness
+                          ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> Claiming…</>
+                          : "Claim This Business"}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">By claiming, you confirm you are authorized to manage this business.</p>
+                      <button
+                        type="button"
+                        onClick={() => setShowClaimPanel(false)}
+                        className="text-xs text-muted-foreground hover:text-foreground w-full text-center transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="mt-5 pt-4 border-t border-border flex items-center justify-center">
