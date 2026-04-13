@@ -1308,7 +1308,13 @@ export default function ManageBusiness() {
       toast({ title: "Please enter an address first.", variant: "destructive" });
       return;
     }
-    const query = [address, municipality, "Puerto Rico"].filter(Boolean).join(", ");
+    // Sanitize: take only the first line, strip ZIP codes, state abbrev, country names
+    const streetLine = address
+      .split(/[\n,]+/)[0]                          // first line or first comma segment
+      .replace(/\b(PR|US|USA|United States)\b/gi, "")
+      .replace(/\b\d{5}(-\d{4})?\b/g, "")         // strip ZIP codes
+      .trim();
+    const query = [streetLine, municipality, "Puerto Rico"].filter(Boolean).join(", ");
     setAddressVerifyState("loading");
     setVerifiedAddressDisplay(null);
     try {
