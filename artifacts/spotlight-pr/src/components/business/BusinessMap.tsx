@@ -1,19 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import mapUnavailableImage from "@assets/image_1776081173066.png";
-
-const pinIcon = L.divIcon({
-  html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36">
-    <path fill="#0d9488" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-    <circle fill="white" cx="12" cy="9" r="2.5"/>
-  </svg>`,
-  className: "",
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-  popupAnchor: [0, -38],
-});
+import { MapPin } from "lucide-react";
 
 interface BusinessMapProps {
   address?: string | null;
@@ -25,9 +11,9 @@ interface BusinessMapProps {
 const API_BASE = import.meta.env.BASE_URL || "/";
 
 export function BusinessMap({ address, municipality, businessName, businessId }: BusinessMapProps) {
-  const [coords, setCoords] = useState<[number, number] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [geocodeFailed, setGeocodeFailed] = useState(false);
+  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
 
   const locationQuery = [address, municipality, "Puerto Rico"].filter(Boolean).join(", ");
 
@@ -35,21 +21,31 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
     if (!locationQuery) return;
     setIsLoading(true);
     setGeocodeFailed(false);
+    setMapImageUrl(null);
 
-    fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationQuery)}&format=json&limit=1`,
-      { headers: { "User-Agent": "SpotlightPR/1.0 (spotlightpuertorico.com)" } }
-    )
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.[0]) {
-          setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-        } else {
+    const geocode = async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationQuery)}&format=json&limit=1`);
+        const data = await res.json();
+        if (!data?.[0]) {
           setGeocodeFailed(true);
+          return;
         }
-      })
-      .catch(() => setGeocodeFailed(true))
-      .finally(() => setIsLoading(false));
+        const lat = Number.parseFloat(data[0].lat);
+        const lon = Number.parseFloat(data[0].lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          setGeocodeFailed(true);
+          return;
+        }
+        setMapImageUrl(`https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=15&size=900x420&scale=2&markers=color:0d9488%7C${lat},${lon}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""}`);
+      } catch {
+        setGeocodeFailed(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void geocode();
   }, [locationQuery]);
 
   const googleMapsUrl = `https://maps.google.com/?q=${encodeURIComponent(locationQuery)}`;
@@ -63,37 +59,28 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
         <div className="h-52 bg-muted/60 animate-pulse flex items-center justify-center">
           <p className="text-muted-foreground text-sm">Loading map…</p>
         </div>
-      ) : coords ? (
-        <div className="h-52 relative z-0">
-          <MapContainer
-            center={coords}
-            zoom={15}
-            style={{ height: "100%", width: "100%" }}
-            zoomControl={false}
-            scrollWheelZoom={false}
-            dragging={false}
-            attributionControl={false}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={coords} icon={pinIcon}>
-              <Popup className="text-sm font-semibold">{businessName}</Popup>
-            </Marker>
-          </MapContainer>
-        </div>
-      ) : geocodeFailed ? (
-        <div className="relative h-52 bg-muted/40">
-          <img
-            src={mapUnavailableImage}
-            alt="Map unavailable for this address"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/15">
-            <div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow">
-              Map unavailable for this address
-            </div>
+      ) : mapImageUrl ? (
+        <a
+          href={googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block h-52 relative group"
+          onClick={() => {
+            if (businessId && businessId > 0) {
+              fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
+            }
+          }}
+        >
+          <img src={mapImageUrl} alt={`Map of ${locationQuery}`} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+          <div className="absolute bottom-3 left-3 bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-700 shadow flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            View on map
           </div>
+        </a>
+      ) : geocodeFailed ? (
+        <div className="h-52 flex items-center justify-center bg-muted/40 text-muted-foreground text-sm px-4 text-center">
+          Unable to load the map image for this address
         </div>
       ) : null}
 
