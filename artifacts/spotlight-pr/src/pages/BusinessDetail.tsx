@@ -412,14 +412,26 @@ export default function BusinessDetail() {
       .finally(() => setMediaLoading(false));
   }, [businessId]);
 
+  useEffect(() => {
+    if (!businessId) return;
+    setMenuItemsLoading(true);
+    fetch(`${API_BASE}api/dashboard/businesses/${businessId}/menu-items`)
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setMenuItems(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setMenuItemsLoading(false));
+  }, [businessId]);
+
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "claim">("about");
+  const [activeTab, setActiveTab] = useState<"about" | "reviews" | "claim" | "menu">("about");
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [menuItemsLoading, setMenuItemsLoading] = useState(false);
 
   const { mutateAsync: submitReview } = useCreateReview();
   const { mutate: claimBiz, isPending: isClaimingBusiness } = useClaimBusiness({
@@ -610,12 +622,12 @@ export default function BusinessDetail() {
           <div className="lg:col-span-2 space-y-8">
             {/* Tabs */}
             <div className="bg-card rounded-2xl shadow-sm border border-border">
-              <div className="flex border-b border-border">
+              <div className="flex border-b border-border overflow-x-auto">
                 {(["about", "reviews"] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 px-6 py-4 font-semibold transition-colors text-center capitalize ${
+                    className={`shrink-0 flex-1 px-6 py-4 font-semibold transition-colors text-center capitalize ${
                       activeTab === tab
                         ? "text-primary border-b-2 border-primary bg-primary/5"
                         : "text-muted-foreground hover:text-foreground"
@@ -624,10 +636,22 @@ export default function BusinessDetail() {
                     {tab === "reviews" ? `Reviews (${business.reviewCount || 0})` : tab}
                   </button>
                 ))}
+                {!menuItemsLoading && menuItems.length > 0 && (
+                  <button
+                    onClick={() => setActiveTab("menu")}
+                    className={`shrink-0 flex-1 px-6 py-4 font-semibold transition-colors text-center ${
+                      activeTab === "menu"
+                        ? "text-primary border-b-2 border-primary bg-primary/5"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Menu
+                  </button>
+                )}
                 {!detail.isClaimed && isAuthenticated && (
                   <button
                     onClick={() => setActiveTab("claim")}
-                    className={`flex-1 px-6 py-4 font-semibold transition-colors text-center ${
+                    className={`shrink-0 flex-1 px-6 py-4 font-semibold transition-colors text-center ${
                       activeTab === "claim"
                         ? "text-primary border-b-2 border-primary bg-primary/5"
                         : "text-muted-foreground hover:text-foreground"
@@ -749,6 +773,56 @@ export default function BusinessDetail() {
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">By claiming, you confirm you are authorized to manage this business.</p>
                     </div>
+                  </section>
+                )}
+
+                {/* Menu Tab */}
+                {activeTab === "menu" && (
+                  <section>
+                    <h2 className="text-xl font-bold mb-6 font-display">Menu</h2>
+                    {menuItemsLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {menuItems.map((item: any) => (
+                          <div key={item.id} className="flex gap-4 bg-muted/30 border border-border rounded-2xl p-4 hover:shadow-md transition-shadow">
+                            {item.imageUrl && (
+                              <img
+                                src={item.imageUrl}
+                                alt={item.title}
+                                className="w-20 h-20 rounded-xl object-cover shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-semibold text-foreground leading-snug">{item.title}</p>
+                                {item.price && (
+                                  <span className="shrink-0 text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                                    {item.price}
+                                  </span>
+                                )}
+                              </div>
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground mt-1 leading-relaxed line-clamp-3">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {detail.menuUrl && (
+                      <div className="mt-6 pt-6 border-t border-border">
+                        <a href={detail.menuUrl} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" className="gap-2 rounded-xl">
+                            <Globe className="w-4 h-4" /> {detail.menuTitle || "View Full Menu"}
+                          </Button>
+                        </a>
+                      </div>
+                    )}
                   </section>
                 )}
 
