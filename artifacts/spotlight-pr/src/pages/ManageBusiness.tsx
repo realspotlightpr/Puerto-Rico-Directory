@@ -1125,7 +1125,7 @@ export default function ManageBusiness() {
   const [menuEditId, setMenuEditId] = useState<number | null>(null);
   const [menuEditForm, setMenuEditForm] = useState({ title: "", price: "", description: "", imageUrl: "" });
 
-  const [addressVerifyState, setAddressVerifyState] = useState<"idle" | "loading" | "verified" | "failed">("idle");
+  const [addressVerifyState, setAddressVerifyState] = useState<"idle" | "loading" | "verified" | "suggestion" | "failed">("idle");
   const [verifiedAddressDisplay, setVerifiedAddressDisplay] = useState<string | null>(null);
 
   const loadMediaItems = useCallback(async () => {
@@ -1312,17 +1312,48 @@ export default function ManageBusiness() {
     setAddressVerifyState("loading");
     setVerifiedAddressDisplay(null);
     try {
-      const res = await fetch(
+      const nominatimHeaders = { "User-Agent": "SpotlightPR/1.0" };
+
+      // 1st attempt: exact query restricted to Puerto Rico
+      const res1 = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=pr`,
-        { headers: { "User-Agent": "SpotlightPR/1.0" } }
+        { headers: nominatimHeaders }
       );
-      const data = await res.json();
-      if (data?.[0]?.display_name) {
+      const data1 = await res1.json();
+      if (data1?.[0]?.display_name) {
         setAddressVerifyState("verified");
-        setVerifiedAddressDisplay(data[0].display_name);
-      } else {
-        setAddressVerifyState("failed");
+        setVerifiedAddressDisplay(data1[0].display_name);
+        return;
       }
+
+      // 2nd attempt: same query without country restriction
+      const res2 = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+        { headers: nominatimHeaders }
+      );
+      const data2 = await res2.json();
+      if (data2?.[0]?.display_name) {
+        setAddressVerifyState("suggestion");
+        setVerifiedAddressDisplay(data2[0].display_name);
+        return;
+      }
+
+      // 3rd attempt: just municipality + Puerto Rico as a broad fallback
+      if (municipality) {
+        const fallbackQuery = `${municipality}, Puerto Rico`;
+        const res3 = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fallbackQuery)}&format=json&limit=1`,
+          { headers: nominatimHeaders }
+        );
+        const data3 = await res3.json();
+        if (data3?.[0]?.display_name) {
+          setAddressVerifyState("suggestion");
+          setVerifiedAddressDisplay(data3[0].display_name);
+          return;
+        }
+      }
+
+      setAddressVerifyState("failed");
     } catch {
       setAddressVerifyState("failed");
     }
@@ -1714,6 +1745,7 @@ export default function ManageBusiness() {
                                 setAddressVerifyState("idle");
                                 setVerifiedAddressDisplay(null);
                               }}
+                              onBlur={field.onBlur}
                             />
                           </FormControl>
                           <Button
@@ -1723,6 +1755,8 @@ export default function ManageBusiness() {
                             className={`shrink-0 rounded-xl gap-1.5 text-xs font-semibold px-3 transition-all ${
                               addressVerifyState === "verified"
                                 ? "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                : addressVerifyState === "suggestion"
+                                ? "border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100"
                                 : addressVerifyState === "failed"
                                 ? "border-red-300 text-red-600 bg-red-50 hover:bg-red-100"
                                 : "border-primary/40 text-primary hover:bg-primary/5"
@@ -1734,6 +1768,8 @@ export default function ManageBusiness() {
                               <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…</>
                             ) : addressVerifyState === "verified" ? (
                               <><CheckCircle2 className="w-3.5 h-3.5" /> Verified</>
+                            ) : addressVerifyState === "suggestion" ? (
+                              <><MapPin className="w-3.5 h-3.5" /> Did you mean?</>
                             ) : addressVerifyState === "failed" ? (
                               <><XCircle className="w-3.5 h-3.5" /> Not found</>
                             ) : (
@@ -1747,10 +1783,16 @@ export default function ManageBusiness() {
                             <span><span className="font-semibold">Address found:</span> {verifiedAddressDisplay}</span>
                           </p>
                         )}
+                        {addressVerifyState === "suggestion" && verifiedAddressDisplay && (
+                          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-1 flex items-start gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span><span className="font-semibold">Did you mean:</span> {verifiedAddressDisplay}</span>
+                          </p>
+                        )}
                         {addressVerifyState === "failed" && (
                           <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-1 flex items-start gap-1.5">
                             <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>Address not found on the map. Check the spelling or try adding the municipality.</span>
+                            <span>No similar address found. Check the spelling or try a nearby landmark.</span>
                           </p>
                         )}
                         <FormMessage />
