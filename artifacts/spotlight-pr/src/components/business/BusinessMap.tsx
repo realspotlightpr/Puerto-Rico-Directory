@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import mapUnavailableImage from "@assets/image_1776081173066.png";
 
 const pinIcon = L.divIcon({
   html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36">
@@ -82,8 +83,17 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
           </MapContainer>
         </div>
       ) : geocodeFailed ? (
-        <div className="h-20 flex items-center justify-center bg-muted/40 text-muted-foreground text-sm">
-          Map unavailable for this address
+        <div className="relative h-52 bg-muted/40">
+          <img
+            src={mapUnavailableImage}
+            alt="Map unavailable for this address"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/15">
+            <div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow">
+              Map unavailable for this address
+            </div>
+          </div>
         </div>
       ) : null}
 
