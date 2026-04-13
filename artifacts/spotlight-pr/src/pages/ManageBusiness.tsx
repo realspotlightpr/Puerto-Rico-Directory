@@ -1125,6 +1125,9 @@ export default function ManageBusiness() {
   const [menuEditId, setMenuEditId] = useState<number | null>(null);
   const [menuEditForm, setMenuEditForm] = useState({ title: "", price: "", description: "", imageUrl: "" });
 
+  const [addressVerifyState, setAddressVerifyState] = useState<"idle" | "loading" | "verified" | "failed">("idle");
+  const [verifiedAddressDisplay, setVerifiedAddressDisplay] = useState<string | null>(null);
+
   const loadMediaItems = useCallback(async () => {
     if (!id || !isAuthenticated) return;
     setMediaLoading(true);
@@ -1296,6 +1299,33 @@ export default function ManageBusiness() {
     mediaForm.setValue(field, aiGenPreview);
     setAiGenOpen(false);
     toast({ title: aiGenType === "logo" ? "AI logo applied!" : "AI cover photo applied!", description: "Click Save Media to keep it." });
+  };
+
+  const verifyAddress = async () => {
+    const address = detailsForm.getValues("address");
+    const municipality = detailsForm.getValues("municipality");
+    if (!address && !municipality) {
+      toast({ title: "Please enter an address first.", variant: "destructive" });
+      return;
+    }
+    const query = [address, municipality, "Puerto Rico"].filter(Boolean).join(", ");
+    setAddressVerifyState("loading");
+    setVerifiedAddressDisplay(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=pr`,
+        { headers: { "User-Agent": "SpotlightPR/1.0" } }
+      );
+      const data = await res.json();
+      if (data?.[0]?.display_name) {
+        setAddressVerifyState("verified");
+        setVerifiedAddressDisplay(data[0].display_name);
+      } else {
+        setAddressVerifyState("failed");
+      }
+    } catch {
+      setAddressVerifyState("failed");
+    }
   };
 
   const enhanceLogo = async () => {
@@ -1673,7 +1703,56 @@ export default function ManageBusiness() {
                     <FormField control={detailsForm.control} name="address" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Street Address</FormLabel>
-                        <FormControl><Input className="rounded-xl" placeholder="123 Calle Principal" {...field} /></FormControl>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              className="rounded-xl"
+                              placeholder="123 Calle Principal"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setAddressVerifyState("idle");
+                                setVerifiedAddressDisplay(null);
+                              }}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className={`shrink-0 rounded-xl gap-1.5 text-xs font-semibold px-3 transition-all ${
+                              addressVerifyState === "verified"
+                                ? "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                : addressVerifyState === "failed"
+                                ? "border-red-300 text-red-600 bg-red-50 hover:bg-red-100"
+                                : "border-primary/40 text-primary hover:bg-primary/5"
+                            }`}
+                            onClick={verifyAddress}
+                            disabled={addressVerifyState === "loading"}
+                          >
+                            {addressVerifyState === "loading" ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…</>
+                            ) : addressVerifyState === "verified" ? (
+                              <><CheckCircle2 className="w-3.5 h-3.5" /> Verified</>
+                            ) : addressVerifyState === "failed" ? (
+                              <><XCircle className="w-3.5 h-3.5" /> Not found</>
+                            ) : (
+                              <><MapPin className="w-3.5 h-3.5" /> Verify</>
+                            )}
+                          </Button>
+                        </div>
+                        {addressVerifyState === "verified" && verifiedAddressDisplay && (
+                          <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 mt-1 flex items-start gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span><span className="font-semibold">Address found:</span> {verifiedAddressDisplay}</span>
+                          </p>
+                        )}
+                        {addressVerifyState === "failed" && (
+                          <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-1 flex items-start gap-1.5">
+                            <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>Address not found on the map. Check the spelling or try adding the municipality.</span>
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )} />
