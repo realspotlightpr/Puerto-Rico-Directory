@@ -13,7 +13,7 @@ const API_BASE = import.meta.env.BASE_URL || "/";
 export function BusinessMap({ address, municipality, businessName, businessId }: BusinessMapProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [geocodeFailed, setGeocodeFailed] = useState(false);
-  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   const locationQuery = [address, municipality, "Puerto Rico"].filter(Boolean).join(", ");
 
@@ -21,11 +21,13 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
     if (!locationQuery) return;
     setIsLoading(true);
     setGeocodeFailed(false);
-    setMapImageUrl(null);
+    setCoords(null);
 
     const geocode = async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationQuery)}&format=json&limit=1`);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationQuery)}&format=json&limit=1&countrycodes=us`
+        );
         const data = await res.json();
         if (!data?.[0]) {
           setGeocodeFailed(true);
@@ -37,7 +39,7 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
           setGeocodeFailed(true);
           return;
         }
-        setMapImageUrl(`https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=15&size=900x420&scale=2&markers=color:0d9488%7C${lat},${lon}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? ""}`);
+        setCoords({ lat, lon });
       } catch {
         setGeocodeFailed(true);
       } finally {
@@ -49,7 +51,17 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
   }, [locationQuery]);
 
   const googleMapsUrl = `https://maps.google.com/?q=${encodeURIComponent(locationQuery)}`;
-  const appleMapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(locationQuery)}`;
+  const appleMapsUrl  = `https://maps.apple.com/?q=${encodeURIComponent(locationQuery)}`;
+
+  const trackClick = () => {
+    if (businessId && businessId > 0) {
+      fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(() => {});
+    }
+  };
+
+  const osmEmbed = coords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lon - 0.006},${coords.lat - 0.004},${coords.lon + 0.006},${coords.lat + 0.004}&layer=mapnik&marker=${coords.lat},${coords.lon}`
+    : null;
 
   if (!address && !municipality) return null;
 
@@ -59,20 +71,21 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
         <div className="h-52 bg-muted/60 animate-pulse flex items-center justify-center">
           <p className="text-muted-foreground text-sm">Loading map…</p>
         </div>
-      ) : mapImageUrl ? (
+      ) : osmEmbed ? (
         <a
           href={googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="block h-52 relative group"
-          onClick={() => {
-            if (businessId && businessId > 0) {
-              fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
-            }
-          }}
+          onClick={trackClick}
         >
-          <img src={mapImageUrl} alt={`Map of ${locationQuery}`} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+          <iframe
+            src={osmEmbed}
+            title={`Map of ${businessName}`}
+            className="w-full h-full border-0 pointer-events-none"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           <div className="absolute bottom-3 left-3 bg-white/90 rounded-full px-3 py-1.5 text-xs font-semibold text-slate-700 shadow flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-primary" />
             View on map
@@ -80,7 +93,7 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
         </a>
       ) : geocodeFailed ? (
         <div className="h-52 flex items-center justify-center bg-muted/40 text-muted-foreground text-sm px-4 text-center">
-          Unable to load the map image for this address
+          Unable to load the map for this address
         </div>
       ) : null}
 
@@ -91,11 +104,7 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => {
-              if (businessId && businessId > 0) {
-                fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
-              }
-            }}
+            onClick={trackClick}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#4285F4] hover:bg-[#3367d6] text-white text-sm font-semibold transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 48 48" fill="none">
@@ -108,11 +117,7 @@ export function BusinessMap({ address, municipality, businessName, businessId }:
             href={appleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => {
-              if (businessId && businessId > 0) {
-                fetch(`${API_BASE}api/businesses/${businessId}/track-maps-click`, { method: "POST" }).catch(err => console.error("Failed to track maps click", err));
-              }
-            }}
+            onClick={trackClick}
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold transition-colors"
           >
             <svg width="13" height="16" viewBox="0 0 13 16" fill="white">

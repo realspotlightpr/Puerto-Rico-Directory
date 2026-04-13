@@ -1322,7 +1322,7 @@ export default function ManageBusiness() {
 
       // 1st attempt: exact query restricted to Puerto Rico
       const res1 = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=pr`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=us`,
         { headers: nominatimHeaders }
       );
       const data1 = await res1.json();
