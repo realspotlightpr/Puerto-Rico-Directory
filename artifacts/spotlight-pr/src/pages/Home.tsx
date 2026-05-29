@@ -58,8 +58,7 @@ interface SliderImage {
 }
 
 function TownTile({ town, index }: { town: typeof FEATURED_TOWNS[0]; index: number }) {
-  const { data } = useListBusinesses({ municipality: town.name, limit: 1 });
-  const count = data?.total ?? null;
+  const count = null;
 
   return (
     <motion.div
