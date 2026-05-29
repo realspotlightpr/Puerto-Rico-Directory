@@ -5,9 +5,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUNICIPALITIES } from "@/lib/constants";
-import { useListBusinesses, useListCategories } from "@workspace/api-client-react";
+import { supabase } from "@/lib/supabase";
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { useDebounce } from "@/hooks/use-debounce";
+
+type BusinessRow = {
+  id: number;
+  slug: string | null;
+  name: string;
+  description: string | null;
+  category_name: string | null;
+  municipality: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  logo_url: string | null;
+  cover_url: string | null;
+  featured: boolean | null;
+  status: string | null;
+  average_rating: number | null;
+  review_count: number | null;
+  created_at: string | null;
+};
+
+const mapBusiness = (b: BusinessRow) => ({
+  id: b.id,
+  slug: b.slug,
+  name: b.name,
+  description: b.description,
+  categoryName: b.category_name,
+  municipality: b.municipality,
+  address: b.address,
+  phone: b.phone,
+  email: b.email,
+  website: b.website,
+  logoUrl: b.logo_url,
+  coverUrl: b.cover_url,
+  featured: !!b.featured,
+  status: b.status ?? "approved",
+  averageRating: Number(b.average_rating ?? 0),
+  reviewCount: Number(b.review_count ?? 0),
+  createdAt: b.created_at ?? new Date().toISOString(),
+});
 
 interface QuickFilter {
   label: string;
@@ -59,16 +99,53 @@ export default function Directory() {
     }
   }, [debouncedSearch, category, municipality, featured, page]);
 
-  const { data: categoriesData } = useListCategories();
-  
-  const { data, isLoading, isError } = useListBusinesses({
-    search: debouncedSearch || undefined,
-    category: category !== "all" ? category : undefined,
-    municipality: municipality !== "all" ? municipality : undefined,
-    featured: featured === "true" ? true : undefined,
-    page,
-    limit: 12
-  });
+  const [categoriesData, setCategoriesData] = useState<{ categories: { id: string; name: string }[] }>({ categories: [] });
+  const [data, setData] = useState<{ businesses: any[]; total: number; totalPages: number }>({ businesses: [], total: 0, totalPages: 1 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        setIsError(false);
+
+        let query = supabase
+          .from("businesses")
+          .select("*", { count: "exact" })
+          .eq("status", "approved");
+
+        if (debouncedSearch) query = query.ilike("name", `%${debouncedSearch}%`);
+        if (municipality !== "all") query = query.eq("municipality", municipality);
+        if (featured === "true") query = query.eq("featured", true);
+        if (category !== "all") query = query.eq("category_name", category);
+
+        const limit = 12;
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        const { data: rows, error, count } = await query.order("created_at", { ascending: false }).range(from, to);
+        if (error) throw error;
+
+        const mapped = (rows ?? []).map((r: any) => mapBusiness(r as BusinessRow));
+        setData({
+          businesses: mapped,
+          total: count ?? mapped.length,
+          totalPages: Math.max(1, Math.ceil((count ?? mapped.length) / limit)),
+        });
+
+        const distinct = Array.from(new Set((rows ?? []).map((r: any) => r.category_name).filter(Boolean)));
+        setCategoriesData({ categories: distinct.map((name) => ({ id: String(name), name: String(name) })) });
+      } catch (e) {
+        console.error("Failed loading directory from Supabase", e);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
+  }, [debouncedSearch, category, municipality, featured, page]);
 
   const handleSurpriseMe = async () => {
     setSurpriseMeLoading(true);
