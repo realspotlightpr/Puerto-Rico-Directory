@@ -5,9 +5,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUNICIPALITIES } from "@/lib/constants";
-import { useListBusinesses } from "@workspace/api-client-react";
+import { supabase } from "@/lib/supabase";
 import { BusinessCard } from "@/components/business/BusinessCard";
 import { motion } from "framer-motion";
+
+type BusinessRow = {
+  id: number;
+  slug: string | null;
+  name: string;
+  description: string | null;
+  category_name: string | null;
+  municipality: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  logo_url: string | null;
+  cover_url: string | null;
+  featured: boolean | null;
+  status: string | null;
+  average_rating: number | null;
+  review_count: number | null;
+  created_at: string | null;
+};
+
+const mapBusiness = (b: BusinessRow) => ({
+  id: b.id,
+  slug: b.slug,
+  name: b.name,
+  description: b.description,
+  categoryName: b.category_name,
+  municipality: b.municipality,
+  address: b.address,
+  phone: b.phone,
+  email: b.email,
+  website: b.website,
+  logoUrl: b.logo_url,
+  coverUrl: b.cover_url,
+  featured: !!b.featured,
+  status: b.status ?? "approved",
+  averageRating: Number(b.average_rating ?? 0),
+  reviewCount: Number(b.review_count ?? 0),
+  createdAt: b.created_at ?? new Date().toISOString(),
+});
 
 interface SliderImage {
   id: number;
@@ -128,14 +168,51 @@ export default function Home() {
   const [sliderLoading, setSliderLoading] = useState(true);
   const [randomDiscoverBusinesses, setRandomDiscoverBusinesses] = useState<any[]>([]);
 
-  const { data: featuredData, isLoading: featuredLoading } = useListBusinesses({ 
-    featured: true, 
-    limit: 20 
-  });
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredData, setFeaturedData] = useState<{ businesses: any[] }>({ businesses: [] });
 
-  const { data: allBusinessesData, isLoading: allBusinessesLoading } = useListBusinesses({ 
-    limit: 50 
-  });
+  const [allBusinessesLoading, setAllBusinessesLoading] = useState(true);
+  const [allBusinessesData, setAllBusinessesData] = useState<{ businesses: any[] }>({ businesses: [] });
+
+  useEffect(() => {
+    const loadBusinesses = async () => {
+      try {
+        setFeaturedLoading(true);
+        setAllBusinessesLoading(true);
+
+        const [{ data: featuredRows, error: featuredErr }, { data: allRows, error: allErr }] = await Promise.all([
+          supabase
+            .from("businesses")
+            .select("*")
+            .eq("status", "approved")
+            .eq("featured", true)
+            .order("created_at", { ascending: false })
+            .limit(20),
+          supabase
+            .from("businesses")
+            .select("*")
+            .eq("status", "approved")
+            .order("created_at", { ascending: false })
+            .limit(50),
+        ]);
+
+        if (featuredErr) throw featuredErr;
+        if (allErr) throw allErr;
+
+        setFeaturedData({ businesses: (featuredRows ?? []).map(mapBusiness) });
+        setAllBusinessesData({ businesses: (allRows ?? []).map(mapBusiness) });
+      } catch (err) {
+        console.error("Failed loading businesses from Supabase:", err);
+        setFeaturedData({ businesses: [] });
+        setAllBusinessesData({ businesses: [] });
+      } finally {
+        setFeaturedLoading(false);
+        setAllBusinessesLoading(false);
+      }
+    };
+
+    loadBusinesses();
+  }, []);
 
   // Randomize all businesses for "Discover Something New" section
   useEffect(() => {
@@ -143,7 +220,7 @@ export default function Home() {
       const shuffled = [...allBusinessesData.businesses].sort(() => Math.random() - 0.5);
       setRandomDiscoverBusinesses(shuffled.slice(0, Math.min(6, shuffled.length)));
     }
-  }, [allBusinessesData?.businesses]);
+  }, [allBusinessesData.businesses]);
 
   // Fetch slider settings
   useEffect(() => {
