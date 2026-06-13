@@ -47,16 +47,36 @@ const AuthContext = createContext<AuthState>({
   getToken: async () => null,
 });
 
-async function fetchAppUser(token: string): Promise<AuthUser | null> {
+async function fetchAppUser(
+  supabase: SupabaseClient,
+  supabaseUser: SupabaseUser,
+): Promise<AuthUser | null> {
   try {
-    const res = await fetch("/api/auth/user", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.isAuthenticated ? (data.user as AuthUser) : null;
+    const { data: profile } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", supabaseUser.id)
+      .maybeSingle();
+
+    const meta = (supabaseUser.user_metadata ?? {}) as Record<string, unknown>;
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? undefined,
+      username: (profile?.username as string) ?? undefined,
+      firstName: (profile?.first_name as string) ?? (meta.first_name as string) ?? undefined,
+      lastName: (profile?.last_name as string) ?? (meta.last_name as string) ?? undefined,
+      profileImage: (profile?.profile_image_url as string) ?? undefined,
+      role: (profile?.role as AuthUser["role"]) ?? "user",
+      emailVerified: Boolean(supabaseUser.email_confirmed_at),
+      createdAt: (profile?.created_at as string) ?? supabaseUser.created_at,
+    };
   } catch {
-    return null;
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? undefined,
+      role: "user",
+      emailVerified: Boolean(supabaseUser.email_confirmed_at),
+    };
   }
 }
 
@@ -75,9 +95,9 @@ export function AuthProvider({
 
   const refreshAppUser = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (token) {
-      const u = await fetchAppUser(token);
+    const sUser = data.session?.user;
+    if (sUser) {
+      const u = await fetchAppUser(supabase, sUser);
       if (u) setAppUser(u);
     }
   }, [supabase]);
@@ -87,8 +107,8 @@ export function AuthProvider({
       const s = data.session ?? null;
       setSession(s);
       setSupabaseUser(s?.user ?? null);
-      if (s?.access_token) {
-        const u = await fetchAppUser(s.access_token);
+      if (s?.user) {
+        const u = await fetchAppUser(supabase, s.user);
         setAppUser(u);
       }
       setIsLoading(false);
@@ -98,8 +118,8 @@ export function AuthProvider({
       async (_event, s) => {
         setSession(s);
         setSupabaseUser(s?.user ?? null);
-        if (s?.access_token) {
-          const u = await fetchAppUser(s.access_token);
+        if (s?.user) {
+          const u = await fetchAppUser(supabase, s.user);
           setAppUser(u);
         } else {
           setAppUser(null);

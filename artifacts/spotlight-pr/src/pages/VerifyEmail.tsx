@@ -3,6 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { Link } from "wouter";
 import { Mail, RefreshCw, CheckCircle2, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 
 export default function VerifyEmail() {
   const { user, supabaseUser, logout } = useAuth();
@@ -10,19 +11,19 @@ export default function VerifyEmail() {
   const [resent, setResent] = useState(false);
   const [resendError, setResendError] = useState(false);
 
-  // Resend verification email via backend
+  const email = user?.email ?? supabaseUser?.email;
+
+  // Resend verification email via Supabase Auth
   async function resendVerification() {
+    if (!email) {
+      setResendError(true);
+      return;
+    }
     setResending(true);
     setResendError(false);
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}api/auth/resend-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to resend email");
-      }
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
       setResent(true);
     } catch {
       setResendError(true);
@@ -30,8 +31,6 @@ export default function VerifyEmail() {
       setResending(false);
     }
   }
-
-  const email = user?.email ?? supabaseUser?.email;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-emerald-50 flex items-center justify-center p-4">

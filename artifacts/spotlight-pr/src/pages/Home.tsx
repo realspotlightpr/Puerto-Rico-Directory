@@ -193,9 +193,9 @@ export default function Home() {
   const handleSurpriseMe = async () => {
     setSurpriseMeLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/businesses/random`);
-      if (res.ok) {
-        const business = await res.json();
+      const pool = allBusinessesData?.businesses ?? [];
+      if (pool.length > 0) {
+        const business = pool[Math.floor(Math.random() * pool.length)] as any;
         setLocation(`/businesses/${business.slug || business.id}`);
       }
     } catch {
@@ -209,7 +209,7 @@ export default function Home() {
     <div className="w-full flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative w-full py-24 lg:py-32 overflow-hidden flex items-center justify-center group">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0a2540] via-[#0e3b2e] to-[#0a1f3a]">
           {/* Image carousel */}
           {sliderImages.map((img, idx) => (
             <motion.img
@@ -222,7 +222,7 @@ export default function Home() {
               className="absolute w-full h-full object-cover"
             />
           ))}
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/65" />
         </div>
 
         {/* Navigation arrows */}

@@ -8,6 +8,23 @@ export type BodyType<T> = T;
 
 export type AuthTokenGetter = () => Promise<string | null> | string | null;
 
+/**
+ * A handler that fully services an `/api/...` request without hitting the
+ * network. When registered via `setApiHandler`, `customFetch` routes every
+ * matching request to it and returns its result. Used to run the app directly
+ * against Supabase instead of the Express API server.
+ */
+export interface ApiHandlerRequest {
+  method: string;
+  /** Pathname only, e.g. "/api/businesses/12/reviews" */
+  path: string;
+  /** Parsed query-string params */
+  query: Record<string, string>;
+  /** Parsed JSON body (undefined for GET/DELETE without a body) */
+  body: unknown;
+}
+export type ApiHandler = (req: ApiHandlerRequest) => Promise<unknown>;
+
 const NO_BODY_STATUS = new Set([204, 205]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
@@ -17,6 +34,16 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _apiHandler: ApiHandler | null = null;
+
+/**
+ * Register a handler that services `/api/...` requests locally (e.g. against
+ * Supabase). When set, `customFetch` bypasses the network for those paths.
+ * Pass `null` to clear.
+ */
+export function setApiHandler(handler: ApiHandler | null): void {
+  _apiHandler = handler;
+}
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -323,6 +350,38 @@ export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
+  // Local API handler (e.g. Supabase) — service matching /api requests without
+  // hitting the network.
+  if (_apiHandler) {
+    const rawUrl = resolveUrl(input);
+    const handlerMethod = resolveMethod(input, options.method);
+    const qIndex = rawUrl.indexOf("?");
+    const pathname = qIndex >= 0 ? rawUrl.slice(0, qIndex) : rawUrl;
+    if (pathname.startsWith("/api/") || pathname === "/api") {
+      const query: Record<string, string> = {};
+      if (qIndex >= 0) {
+        new URLSearchParams(rawUrl.slice(qIndex + 1)).forEach((v, k) => {
+          query[k] = v;
+        });
+      }
+      let parsedBody: unknown = undefined;
+      const rawBody = (options as RequestInit).body;
+      if (typeof rawBody === "string" && rawBody.length > 0) {
+        try {
+          parsedBody = JSON.parse(rawBody);
+        } catch {
+          parsedBody = rawBody;
+        }
+      }
+      return (await _apiHandler({
+        method: handlerMethod,
+        path: pathname,
+        query,
+        body: parsedBody,
+      })) as T;
+    }
+  }
+
   input = applyBaseUrl(input);
   const { responseType = "auto", headers: headersInit, ...init } = options;
 
