@@ -115,17 +115,23 @@ export function AuthProvider({
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      (_event, s) => {
         setSession(s);
         setSupabaseUser(s?.user ?? null);
-        if (s?.user) {
-          const u = await fetchAppUser(supabase, s.user);
-          setAppUser(u);
-        } else {
-          setAppUser(null);
-        }
-        setIsLoading(false);
         if (s) setShowAuthModal(false);
+        // Defer Supabase DB calls: running them synchronously inside the
+        // onAuthStateChange callback deadlocks supabase-js, because the auth
+        // lock is held while the callback runs. setTimeout lets the lock
+        // release first so signInWithPassword can resolve.
+        setTimeout(async () => {
+          if (s?.user) {
+            const u = await fetchAppUser(supabase, s.user);
+            setAppUser(u);
+          } else {
+            setAppUser(null);
+          }
+          setIsLoading(false);
+        }, 0);
       },
     );
 
