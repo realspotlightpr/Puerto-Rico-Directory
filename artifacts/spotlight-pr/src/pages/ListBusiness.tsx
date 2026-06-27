@@ -11,13 +11,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUNICIPALITIES } from "@/lib/constants";
-import { useListCategories, useCreateBusiness } from "@workspace/api-client-react";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { Checkbox } from "@/components/ui/checkbox";
+
+function slugify(name: string): string {
+  const base = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  const suffix = Math.random().toString(36).slice(2, 7);
+  return `${base || "business"}-${suffix}`;
+}
 
 const formSchema = z.object({
   ownerName: z.string().min(2, "Please enter your full name."),
@@ -164,8 +176,22 @@ export default function ListBusiness() {
     staffSize: "",
   });
 
-  const { data: categoriesData } = useListCategories();
-  const { mutateAsync: createBusiness, isPending } = useCreateBusiness();
+  const [categoriesData, setCategoriesData] = useState<{ categories: { id: number; name: string }[] }>({ categories: [] });
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name");
+      if (active && !error && data) {
+        setCategoriesData({ categories: data as { id: number; name: string }[] });
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -253,43 +279,62 @@ export default function ListBusiness() {
     if (step !== STEPS.length) {
       return;
     }
-    try {
-      const result = await createBusiness({ data: data as any });
-
-      // For authenticated users: redirect as before
-      if (isAuthenticated) {
-        toast({
-          title: "Listing submitted!",
-          description: "Your business is pending review. We'll be in touch soon.",
-        });
-        setLocation("/dashboard");
-        return;
-      }
-
-      // For guest users: show the success screen
-      setSuccessInfo({
-        businessName: data.name,
-        ownerEmail: data.ownerContactEmail,
-        accountCreated: (result as any)?.accountCreated ?? true,
-      });
-    } catch (err: any) {
-      const body = (err?.data ?? null) as any;
-
-      if (body?.code === "ACCOUNT_EXISTS") {
-        toast({
-          title: "Account already exists",
-          description: "An account with this email already exists. Please log in to submit your business.",
-          variant: "destructive",
-          duration: 8000,
-        });
-        return;
-      }
-
+    if (!isAuthenticated) {
       toast({
-        title: "Submission failed",
-        description: body?.error ?? "Something went wrong. Please try again.",
+        title: "Please log in first",
+        description: "You need an account to submit a business. Log in or sign up, then submit.",
         variant: "destructive",
       });
+      openAuthModal();
+      return;
+    }
+    setIsPending(true);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData.user?.id;
+      if (!uid) {
+        toast({ title: "Please log in first", description: "Your session expired. Log in and try again.", variant: "destructive" });
+        openAuthModal();
+        return;
+      }
+
+      const insert = {
+        name: data.name,
+        slug: slugify(data.name),
+        description: data.description ?? "",
+        category_id: data.categoryId || null,
+        municipality: data.municipality,
+        address: data.hasPhysicalLocation ? (data.address || null) : null,
+        phone: data.phone || null,
+        email: data.email || null,
+        website: data.website || null,
+        logo_url: data.logoUrl || null,
+        cover_url: data.coverUrl || null,
+        owner_id: uid,
+        owner_name: data.ownerName || null,
+        owner_phone: data.ownerPhone || null,
+        owner_contact_email: data.ownerContactEmail || null,
+        is_claimed: true,
+        source: "user_submitted",
+        status: "pending",
+      };
+
+      const { error: insertError } = await supabase.from("businesses").insert(insert);
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Listing submitted!",
+        description: "Your business is pending review. We'll be in touch soon.",
+      });
+      setLocation("/dashboard");
+    } catch (err: any) {
+      toast({
+        title: "Submission failed",
+        description: err?.message ?? "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPending(false);
     }
   };
 
