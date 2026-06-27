@@ -2840,11 +2840,6 @@ function SliderSettingsSection() {
     fetchSliders();
   }, []);
 
-  useEffect(() => {
-    if (section === "email-logs" && isAdmin) {
-      fetchEmailLogs();
-    }
-  }, [section, emailLogsOffset, emailLogsStatusFilter, emailLogsTypeFilter]);
 
   const fetchSliders = async () => {
     try {
@@ -2861,29 +2856,6 @@ function SliderSettingsSection() {
     }
   };
 
-  const fetchEmailLogs = async () => {
-    setEmailLogsLoading(true);
-    try {
-      const token = useAuth().getToken ? await useAuth().getToken() : "";
-      const params = new URLSearchParams({ limit: "50", offset: emailLogsOffset.toString() });
-      if (emailLogsStatusFilter) params.append("status", emailLogsStatusFilter);
-      if (emailLogsTypeFilter) params.append("emailType", emailLogsTypeFilter);
-      
-      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/email-logs?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const { logs, total } = await res.json();
-        setEmailLogs(logs);
-        setEmailLogsTotal(total);
-      }
-    } catch (err) {
-      console.error("Failed to fetch email logs:", err);
-      toast({ title: "Error loading email logs", variant: "destructive" });
-    } finally {
-      setEmailLogsLoading(false);
-    }
-  };
 
   const handleUpdate = async () => {
     if (!editing || !editForm.city || !editForm.region || !editForm.imageUrl) {
