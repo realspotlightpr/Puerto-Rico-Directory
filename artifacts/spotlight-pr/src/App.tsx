@@ -24,6 +24,8 @@ import UserProfile from "@/pages/UserProfile";
 import VerifyEmail from "@/pages/VerifyEmail";
 import TeamDashboard from "@/pages/TeamDashboard";
 import { SystemExplained } from "@/pages/SystemExplained";
+import Terms from "@/pages/Terms";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -111,6 +113,8 @@ function Router() {
           <Route path="/profile" component={UserProfile} />
           <Route path="/profile/:id" component={UserProfile} />
           <Route path="/verify-email" component={VerifyEmail} />
+          <Route path="/terms" component={Terms} />
+          <Route path="/privacy-policy" component={PrivacyPolicy} />
           <Route component={NotFound} />
         </Switch>
       </main>
