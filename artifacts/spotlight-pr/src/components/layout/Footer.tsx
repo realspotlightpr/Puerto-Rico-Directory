@@ -95,7 +95,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/postcard-marketing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/services" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   📬 Postcard Marketing
                 </Link>
               </li>
@@ -115,9 +115,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/spotlight-system" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Business FAQs
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -132,24 +132,29 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/team" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Become an Affiliate
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/team" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Partner Programs
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <a href="mailto:realspotlightpr@gmail.com" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Privacy & Terms
-                </a>
+                <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
               </li>
             </ul>
           </div>
