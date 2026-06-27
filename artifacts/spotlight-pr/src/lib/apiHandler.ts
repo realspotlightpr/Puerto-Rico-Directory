@@ -134,7 +134,7 @@ function mapReview(row: any): any {
 function mapUser(row: any): any {
   return {
     id: row.id,
-    username: row.username ?? undefined,
+    username: row.username ?? (typeof row.email === "string" && row.email ? row.email.split("@")[0] : undefined) ?? "user",
     firstName: row.first_name ?? undefined,
     lastName: row.last_name ?? undefined,
     profileImage: row.profile_image_url ?? undefined,
