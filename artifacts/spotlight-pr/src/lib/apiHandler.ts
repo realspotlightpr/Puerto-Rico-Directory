@@ -605,7 +605,15 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         }
         return { imported, skipped, duplicates };
       }
-      if (id === "gmb-import") throw new NotImplementedError("Importing directly from a Google Maps link");
+      if (id === "gmb-import" && method === "POST") {
+        await requireUserId();
+        const { data: fnData, error: fnErr } = await supabase.functions.invoke("places", {
+          body: { action: "import", url: (body as any)?.url },
+        });
+        if (fnErr) throw new Error(fnErr.message || "GMB import failed");
+        if ((fnData as any)?.error) throw new Error((fnData as any).error);
+        return fnData;
+      }
       if (!id && method === "GET") {
         const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("source", "spotlight_rep").order("created_at", { ascending: false });
         throwSb(error);
