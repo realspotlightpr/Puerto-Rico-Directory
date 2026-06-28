@@ -11,25 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUNICIPALITIES } from "@/lib/constants";
-import { supabase } from "@/lib/supabase";
+import { useListCategories, useCreateBusiness } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { Checkbox } from "@/components/ui/checkbox";
-
-function slugify(name: string): string {
-  const base = name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  const suffix = Math.random().toString(36).slice(2, 7);
-  return `${base || "business"}-${suffix}`;
-}
 
 const formSchema = z.object({
   ownerName: z.string().min(2, "Please enter your full name."),
@@ -176,22 +164,8 @@ export default function ListBusiness() {
     staffSize: "",
   });
 
-  const [categoriesData, setCategoriesData] = useState<{ categories: { id: number; name: string }[] }>({ categories: [] });
-  const [isPending, setIsPending] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name")
-        .order("name");
-      if (active && !error && data) {
-        setCategoriesData({ categories: data as { id: number; name: string }[] });
-      }
-    })();
-    return () => { active = false; };
-  }, []);
+  const { data: categoriesData } = useListCategories();
+  const { mutateAsync: createBusiness, isPending } = useCreateBusiness();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -244,11 +218,9 @@ export default function ListBusiness() {
     }
 
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/api/openai/enhance-description`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data: aiData, error: aiErr } = await supabase.functions.invoke("openai-ai", {
+        body: {
+          action: "enhance-description",
           businessName,
           currentDescription,
           targetAudience: advancedAnswers.targetAudience,
@@ -256,17 +228,15 @@ export default function ListBusiness() {
           uniqueFeature: advancedAnswers.uniqueFeature,
           yearsInBusiness: advancedAnswers.yearsInBusiness,
           staffSize: advancedAnswers.staffSize,
-        }),
+        },
       });
 
-      if (res.ok) {
-        const { description } = await res.json();
-        form.setValue("description", description, { shouldValidate: true });
+      if (!aiErr && (aiData as any)?.description) {
+        form.setValue("description", (aiData as any).description, { shouldValidate: true });
         toast({ title: "Description enhanced! Review and adjust as needed." });
         setAdvancedExpanded(false);
       } else {
-        const error = await res.json();
-        toast({ title: "Error", description: error.error || "Failed to enhance description", variant: "destructive" });
+        toast({ title: "Error", description: (aiData as any)?.error || aiErr?.message || "Failed to enhance description", variant: "destructive" });
       }
     } catch (err) {
       console.error("Failed to enhance description:", err);
@@ -279,62 +249,43 @@ export default function ListBusiness() {
     if (step !== STEPS.length) {
       return;
     }
-    if (!isAuthenticated) {
-      toast({
-        title: "Please log in first",
-        description: "You need an account to submit a business. Log in or sign up, then submit.",
-        variant: "destructive",
-      });
-      openAuthModal();
-      return;
-    }
-    setIsPending(true);
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const uid = authData.user?.id;
-      if (!uid) {
-        toast({ title: "Please log in first", description: "Your session expired. Log in and try again.", variant: "destructive" });
-        openAuthModal();
+      const result = await createBusiness({ data: data as any });
+
+      // For authenticated users: redirect as before
+      if (isAuthenticated) {
+        toast({
+          title: "Listing submitted!",
+          description: "Your business is pending review. We'll be in touch soon.",
+        });
+        setLocation("/dashboard");
         return;
       }
 
-      const insert = {
-        name: data.name,
-        slug: slugify(data.name),
-        description: data.description ?? "",
-        category_id: data.categoryId || null,
-        municipality: data.municipality,
-        address: data.hasPhysicalLocation ? (data.address || null) : null,
-        phone: data.phone || null,
-        email: data.email || null,
-        website: data.website || null,
-        logo_url: data.logoUrl || null,
-        cover_url: data.coverUrl || null,
-        owner_id: uid,
-        owner_name: data.ownerName || null,
-        owner_phone: data.ownerPhone || null,
-        owner_contact_email: data.ownerContactEmail || null,
-        is_claimed: true,
-        source: "user_submitted",
-        status: "pending",
-      };
-
-      const { error: insertError } = await supabase.from("businesses").insert(insert);
-      if (insertError) throw insertError;
-
-      toast({
-        title: "Listing submitted!",
-        description: "Your business is pending review. We'll be in touch soon.",
+      // For guest users: show the success screen
+      setSuccessInfo({
+        businessName: data.name,
+        ownerEmail: data.ownerContactEmail,
+        accountCreated: (result as any)?.accountCreated ?? true,
       });
-      setLocation("/dashboard");
     } catch (err: any) {
+      const body = (err?.data ?? null) as any;
+
+      if (body?.code === "ACCOUNT_EXISTS") {
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please log in to submit your business.",
+          variant: "destructive",
+          duration: 8000,
+        });
+        return;
+      }
+
       toast({
         title: "Submission failed",
-        description: err?.message ?? "Something went wrong. Please try again.",
+        description: body?.error ?? "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsPending(false);
     }
   };
 

@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -948,18 +949,16 @@ export default function Admin() {
     setMapSearchResults([]);
     setMapSelectedPlace(null);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const params = new URLSearchParams({ query: mapSearchQuery });
-      if (mapSearchMunicipality) params.set("municipality", mapSearchMunicipality);
-      const res = await fetch(`${baseUrl}/api/admin/leads/map-search?${params}`);
-      const data = await res.json();
-      if (res.ok) {
-        setMapSearchResults(data.results ?? []);
-        if ((data.results ?? []).length === 0) {
+      const { data, error } = await supabase.functions.invoke("places", {
+        body: { action: "search", query: mapSearchQuery, municipality: mapSearchMunicipality },
+      });
+      if (!error && (data as any)?.results) {
+        setMapSearchResults((data as any).results ?? []);
+        if (((data as any).results ?? []).length === 0) {
           toast({ title: "No results found", description: "Try a different search or municipality." });
         }
       } else {
-        toast({ title: "Search failed", description: data.error, variant: "destructive" });
+        toast({ title: "Search failed", description: (data as any)?.error || error?.message, variant: "destructive" });
       }
     } catch {
       toast({ title: "Search failed", variant: "destructive" });
