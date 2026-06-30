@@ -42,6 +42,49 @@ async function requireUserId(): Promise<string> {
   return data.user.id;
 }
 
+async function syncHighLevel(biz: any): Promise<void> {
+  try {
+    await supabase.functions.invoke("highlevel", { body: { action: "sync-business", business: biz } });
+  } catch (e) {
+    console.warn("HighLevel sync failed", e);
+  }
+}
+
+async function notifyHighLevel(event: string, biz: any): Promise<void> {
+  try {
+    await supabase.functions.invoke("highlevel", { body: { action: "notify", event, business: biz } });
+  } catch (e) {
+    console.warn("HighLevel notify failed", e);
+  }
+}
+
+function bizFromRow(row: any): any {
+  return { name: row?.name, ownerName: row?.owner_name, ownerContactEmail: row?.owner_contact_email, ownerPhone: row?.owner_phone };
+}
+
+function mapTeamMember(row: any, user?: any, businessesAdded?: number): any {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    type: row.type,
+    permissions: row.permissions ?? [],
+    invitedBy: row.invited_by ?? null,
+    notes: row.notes ?? null,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    user: user ? {
+      username: user.username ?? null,
+      firstName: user.first_name ?? null,
+      lastName: user.last_name ?? null,
+      email: user.email ?? null,
+      profileImageUrl: user.profile_image_url ?? null,
+      role: user.role ?? null,
+    } : undefined,
+    businessesAdded: businessesAdded ?? 0,
+  };
+}
+
 function extractMunicipality(address?: string): string {
   if (!address) return "";
   const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
@@ -265,6 +308,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       };
       const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
       throwSb(error);
+      await syncHighLevel({ ...b, source: "user_submitted" });
+      void notifyHighLevel("listing_submitted", { ...b, source: "user_submitted" });
       return mapBusiness(data);
     }
 
@@ -353,6 +398,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         data: rest ?? {},
       });
       throwSb(error);
+      const { data: inqBiz } = await supabase.from("businesses").select("name, owner_name, owner_contact_email, owner_phone").eq("id", Number(id)).maybeSingle();
+      void notifyHighLevel("new_inquiry", { ...bizFromRow(inqBiz), inquiryFrom: name, inquiryMessage: (rest as any)?.message });
       return { success: true };
     }
 
@@ -469,11 +516,15 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       }
       if (id && action === "approve" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "approved" }).eq("id", Number(id)).select(BUSINESS_SELECT).single();
-        throwSb(error); return mapBusiness(data);
+        throwSb(error);
+        void notifyHighLevel("listing_approved", bizFromRow(data));
+        return mapBusiness(data);
       }
       if (id && action === "reject" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "rejected" }).eq("id", Number(id)).select(BUSINESS_SELECT).single();
-        throwSb(error); return mapBusiness(data);
+        throwSb(error);
+        void notifyHighLevel("listing_rejected", bizFromRow(data));
+        return mapBusiness(data);
       }
       if (id && action === "feature" && method === "POST") {
         const { data: cur } = await supabase.from("businesses").select("featured").eq("id", Number(id)).maybeSingle();
@@ -602,6 +653,9 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         if (rows.length) {
           const { error } = await supabase.from("businesses").insert(rows);
           throwSb(error);
+          for (const row of rows) {
+            void syncHighLevel({ name: row.name, email: row.email, phone: row.phone, municipality: row.municipality, address: row.address, source: "spotlight_rep" });
+          }
         }
         return { imported, skipped, duplicates };
       }
@@ -630,7 +684,9 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
           source: "spotlight_rep", is_claimed: false, status: "approved", added_by_rep_id: uid,
         };
         const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
-        throwSb(error); return mapLead(data);
+        throwSb(error);
+        await syncHighLevel({ ...b, source: "spotlight_rep" });
+        return mapLead(data);
       }
       if (id && (method === "PATCH" || method === "PUT")) {
         const b = (body ?? {}) as any;
@@ -647,13 +703,123 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     }
 
     // team management — deferred
-    if (seg[1] === "team") throw new NotImplementedError("Team management");
+    if (seg[1] === "team") {
+      const tid = seg[2];
+      if (!tid && method === "GET") {
+        const { data: members, error } = await supabase.from("team_members").select("*").order("created_at", { ascending: false });
+        throwSb(error);
+        const list = (members ?? []) as any[];
+        const userIds = list.map((m) => m.user_id);
+        const { data: users } = userIds.length ? await supabase.from("users").select("*").in("id", userIds) : { data: [] as any[] };
+        const umap: Record<string, any> = {};
+        (users ?? []).forEach((u: any) => { umap[u.id] = u; });
+        const { data: biz } = userIds.length ? await supabase.from("businesses").select("added_by_rep_id").in("added_by_rep_id", userIds) : { data: [] as any[] };
+        const counts: Record<string, number> = {};
+        (biz ?? []).forEach((x: any) => { if (x.added_by_rep_id) counts[x.added_by_rep_id] = (counts[x.added_by_rep_id] || 0) + 1; });
+        return { members: list.map((m) => mapTeamMember(m, umap[m.user_id], counts[m.user_id] || 0)), total: list.length };
+      }
+      if (!tid && method === "POST") {
+        const uid = await requireUserId();
+        const b = (body ?? {}) as any;
+        const { data, error } = await supabase.from("team_members").insert({
+          user_id: b.userId, type: b.type ?? "team_member", permissions: b.permissions ?? [], notes: b.notes ?? null, invited_by: uid, status: "active",
+        }).select("*").single();
+        throwSb(error);
+        const { data: u } = await supabase.from("users").select("*").eq("id", data.user_id).maybeSingle();
+        return mapTeamMember(data, u, 0);
+      }
+      if (tid && (method === "PATCH" || method === "PUT")) {
+        const b = (body ?? {}) as any;
+        const upd: any = {};
+        if (b.type !== undefined) upd.type = b.type;
+        if (b.permissions !== undefined) upd.permissions = b.permissions;
+        if (b.notes !== undefined) upd.notes = b.notes;
+        if (b.status !== undefined) upd.status = b.status;
+        const { data, error } = await supabase.from("team_members").update(upd).eq("id", Number(tid)).select("*").single();
+        throwSb(error);
+        const { data: u } = await supabase.from("users").select("*").eq("id", data.user_id).maybeSingle();
+        return mapTeamMember(data, u, 0);
+      }
+      if (tid && method === "DELETE") {
+        const { error } = await supabase.from("team_members").delete().eq("id", Number(tid));
+        throwSb(error);
+        return { success: true };
+      }
+    }
   }
 
   // ---- server-only features (deferred) ----
   if (top === "openai") throw new NotImplementedError("The AI assistant and image generator");
   if (top === "storage") throw new NotImplementedError("Image uploads");
-  if (top === "team") throw new NotImplementedError("The team & affiliate dashboard");
+  if (top === "team") {
+    const uid = await requireUserId();
+    const sub = seg[1];
+    if (sub === "me" && method === "GET") {
+      const { data } = await supabase.from("team_members").select("*").eq("user_id", uid).maybeSingle();
+      if (!data) { const e = new Error("You are not a team member") as Error & { status?: number }; e.status = 403; throw e; }
+      const { data: u } = await supabase.from("users").select("*").eq("id", uid).maybeSingle();
+      return mapTeamMember(data, u, 0);
+    }
+    if (sub === "stats" && method === "GET") {
+      const { data: member } = await supabase.from("team_members").select("*").eq("user_id", uid).maybeSingle();
+      const { data: biz } = await supabase.from("businesses").select("status, is_claimed").eq("added_by_rep_id", uid);
+      const list = (biz ?? []) as any[];
+      return {
+        totalAdded: list.length,
+        approved: list.filter((b) => b.status === "approved").length,
+        pending: list.filter((b) => b.status === "pending").length,
+        claimed: list.filter((b) => b.is_claimed).length,
+        unclaimed: list.filter((b) => !b.is_claimed).length,
+        permissions: member?.permissions ?? [],
+        type: member?.type ?? "team_member",
+      };
+    }
+    if (sub === "my-submissions" && method === "GET") {
+      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("added_by_rep_id", uid).order("created_at", { ascending: false });
+      throwSb(error);
+      return { businesses: (data ?? []).map(mapBusiness), total: (data ?? []).length };
+    }
+    if (sub === "pending-reviews" && method === "GET") {
+      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("status", "pending").order("created_at", { ascending: false });
+      throwSb(error);
+      return { businesses: (data ?? []).map(mapBusiness), total: (data ?? []).length };
+    }
+    if (sub === "businesses") {
+      const tbId = seg[2];
+      const tbAction = seg[3];
+      if (!tbId && method === "POST") {
+        const b = (body ?? {}) as any;
+        const insert = {
+          name: b.name, slug: slugify(b.name ?? "business"), description: b.description ?? "",
+          category_id: b.categoryId ?? null, municipality: b.municipality, address: b.address ?? null,
+          phone: b.phone ?? null, email: b.email ?? null, website: b.website ?? null,
+          logo_url: b.logoUrl ?? null, cover_url: b.coverUrl ?? null,
+          source: "spotlight_rep", is_claimed: false, status: "approved", added_by_rep_id: uid,
+        };
+        const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
+        throwSb(error);
+        await syncHighLevel({ ...b, source: "spotlight_rep" });
+        return mapBusiness(data);
+      }
+      if (tbId && tbAction === "approve" && method === "POST") {
+        const { data, error } = await supabase.from("businesses").update({ status: "approved" }).eq("id", Number(tbId)).select(BUSINESS_SELECT).single();
+        throwSb(error);
+        void notifyHighLevel("listing_approved", bizFromRow(data));
+        return mapBusiness(data);
+      }
+      if (tbId && tbAction === "reject" && method === "POST") {
+        const { data, error } = await supabase.from("businesses").update({ status: "rejected" }).eq("id", Number(tbId)).select(BUSINESS_SELECT).single();
+        throwSb(error);
+        void notifyHighLevel("listing_rejected", bizFromRow(data));
+        return mapBusiness(data);
+      }
+      if (tbId && tbAction === "verify" && method === "POST") {
+        const { data, error } = await supabase.from("businesses").update({ status: "approved" }).eq("id", Number(tbId)).select(BUSINESS_SELECT).single();
+        throwSb(error);
+        return mapBusiness(data);
+      }
+    }
+  }
 
   const err = new Error(`No Supabase route for ${method} ${path}`) as Error & { status?: number };
   err.status = 404;
