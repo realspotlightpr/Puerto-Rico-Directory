@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { useUpload } from "@workspace/object-storage-web";
 import { ImageIcon, Upload, X, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 interface ImageUploadFieldProps {
   value?: string;
@@ -12,7 +12,7 @@ interface ImageUploadFieldProps {
   className?: string;
 }
 
-const BASE_STORAGE = import.meta.env.BASE_URL.replace(/\/$/, "") + "/api/storage";
+const BUCKET = "business-media";
 
 export function ImageUploadField({
   value,
@@ -25,19 +25,33 @@ export function ImageUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const { uploadFile, isUploading, progress } = useUpload({
-    basePath: BASE_STORAGE,
-    onSuccess: (res) => {
-      const servingUrl = BASE_STORAGE + res.objectPath;
-      onChange(servingUrl);
+  const uploadToStorage = async (file: File) => {
+    setIsUploading(true);
+    setProgress(25);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id ?? "public";
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      setProgress(60);
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, file, { cacheControl: "3600", upsert: true, contentType: file.type || undefined });
+      if (error) throw error;
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      setProgress(100);
+      onChange(data.publicUrl);
       setUploadError(null);
-    },
-    onError: (err) => {
-      setUploadError(err.message ?? "Upload failed. Please try again.");
+    } catch (err: any) {
+      setUploadError(err?.message ?? "Upload failed. Please try again.");
       setLocalPreview(null);
-    },
-  });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,8 +69,7 @@ export function ImageUploadField({
     setUploadError(null);
     const preview = URL.createObjectURL(file);
     setLocalPreview(preview);
-    await uploadFile(file);
-    // Clean up object URL after upload
+    await uploadToStorage(file);
     URL.revokeObjectURL(preview);
   };
 
@@ -85,15 +98,9 @@ export function ImageUploadField({
           isSquare ? "aspect-square max-w-[160px]" : "aspect-video w-full"
         )}
       >
-        {/* Preview image */}
         {displayUrl ? (
           <>
-            <img
-              src={displayUrl}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
-            {/* Overlay on hover */}
+            <img src={displayUrl} alt="Preview" className="w-full h-full object-cover" />
             {!isUploading && (
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center gap-1.5 text-white">
@@ -102,7 +109,6 @@ export function ImageUploadField({
                 </div>
               </div>
             )}
-            {/* Clear button */}
             {!isUploading && (
               <button
                 type="button"
@@ -126,24 +132,18 @@ export function ImageUploadField({
           </div>
         )}
 
-        {/* Upload progress overlay */}
         {isUploading && (
           <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
             <div className="w-3/4 bg-white/30 rounded-full h-1.5">
-              <div
-                className="bg-white rounded-full h-1.5 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
+              <div className="bg-white rounded-full h-1.5 transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
             <p className="text-white text-xs font-medium">Uploading…</p>
           </div>
         )}
       </div>
 
-      {hint && !uploadError && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
+      {hint && !uploadError && <p className="text-xs text-muted-foreground">{hint}</p>}
       {uploadError && (
         <p className="text-xs text-destructive flex items-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {uploadError}

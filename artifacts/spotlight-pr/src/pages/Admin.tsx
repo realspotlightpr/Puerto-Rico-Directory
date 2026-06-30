@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -948,18 +949,16 @@ export default function Admin() {
     setMapSearchResults([]);
     setMapSelectedPlace(null);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const params = new URLSearchParams({ query: mapSearchQuery });
-      if (mapSearchMunicipality) params.set("municipality", mapSearchMunicipality);
-      const res = await fetch(`${baseUrl}/api/admin/leads/map-search?${params}`);
-      const data = await res.json();
-      if (res.ok) {
-        setMapSearchResults(data.results ?? []);
-        if ((data.results ?? []).length === 0) {
+      const { data, error } = await supabase.functions.invoke("places", {
+        body: { action: "search", query: mapSearchQuery, municipality: mapSearchMunicipality },
+      });
+      if (!error && (data as any)?.results) {
+        setMapSearchResults((data as any).results ?? []);
+        if (((data as any).results ?? []).length === 0) {
           toast({ title: "No results found", description: "Try a different search or municipality." });
         }
       } else {
-        toast({ title: "Search failed", description: data.error, variant: "destructive" });
+        toast({ title: "Search failed", description: (data as any)?.error || error?.message, variant: "destructive" });
       }
     } catch {
       toast({ title: "Search failed", variant: "destructive" });
@@ -1949,23 +1948,23 @@ export default function Admin() {
               </div>
 
               <div className="flex gap-4">
-                <Select value={emailLogsStatusFilter} onValueChange={(v: any) => { setEmailLogsStatusFilter(v); setEmailLogsOffset(0); }}>
+                <Select value={emailLogsStatusFilter || "all"} onValueChange={(v: any) => { setEmailLogsStatusFilter(v === "all" ? "" : v); setEmailLogsOffset(0); }}>
                   <SelectTrigger className="w-40 rounded-xl">
                     <SelectValue placeholder="Filter by Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
                     <SelectItem value="failed">Failed</SelectItem>
                   </SelectContent>
                 </Select>
                 
-                <Select value={emailLogsTypeFilter} onValueChange={(v: any) => { setEmailLogsTypeFilter(v); setEmailLogsOffset(0); }}>
+                <Select value={emailLogsTypeFilter || "all"} onValueChange={(v: any) => { setEmailLogsTypeFilter(v === "all" ? "" : v); setEmailLogsOffset(0); }}>
                   <SelectTrigger className="w-48 rounded-xl">
                     <SelectValue placeholder="Filter by Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="welcome">Welcome</SelectItem>
                     <SelectItem value="inquiry">Inquiry</SelectItem>
                     <SelectItem value="verification">Verification</SelectItem>
@@ -2323,12 +2322,12 @@ export default function Admin() {
               />
             </div>
             <div className="w-44">
-              <Select value={mapSearchMunicipality} onValueChange={setMapSearchMunicipality}>
+              <Select value={mapSearchMunicipality || "all"} onValueChange={(v) => setMapSearchMunicipality(v === "all" ? "" : v)}>
                 <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Any municipality" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px]">
-                  <SelectItem value="">Any municipality</SelectItem>
+                  <SelectItem value="all">Any municipality</SelectItem>
                   {MUNICIPALITIES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -2840,11 +2839,6 @@ function SliderSettingsSection() {
     fetchSliders();
   }, []);
 
-  useEffect(() => {
-    if (section === "email-logs" && isAdmin) {
-      fetchEmailLogs();
-    }
-  }, [section, emailLogsOffset, emailLogsStatusFilter, emailLogsTypeFilter]);
 
   const fetchSliders = async () => {
     try {
@@ -2861,29 +2855,6 @@ function SliderSettingsSection() {
     }
   };
 
-  const fetchEmailLogs = async () => {
-    setEmailLogsLoading(true);
-    try {
-      const token = useAuth().getToken ? await useAuth().getToken() : "";
-      const params = new URLSearchParams({ limit: "50", offset: emailLogsOffset.toString() });
-      if (emailLogsStatusFilter) params.append("status", emailLogsStatusFilter);
-      if (emailLogsTypeFilter) params.append("emailType", emailLogsTypeFilter);
-      
-      const res = await fetch(`${import.meta.env.BASE_URL}api/admin/email-logs?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const { logs, total } = await res.json();
-        setEmailLogs(logs);
-        setEmailLogsTotal(total);
-      }
-    } catch (err) {
-      console.error("Failed to fetch email logs:", err);
-      toast({ title: "Error loading email logs", variant: "destructive" });
-    } finally {
-      setEmailLogsLoading(false);
-    }
-  };
 
   const handleUpdate = async () => {
     if (!editing || !editForm.city || !editForm.region || !editForm.imageUrl) {
