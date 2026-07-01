@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MUNICIPALITIES } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
 import { useListCategories, useCreateBusiness } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
@@ -151,6 +152,7 @@ function SuccessScreen({ info, onGoHome }: { info: SuccessInfo; onGoHome: () => 
 
 export default function ListBusiness() {
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [successInfo, setSuccessInfo] = useState<SuccessInfo | null>(null);
   const [, setLocation] = useLocation();
   const { isAuthenticated, user } = useAuth();
@@ -245,47 +247,64 @@ export default function ListBusiness() {
   };
 
   const onSubmit = async (data: FormValues) => {
-    // Only allow submission from step 5 (review page)
+    // Only allow submission from the final review step
     if (step !== STEPS.length) {
       return;
     }
-    try {
-      const result = await createBusiness({ data: data as any });
 
-      // For authenticated users: redirect as before
-      if (isAuthenticated) {
+    // Authenticated owners: create directly (listing is linked to their account)
+    if (isAuthenticated) {
+      try {
+        await createBusiness({ data: data as any });
         toast({
           title: "Listing submitted!",
           description: "Your business is pending review. We'll be in touch soon.",
         });
         setLocation("/dashboard");
-        return;
+      } catch (err: any) {
+        const body = (err?.data ?? null) as any;
+        toast({
+          title: "Submission failed",
+          description: body?.error ?? "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
+      return;
+    }
 
-      // For guest users: show the success screen
-      setSuccessInfo({
-        businessName: data.name,
-        ownerEmail: data.ownerContactEmail,
-        accountCreated: (result as any)?.accountCreated ?? true,
+    // Guests: server-side function creates their owner account + the pending listing
+    setIsSubmitting(true);
+    try {
+      const { data: result, error: fnErr } = await supabase.functions.invoke("submit-business", {
+        body: { action: "submit-business", ...data },
       });
-    } catch (err: any) {
-      const body = (err?.data ?? null) as any;
+      if (fnErr) throw fnErr;
+      const res = result as any;
 
-      if (body?.code === "ACCOUNT_EXISTS") {
+      if (res?.accountExists) {
         toast({
           title: "Account already exists",
-          description: "An account with this email already exists. Please log in to submit your business.",
+          description: "An account with this email already exists. Please log in to add your business.",
           variant: "destructive",
           duration: 8000,
         });
         return;
       }
+      if (res?.error) throw new Error(res.error);
 
+      setSuccessInfo({
+        businessName: data.name,
+        ownerEmail: data.ownerContactEmail,
+        accountCreated: res?.accountCreated ?? true,
+      });
+    } catch (err: any) {
       toast({
         title: "Submission failed",
-        description: body?.error ?? "Something went wrong. Please try again.",
+        description: err?.message ?? "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -731,10 +750,10 @@ export default function ListBusiness() {
               ) : (
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || isSubmitting}
                   className="rounded-xl px-8 shadow-lg shadow-primary/25 gap-2"
                 >
-                  {isPending
+                  {(isPending || isSubmitting)
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</>
                     : <><CheckCircle2 className="w-4 h-4" /> Submit Listing</>
                   }
