@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Phone, Globe, Mail, ShieldCheck, Star, Clock, Tag, ExternalLink, Facebook, Instagram } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
-import { ClaimBusinessModal } from "@/components/ClaimBusinessModal";
+import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
 
 type Review = {
   id: number;

@@ -45,7 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { ClaimsSection } from "@/components/ClaimsSection";
+import { ClaimsSection } from "@/components/admin/ClaimsSection";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
