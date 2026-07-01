@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -57,21 +58,18 @@ export function ImageStudio({ businessId, businessName, onImageSaved }: ImageStu
 
     setIsGenerating(true);
     try {
-      const token = await getToken();
       const fullPrompt = `${prompt.trim()} — professional image for a Puerto Rico business called "${businessName}"`;
-      const res = await fetch("/api/openai/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt: fullPrompt, size, businessId }),
+      const { data, error } = await supabase.functions.invoke("openai-ai", {
+        body: { action: "generate-image", prompt: fullPrompt, size, businessId },
       });
-
-      if (!res.ok) throw new Error("Image generation failed");
-      const { b64_json } = await res.json();
-      const dataUrl = `data:image/png;base64,${b64_json}`;
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const url = (data as any)?.url || (data as any)?.imageUrl;
+      if (!url) throw new Error("Image generation failed");
 
       setGeneratedImages(prev => [{
-        b64_json,
-        dataUrl,
+        b64_json: url,
+        dataUrl: url,
         prompt: prompt.trim(),
         size,
       }, ...prev.slice(0, 5)]);
