@@ -161,28 +161,49 @@ export default function UserProfile() {
       setLoading(true);
       setError(null);
       try {
-        let url: string;
-        let headers: Record<string, string> = {};
+        const { data: { user: au } } = await supabase.auth.getUser();
+        const targetUserId = targetId || au?.id || null;
+        if (!targetUserId) { setLoading(false); return; }
 
-        if (isOwnProfile && isAuthenticated) {
-          const token = await getToken();
-          url = "/api/my/profile";
-          if (token) headers["Authorization"] = `Bearer ${token}`;
-        } else if (targetId) {
-          url = `/api/users/${targetId}/profile`;
-        } else if (!authLoading && isAuthenticated && authUser) {
-          const token = await getToken();
-          url = "/api/my/profile";
-          if (token) headers["Authorization"] = `Bearer ${token}`;
-        } else {
-          setLoading(false);
-          return;
-        }
+        const { data: u } = await supabase.from("users").select("*").eq("id", targetUserId).maybeSingle();
+        if (!u) throw new Error("Profile not found");
 
-        const res = await fetch(url, { headers });
-        if (!res.ok) throw new Error("Profile not found");
-        const data = await res.json();
-        setProfile(data);
+        const { data: rv } = await supabase
+          .from("reviews")
+          .select("id, rating, title, body, created_at, businesses(id, name, slug, logo_url, municipality)")
+          .eq("user_id", targetUserId)
+          .order("created_at", { ascending: false });
+
+        const reviews = (rv || []).map((r: any) => ({
+          id: r.id,
+          rating: r.rating,
+          title: r.title || undefined,
+          body: r.body || undefined,
+          createdAt: r.created_at,
+          business: r.businesses ? {
+            id: r.businesses.id,
+            name: r.businesses.name,
+            slug: r.businesses.slug,
+            logoUrl: r.businesses.logo_url || undefined,
+            municipality: r.businesses.municipality || undefined,
+          } : null,
+        }));
+        const totalReviews = reviews.length;
+        const avg = totalReviews ? reviews.reduce((s: number, r: any) => s + (r.rating || 0), 0) / totalReviews : 0;
+
+        setProfile({
+          user: {
+            id: (u as any).id,
+            firstName: (u as any).first_name || undefined,
+            lastName: (u as any).last_name || undefined,
+            username: (u as any).username || undefined,
+            profileImage: (u as any).profile_image_url || undefined,
+            role: (u as any).role || "user",
+            createdAt: (u as any).created_at,
+          },
+          stats: { totalReviews, averageRatingGiven: avg },
+          reviews,
+        });
       } catch (e: any) {
         setError(e.message ?? "Failed to load profile");
       } finally {
