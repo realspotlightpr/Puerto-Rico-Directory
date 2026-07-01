@@ -45,7 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { ClaimsSection } from "@/components/ClaimsSection";
+import { ClaimsSection } from "@/components/admin/ClaimsSection";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -1163,22 +1163,21 @@ export default function Admin() {
 
   const loginAsUser = async (userId: string, userData: any) => {
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/api/admin/users/${userId}/impersonate`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.error || "Failed to impersonate user");
-      }
-      const session = await res.json();
-      setImpersonationSession(session);
-      setImpersonatedUser(userData);
-      toast({ title: `Logged in as ${userData.firstName || userData.username}` });
+      // save the admin's current session so we can return to it later
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) localStorage.setItem("imp_admin", JSON.stringify({ access_token: session.access_token, refresh_token: session.refresh_token }));
+      const { data, error } = await supabase.functions.invoke("impersonate", { body: { userId } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const tokenHash = (data as any)?.token_hash;
+      if (!tokenHash) throw new Error("Could not create a session for that user.");
+      const { error: vErr } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
+      if (vErr) throw vErr;
+      localStorage.setItem("imp_active", JSON.stringify({ name: userData.firstName || userData.username || userData.email || "user" }));
+      window.location.href = "/dashboard";
     } catch (err: any) {
-      toast({ title: "Failed to login as user", description: err.message, variant: "destructive" });
+      localStorage.removeItem("imp_admin");
+      toast({ title: "Failed to login as user", description: err?.message, variant: "destructive" });
     }
   };
 
@@ -1642,10 +1641,11 @@ export default function Admin() {
                               </div>
                             </td>
                             <td className="p-4">
-                              {(b as any).ownerName ? (
+                              {(b as any).ownerName || (b as any).ownerContactEmail ? (
                                 <div>
-                                  <p className="font-medium text-sm">{(b as any).ownerName}</p>
-                                  <a href={`mailto:${(b as any).ownerContactEmail}`} className="text-xs text-primary hover:underline">{(b as any).ownerContactEmail}</a>
+                                  {(b as any).ownerName && <p className="font-medium text-sm">{(b as any).ownerName}</p>}
+                                  {(b as any).ownerContactEmail && <a href={`mailto:${(b as any).ownerContactEmail}`} className="block text-xs text-primary hover:underline">{(b as any).ownerContactEmail}</a>}
+                                  {(b as any).ownerPhone && <a href={`tel:${(b as any).ownerPhone}`} className="block text-xs text-muted-foreground hover:underline">{(b as any).ownerPhone}</a>}
                                 </div>
                               ) : <span className="text-xs text-muted-foreground italic">No owner</span>}
                             </td>

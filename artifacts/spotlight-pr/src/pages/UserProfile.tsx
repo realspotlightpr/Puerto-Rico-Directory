@@ -7,7 +7,11 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { format, formatDistanceToNow } from "date-fns";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileData {
   user: {
@@ -54,6 +58,90 @@ function RoleBadge({ role }: { role: string }) {
   if (role === "admin") return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Admin</Badge>;
   if (role === "business_owner") return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Business Owner</Badge>;
   return <Badge variant="secondary">Community Member</Badge>;
+}
+
+function AccountSettings() {
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setEmail(user?.email || "");
+      if (user?.id) {
+        const { data } = await supabase.from("users").select("phone").eq("id", user.id).maybeSingle();
+        setPhone((data as any)?.phone || "");
+      }
+    })();
+  }, []);
+
+  async function saveInfo() {
+    setSavingInfo(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("profile", { body: { email: email.trim(), phone: phone.trim() } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Account updated", description: (data as any)?.emailChanged ? "Check your new email inbox to confirm the change." : "Your contact info was saved and synced." });
+    } catch (e: any) {
+      toast({ title: "Update failed", description: e?.message, variant: "destructive" });
+    } finally {
+      setSavingInfo(false);
+    }
+  }
+
+  async function savePw() {
+    if (pw.length < 8) { toast({ title: "Password must be at least 8 characters.", variant: "destructive" }); return; }
+    if (pw !== pw2) { toast({ title: "Passwords don't match.", variant: "destructive" }); return; }
+    setSavingPw(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw error;
+      setPw(""); setPw2("");
+      toast({ title: "Password changed" });
+    } catch (e: any) {
+      toast({ title: "Couldn't change password", description: e?.message, variant: "destructive" });
+    } finally {
+      setSavingPw(false);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border shadow-sm p-5 space-y-5">
+      <h2 className="font-bold font-display text-sm text-muted-foreground uppercase tracking-wide">Account Settings</h2>
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="acct-email">Email</Label>
+          <Input id="acct-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="acct-phone">Phone</Label>
+          <Input id="acct-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (787) 555-0123" />
+        </div>
+        <Button onClick={saveInfo} disabled={savingInfo} size="sm" className="w-full rounded-xl">
+          {savingInfo ? "Saving…" : "Save contact info"}
+        </Button>
+        <p className="text-xs text-muted-foreground">Changes also update your contact in our CRM.</p>
+      </div>
+      <div className="border-t pt-4 space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="acct-pw">New Password</Label>
+          <Input id="acct-pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="At least 8 characters" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="acct-pw2">Confirm Password</Label>
+          <Input id="acct-pw2" type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+        </div>
+        <Button onClick={savePw} disabled={savingPw} size="sm" variant="outline" className="w-full rounded-xl">
+          {savingPw ? "Saving…" : "Change password"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default function UserProfile() {
@@ -152,11 +240,9 @@ export default function UserProfile() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
 
-      {/* ── Profile Header ── */}
       <div className="bg-white border-b border-border">
         <div className="container mx-auto px-4 py-10 max-w-4xl">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            {/* Avatar */}
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center text-white text-3xl font-bold font-display shrink-0 shadow-lg overflow-hidden border-4 border-white ring-2 ring-primary/20">
               {user.profileImage
                 ? <img src={user.profileImage} alt={displayName} className="w-full h-full object-cover" />
@@ -164,7 +250,6 @@ export default function UserProfile() {
               }
             </div>
 
-            {/* Info */}
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
                 <h1 className="text-2xl font-bold font-display text-foreground">{displayName}</h1>
@@ -189,10 +274,8 @@ export default function UserProfile() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ── Left sidebar: Stats ── */}
           <div className="space-y-4">
 
-            {/* Stats card */}
             <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
               <h2 className="font-bold font-display text-sm text-muted-foreground uppercase tracking-wide mb-4">Community Stats</h2>
               <div className="space-y-4">
@@ -220,7 +303,8 @@ export default function UserProfile() {
               </div>
             </div>
 
-            {/* Reputation badge */}
+            {isOwnProfile && <AccountSettings />}
+
             {stats.totalReviews >= 1 && (
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200 p-5">
                 <div className="flex items-center gap-2 mb-3">
@@ -247,7 +331,6 @@ export default function UserProfile() {
               </div>
             )}
 
-            {/* CTA to browse */}
             {isOwnProfile && (
               <div className="bg-white rounded-2xl border border-dashed border-border p-5 text-center">
                 <Store className="w-8 h-8 text-primary/40 mx-auto mb-2" />
@@ -262,7 +345,6 @@ export default function UserProfile() {
             )}
           </div>
 
-          {/* ── Right: Review Feed ── */}
           <div className="lg:col-span-2 space-y-4">
             <h2 className="font-bold font-display text-lg flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" />
@@ -293,7 +375,6 @@ export default function UserProfile() {
               <div className="space-y-3">
                 {reviews.map(review => (
                   <div key={review.id} className="bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-5">
-                    {/* Business header */}
                     {review.business && (
                       <Link href={`/businesses/${(review.business as any).slug || review.business.id}`}>
                         <div className="flex items-center gap-3 mb-4 group cursor-pointer">
@@ -321,7 +402,6 @@ export default function UserProfile() {
                       </Link>
                     )}
 
-                    {/* Review content */}
                     <div className="flex items-start gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-emerald-100 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
                         {initials}
