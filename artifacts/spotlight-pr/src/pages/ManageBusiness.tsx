@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@workspace/replit-auth-web";
+import { supabase } from "@/lib/supabase";
 import {
   useGetBusiness,
   useUpdateBusiness,
@@ -446,18 +447,12 @@ function HtmlDescriptionEditor({
     setIsGenerating(true);
     setAiHtml("");
     try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE}api/openai/generate-about-html`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ businessId, brief }),
+      const { data, error } = await supabase.functions.invoke("openai-ai", {
+        body: { action: "generate-about-html", businessId, brief },
       });
-      if (!res.ok) throw new Error("AI generation failed");
-      const data = await res.json();
-      setAiHtml(data.html || "");
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setAiHtml((data as any)?.html || "");
     } catch {
       toast({ title: "Error", description: "Could not generate design. Please try again.", variant: "destructive" });
     } finally {
@@ -1275,17 +1270,12 @@ export default function ManageBusiness() {
     setAiGenLoading(true);
     setAiGenPreview(null);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/api/openai/generate-business-image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ businessId: business.id, type: aiGenType, style: aiGenStyle || undefined }),
+      const { data, error } = await supabase.functions.invoke("openai-ai", {
+        body: { action: "generate-business-image", businessId: business.id, type: aiGenType, style: aiGenStyle || undefined },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Generation failed");
-      const fullUrl = `${baseUrl}${data.url}`;
-      setAiGenPreview(fullUrl);
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setAiGenPreview((data as any)?.url || (data as any)?.imageUrl);
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
     } finally {
@@ -1375,20 +1365,12 @@ export default function ManageBusiness() {
     setIsEnhancingLogo(true);
     setEnhancedLogoPreview(null);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const token = await getToken();
-      const res = await fetch(`${baseUrl}/api/openai/enhance-logo`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ imageUrl: logoUrl, businessId: business?.id }),
+      const { data, error } = await supabase.functions.invoke("openai-ai", {
+        body: { action: "enhance-logo", imageUrl: logoUrl, businessId: business?.id, type: "logo" },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Enhancement failed");
-      const b64Image = `data:image/png;base64,${data.b64_json}`;
-      setEnhancedLogoPreview(b64Image);
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setEnhancedLogoPreview((data as any)?.url || (data as any)?.imageUrl);
       toast({ title: "Logo enhanced!", description: "Review and click 'Use Enhanced Logo' to apply it." });
     } catch (err: any) {
       toast({ title: "Enhancement failed", description: err.message, variant: "destructive" });
