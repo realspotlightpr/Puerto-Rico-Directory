@@ -88,12 +88,47 @@ function MagicLinkHandler() {
   return <SetPasswordModal onComplete={() => setShowSetPassword(false)} />;
 }
 
+// Forces a password reset for accounts created with a temporary password
+// (claim approvals, guest business submissions). The account's user_metadata
+// carries `must_change_password: true` until they set their own.
+function ForcePasswordGate() {
+  const { isLoading, isAuthenticated } = useAuth();
+  const [mustChange, setMustChange] = useState(false);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) {
+      setMustChange(false);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setMustChange(!!data.user?.user_metadata?.must_change_password);
+    })();
+  }, [isLoading, isAuthenticated]);
+
+  if (!mustChange) return null;
+
+  return (
+    <SetPasswordModal
+      onComplete={async () => {
+        try {
+          await supabase.auth.updateUser({ data: { must_change_password: false } });
+        } catch {
+          /* non-blocking */
+        }
+        setMustChange(false);
+      }}
+    />
+  );
+}
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
       <AuthTokenWirer />
       <MagicLinkHandler />
+      <ForcePasswordGate />
       <Navbar />
       <main className="flex-1">
         <Switch>

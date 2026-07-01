@@ -31,7 +31,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Lead, TeamMember, ScraperRecord } from "@workspace/api-client-react";
 import {
-  Shield, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
+  Shield, ShieldCheck, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
   LayoutDashboard, Edit2, Edit3, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { ClaimsSection } from "@/components/ClaimsSection";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -58,7 +59,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs";
+type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "claims";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
@@ -862,7 +863,22 @@ export default function Admin() {
   const [emailLogsStatusFilter, setEmailLogsStatusFilter] = useState<"" | "sent" | "failed">("");
   const [emailLogsTypeFilter, setEmailLogsTypeFilter] = useState("");
 
+  const [openClaimsCount, setOpenClaimsCount] = useState(0);
+
   const isAdmin = isAuthenticated && user?.role === "admin";
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      try {
+        const { count } = await supabase
+          .from("business_claims")
+          .select("id", { count: "exact", head: true })
+          .not("status", "in", "(approved,rejected)");
+        setOpenClaimsCount(count ?? 0);
+      } catch { /* ignore */ }
+    })();
+  }, [isAdmin, section]);
 
   // ── Queries ──
   const { data: stats } = useGetAdminStats({ query: { enabled: isAdmin } });
@@ -1207,6 +1223,7 @@ export default function Admin() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "leads", label: "Leads", icon: Target, badge: unclaimedLeads || undefined, badgeColor: "bg-violet-500" },
     { id: "businesses", label: "Business Listings", icon: Store },
+    { id: "claims", label: "Claims", icon: ShieldCheck, badge: openClaimsCount || undefined, badgeColor: "bg-amber-500" },
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
@@ -1667,9 +1684,6 @@ export default function Admin() {
                                     <X className="w-4 h-4" />
                                   </Button>
                                 )}
-                                <Button size="icon" variant="outline" title="Edit" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openBusinessEdit(b)}>
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
                                 <Button size="icon" variant="outline" title="View Stats" className="text-violet-600 border-violet-200 hover:bg-violet-50" onClick={() => setStatsBusinessId(b.id)}>
                                   <BarChart3 className="w-4 h-4" />
                                 </Button>
@@ -2056,6 +2070,10 @@ export default function Admin() {
                 </div>
               )}
             </div>
+          )}
+
+          {section === "claims" && (
+            <ClaimsSection />
           )}
 
           {/* ── TEAM & AFFILIATES ── */}

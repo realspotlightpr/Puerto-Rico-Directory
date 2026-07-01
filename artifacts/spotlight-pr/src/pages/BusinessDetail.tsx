@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Phone, Globe, Mail } from "lucide-react";
+import { MapPin, Phone, Globe, Mail, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { ClaimBusinessModal } from "@/components/ClaimBusinessModal";
 
 type BusinessRow = {
   id: number;
@@ -20,12 +21,15 @@ type BusinessRow = {
   cover_url: string | null;
   featured: boolean | null;
   status: string | null;
+  is_claimed: boolean | null;
+  owner_id: string | null;
 };
 
 export default function BusinessDetail() {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessRow | null>(null);
+  const [showClaim, setShowClaim] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -86,9 +90,28 @@ export default function BusinessDetail() {
             {business.website && <a href={business.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary"><Globe className="w-4 h-4" /> Visit Website</a>}
           </div>
 
-          <div className="pt-4 text-xs text-muted-foreground">Temporary simplified profile while full Supabase migration finishes.</div>
+          {!business.is_claimed && !business.owner_id && (
+            <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Is this your business?</p>
+                  <p className="text-sm text-muted-foreground">Claim it to manage your page, add photos, and connect with customers — free.</p>
+                </div>
+              </div>
+              <Button onClick={() => setShowClaim(true)} className="shrink-0">Claim this business</Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {showClaim && (
+        <ClaimBusinessModal
+          businessId={business.id}
+          businessName={business.name}
+          onClose={() => setShowClaim(false)}
+        />
+      )}
     </div>
   );
 }
