@@ -65,7 +65,6 @@ function MagicLinkHandler() {
   const [showSetPassword, setShowSetPassword] = useState(false);
   const detectedRef = useRef(false);
 
-  // Capture the URL hash immediately on mount — Supabase clears it once it processes the token
   useEffect(() => {
     const hash = window.location.hash;
     if (
@@ -76,7 +75,6 @@ function MagicLinkHandler() {
     }
   }, []);
 
-  // Once auth resolves and the user is logged in, show the set-password modal
   useEffect(() => {
     if (detectedRef.current && !isLoading && isAuthenticated) {
       setShowSetPassword(true);
@@ -89,8 +87,7 @@ function MagicLinkHandler() {
 }
 
 // Forces a password reset for accounts created with a temporary password
-// (claim approvals, guest business submissions). The account's user_metadata
-// carries `must_change_password: true` until they set their own.
+// (claim approvals, guest business submissions).
 function ForcePasswordGate() {
   const { isLoading, isAuthenticated } = useAuth();
   const [mustChange, setMustChange] = useState(false);
@@ -122,6 +119,36 @@ function ForcePasswordGate() {
   );
 }
 
+// Persistent bar shown while an admin is signed in as another user
+function ImpersonationBar() {
+  const [active, setActive] = useState<{ name?: string } | null>(null);
+  useEffect(() => {
+    try {
+      const a = localStorage.getItem("imp_active");
+      if (a) setActive(JSON.parse(a));
+    } catch { /* ignore */ }
+  }, []);
+  if (!active) return null;
+  const returnToAdmin = async () => {
+    try {
+      const raw = localStorage.getItem("imp_admin");
+      if (raw) {
+        const t = JSON.parse(raw);
+        await supabase.auth.setSession({ access_token: t.access_token, refresh_token: t.refresh_token });
+      }
+    } catch { /* ignore */ }
+    localStorage.removeItem("imp_active");
+    localStorage.removeItem("imp_admin");
+    window.location.href = "/admin";
+  };
+  return (
+    <div className="bg-amber-500 text-white text-sm px-4 py-2 flex items-center justify-center gap-3 sticky top-0 z-[60]">
+      <span>👁️ Viewing as <strong>{active.name}</strong></span>
+      <button onClick={returnToAdmin} className="underline font-semibold hover:text-amber-100">Return to my account</button>
+    </div>
+  );
+}
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -129,6 +156,7 @@ function Router() {
       <AuthTokenWirer />
       <MagicLinkHandler />
       <ForcePasswordGate />
+      <ImpersonationBar />
       <Navbar />
       <main className="flex-1">
         <Switch>
