@@ -138,6 +138,8 @@ function mapBusiness(row: any): any {
     reviewCount: row.review_count ?? 0,
     ownerId: row.owner_id ?? undefined,
     ownerName: row.owner_name ?? undefined,
+    ownerContactEmail: row.owner_contact_email ?? undefined,
+    ownerPhone: row.owner_phone ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     // detail-only fields
@@ -287,6 +289,9 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     if (!id && method === "POST") {
       const uid = await requireUserId();
       const b = (body ?? {}) as any;
+      // Admins' own listings go live immediately; everyone else is pending review.
+      const { data: me } = await supabase.from("users").select("role").eq("id", uid).maybeSingle();
+      const isAdminSubmitter = me?.role === "admin";
       const insert = {
         name: b.name,
         slug: slugify(b.name ?? "business"),
@@ -304,7 +309,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         owner_id: uid,
         is_claimed: true,
         source: "user_submitted",
-        status: "pending",
+        status: isAdminSubmitter ? "approved" : "pending",
       };
       const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
       throwSb(error);
