@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,33 @@ import { MapPin, Phone, Globe, Mail, ShieldCheck, BadgeCheck, Star, Clock, Tag, 
 import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
+
+// ── Analytics: log listing interactions via the log_listing_event RPC ──────────
+// Never let analytics break the page — every call is best-effort.
+function analyticsSession(): string {
+  try {
+    let s = sessionStorage.getItem("sp_sid");
+    if (!s) { s = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem("sp_sid", s); }
+    return s;
+  } catch { return "anon"; }
+}
+async function track(businessId: number, type: "page_view" | "phone_click" | "website_click" | "maps_click" | "share") {
+  try {
+    let source = "direct";
+    try { if (document.referrer) source = new URL(document.referrer).hostname || "direct"; } catch { /* ignore */ }
+    await supabase.rpc("log_listing_event", {
+      p_business_id: businessId,
+      p_type: type,
+      p_source: source,
+      p_session: analyticsSession(),
+    });
+  } catch { /* analytics must never throw */ }
+}
+
+function mapsUrl(address: string, municipality?: string | null): string {
+  const q = [address, municipality || "", "Puerto Rico"].filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
 
 type Review = {
   id: number;
@@ -208,6 +235,7 @@ export default function BusinessDetail() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [nearby, setNearby] = useState<NearbyBusiness[]>([]);
   const [showClaim, setShowClaim] = useState(false);
+  const viewedRef = useRef<number | null>(null);
 
   const loadNearby = useCallback(async (b: any) => {
     try {
@@ -267,6 +295,14 @@ export default function BusinessDetail() {
   }, [id, loadNearby]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Count one page view per business per mount.
+  useEffect(() => {
+    if (business?.id && viewedRef.current !== business.id) {
+      viewedRef.current = business.id;
+      track(business.id, "page_view");
+    }
+  }, [business?.id]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -354,10 +390,10 @@ export default function BusinessDetail() {
           )}
 
           <div className="grid gap-2 text-sm border-t pt-4">
-            {b.address && <p className="flex items-center gap-2"><MapPin className="w-4 h-4 shrink-0" /> {b.address}</p>}
-            {b.phone && <a href={`tel:${b.phone}`} className="flex items-center gap-2 text-primary"><Phone className="w-4 h-4" /> {b.phone}</a>}
+            {b.address && <a href={mapsUrl(b.address, b.municipality)} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="flex items-center gap-2 text-primary"><MapPin className="w-4 h-4 shrink-0" /> {b.address}</a>}
+            {b.phone && <a href={`tel:${b.phone}`} onClick={() => track(b.id, "phone_click")} className="flex items-center gap-2 text-primary"><Phone className="w-4 h-4" /> {b.phone}</a>}
             {b.email && <a href={`mailto:${b.email}`} className="flex items-center gap-2 text-primary"><Mail className="w-4 h-4" /> {b.email}</a>}
-            {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary"><Globe className="w-4 h-4" /> Visit Website</a>}
+            {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center gap-2 text-primary"><Globe className="w-4 h-4" /> Visit Website</a>}
           </div>
 
           {b.hours && <HoursBlock hours={b.hours} />}
