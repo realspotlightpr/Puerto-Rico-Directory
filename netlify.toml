@@ -7,7 +7,9 @@
   publish = "artifacts/spotlight-pr/dist/public"
 
 [build.environment]
-  # Required by vite.config.ts, plus the public Supabase config baked into the bundle.
+  # Required by vite.config.ts (it throws if PORT or BASE_PATH are missing, even for `vite build`),
+  # plus the public Supabase config baked into the bundle.
+  PORT = "5173"
   BASE_PATH = "/"
   NODE_VERSION = "20"
   VITE_SUPABASE_URL = "https://zswvumzbtikzvwgtpprw.supabase.co"
