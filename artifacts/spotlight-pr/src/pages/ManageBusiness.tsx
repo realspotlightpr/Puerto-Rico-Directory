@@ -28,6 +28,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
+
+// Premium checkout (HighLevel payment links). Payments/invoices/receipts run through HighLevel.
+const PREMIUM_CHECKOUT = {
+  monthly: "https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0",
+  yearly: "https://login.spotlightpuertorico.com/payment-link/6a47d219a655fa0b802a28f2",
+};
 import {
   useGetBusiness,
   useUpdateBusiness,
@@ -1094,6 +1100,7 @@ export default function ManageBusiness() {
   const { mutateAsync: updateBusiness, isPending: isSaving } = useUpdateBusiness();
 
   const business = businessData;
+  const isPremium = !!(business as any)?.is_premium;
 
   // ── Analytics (real interaction data from listing_events) ──
   const [analytics, setAnalytics] = useState<{ views: number; phone: number; website: number; maps: number; daily: { date: string; count: number }[]; sources: { source: string; count: number }[] } | null>(null);
@@ -1627,6 +1634,29 @@ export default function ManageBusiness() {
 
       {/* ── Content ── */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {!isPremium && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3">
+                <Star className="w-6 h-6 text-amber-500 shrink-0 mt-0.5 fill-amber-400" />
+                <div>
+                  <p className="font-bold font-display text-base">Upgrade to a Premium listing</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Unlock your menu, full page customization, featured placement &amp; a Premium badge, the local business community &amp; events, and more exposure to customers.</p>
+                </div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <a href={PREMIUM_CHECKOUT.monthly} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl border border-amber-300 bg-white text-amber-800 text-sm font-semibold hover:bg-amber-50 transition-colors text-center">$29<span className="text-xs font-normal">/mo</span></a>
+                <a href={PREMIUM_CHECKOUT.yearly} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors text-center shadow-sm">$200<span className="text-xs font-normal">/yr</span> · Best value</a>
+              </div>
+            </div>
+          </div>
+        )}
+        {isPremium && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-center gap-3">
+            <Star className="w-5 h-5 text-amber-500 fill-amber-400 shrink-0" />
+            <p className="text-sm font-semibold text-amber-800">Premium listing active — all features unlocked. Thank you for supporting Spotlight Puerto Rico! 🎉</p>
+          </div>
+        )}
         <Tabs defaultValue="details">
           <TabsList className="w-full mb-8 bg-white border border-border rounded-xl p-1 h-auto flex-wrap gap-1">
             <TabsTrigger value="details" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
@@ -1650,8 +1680,9 @@ export default function ManageBusiness() {
             <TabsTrigger value="media-library" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <LayoutGrid className="w-4 h-4" /> Media Library {mediaItems.length > 0 && `(${mediaItems.length})`}
             </TabsTrigger>
-            <TabsTrigger value="social-planner" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="social-planner" disabled className="flex-1 rounded-lg gap-2 py-2 opacity-60 cursor-not-allowed">
               <Calendar className="w-4 h-4" /> Social Planner
+              <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Soon</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <BarChart3 className="w-4 h-4" /> Analytics
@@ -1661,6 +1692,7 @@ export default function ManageBusiness() {
             </TabsTrigger>
             <TabsTrigger value="menu" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <FileText className="w-4 h-4" /> Menu
+              <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Premium</span>
             </TabsTrigger>
             <TabsTrigger value="inbox" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Inbox className="w-4 h-4" /> Inbox
@@ -2198,6 +2230,13 @@ export default function ManageBusiness() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {!isPremium && (
+                <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                  <p className="text-sm text-amber-900"><span className="font-semibold">Want bigger numbers?</span> Premium listings get featured placement and higher visibility across Spotlight — more views, calls, and clicks.</p>
+                  <a href={PREMIUM_CHECKOUT.yearly} target="_blank" rel="noopener noreferrer" className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 text-center">Upgrade to Premium</a>
                 </div>
               )}
 
