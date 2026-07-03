@@ -1,0 +1,20 @@
+# Netlify build + hosting config for Spotlight Puerto Rico (frontend).
+# With this committed, a newly-imported Netlify site auto-configures itself — no dashboard setup needed.
+# Backend stays on Supabase (DB, auth, edge functions) — unaffected.
+
+[build]
+  command = "corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter @workspace/spotlight-pr build"
+  publish = "artifacts/spotlight-pr/dist/public"
+
+[build.environment]
+  # Required by vite.config.ts, plus the public Supabase config baked into the bundle.
+  BASE_PATH = "/"
+  NODE_VERSION = "20"
+  VITE_SUPABASE_URL = "https://zswvumzbtikzvwgtpprw.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpzd3Z1bXpidGlrenZ3Z3RwcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyOTkwMDksImV4cCI6MjA5Njg3NTAwOX0.rC8oSs0fiI7_-bS04iRayIoAjn-KWLQ3_u5VuzzeoPI"
+
+# SPA fallback so deep links (e.g. /businesses/<slug>) resolve to the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
