@@ -59,7 +59,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "claims";
+type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
 type BusinessTab = "approved" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
@@ -862,6 +862,12 @@ export default function Admin() {
   const [emailLogsOffset, setEmailLogsOffset] = useState(0);
   const [emailLogsStatusFilter, setEmailLogsStatusFilter] = useState<"" | "sent" | "failed">("");
   const [emailLogsTypeFilter, setEmailLogsTypeFilter] = useState("");
+  const [commsLogs, setCommsLogs] = useState<any[]>([]);
+  const [commsLoading, setCommsLoading] = useState(false);
+  const [commsTotal, setCommsTotal] = useState(0);
+  const [commsOffset, setCommsOffset] = useState(0);
+  const [commsChannel, setCommsChannel] = useState<"" | "email" | "sms">("");
+  const [commsStatus, setCommsStatus] = useState<"" | "sent" | "failed" | "skipped">("");
 
   const [openClaimsCount, setOpenClaimsCount] = useState(0);
 
@@ -879,6 +885,31 @@ export default function Admin() {
       } catch { /* ignore */ }
     })();
   }, [isAdmin, section]);
+
+  // Communications log (every SMS/email sent through HighLevel)
+  useEffect(() => {
+    if (!isAdmin || section !== "communications") return;
+    let cancelled = false;
+    (async () => {
+      setCommsLoading(true);
+      try {
+        let q = supabase
+          .from("communications_log")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .range(commsOffset, commsOffset + 49);
+        if (commsChannel) q = q.eq("channel", commsChannel);
+        if (commsStatus) q = q.eq("status", commsStatus);
+        const { data, count } = await q;
+        if (!cancelled) { setCommsLogs(data ?? []); setCommsTotal(count ?? 0); }
+      } catch {
+        if (!cancelled) { setCommsLogs([]); setCommsTotal(0); }
+      } finally {
+        if (!cancelled) setCommsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAdmin, section, commsOffset, commsChannel, commsStatus]);
 
   // ── Queries ──
   const { data: stats } = useGetAdminStats({ query: { enabled: isAdmin } });
@@ -1227,6 +1258,7 @@ export default function Admin() {
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
     { id: "email-logs", label: "Email Logs", icon: Mail },
+    { id: "communications", label: "Communications", icon: MessageSquare },
     { id: "settings", label: "Page Settings", icon: Settings },
   ];
 
@@ -1312,6 +1344,7 @@ export default function Admin() {
               {section === "leads" && `${leadsCount} scouted · ${claimedLeads} claimed · ${unclaimedLeads} unclaimed`}
               {section === "users" && `${usersData?.total ?? 0} registered users`}
               {section === "reviews" && `${reviewsData?.total ?? 0} reviews`}
+            {section === "communications" && `${commsTotal} message${commsTotal !== 1 ? "s" : ""} sent through HighLevel`}
               {section === "notifications" && `${totalNotifications} item${totalNotifications !== 1 ? "s" : ""} need attention`}
             </p>
           </div>
@@ -2065,6 +2098,103 @@ export default function Admin() {
                       >
                         Next
                       </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {section === "communications" && (
+            <div className="space-y-6">
+              <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+                <MessageSquare className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm text-cyan-900">Communications Log</p>
+                  <p className="text-xs text-cyan-700 mt-0.5">
+                    Every SMS &amp; email sent through HighLevel — review alerts, claims, approvals and more. Nothing goes out without a record here, including skipped sends.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Select value={commsChannel || "all"} onValueChange={(v: any) => { setCommsChannel(v === "all" ? "" : v); setCommsOffset(0); }}>
+                  <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Channel" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Channels</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={commsStatus || "all"} onValueChange={(v: any) => { setCommsStatus(v === "all" ? "" : v); setCommsOffset(0); }}>
+                  <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="skipped">Skipped</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {commsLoading ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <Loader2 className="w-8 h-8 mx-auto mb-4 text-muted-foreground animate-spin" />
+                  <p className="text-muted-foreground">Loading communications...</p>
+                </div>
+              ) : commsLogs.length === 0 ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+                  <h3 className="text-lg font-bold font-display mb-2">No Messages Yet</h3>
+                  <p className="text-muted-foreground text-sm">Nothing has been sent through HighLevel matching your filters.</p>
+                </div>
+              ) : (
+                <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b border-border">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Recipient</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Channel</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Event</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Source</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Sent At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {commsLogs.map((log: any) => (
+                          <tr key={log.id} className="border-b border-border last:border-0 hover:bg-slate-50 transition-colors">
+                            <td className="px-5 py-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{log.recipient_name || log.recipient_email || log.recipient_phone || "—"}</p>
+                                <p className="text-xs text-muted-foreground">{log.recipient_email || log.recipient_phone || ""}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3">
+                              <Badge className={`text-xs ${log.channel === "sms" ? "bg-violet-100 text-violet-700 hover:bg-violet-100" : "bg-blue-100 text-blue-700 hover:bg-blue-100"}`}>
+                                {String(log.channel || "").toUpperCase()}
+                              </Badge>
+                            </td>
+                            <td className="px-5 py-3"><p className="text-sm text-foreground">{(log.event || "—").replace(/_/g, " ")}</p></td>
+                            <td className="px-5 py-3"><span className="text-xs text-muted-foreground font-mono">{log.source || "—"}</span></td>
+                            <td className="px-5 py-3">
+                              <Badge className={`text-xs ${log.status === "sent" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" : log.status === "failed" ? "bg-red-100 text-red-700 hover:bg-red-100" : "bg-slate-100 text-slate-600 hover:bg-slate-100"}`}>
+                                {log.status === "sent" ? <CheckCircle className="w-3 h-3 mr-1" /> : log.status === "failed" ? <AlertCircle className="w-3 h-3 mr-1" /> : null}
+                                {log.status}
+                              </Badge>
+                            </td>
+                            <td className="px-5 py-3 text-sm text-muted-foreground">{format(new Date(log.created_at), "MMM d, yyyy HH:mm")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-5 py-4 border-t border-border flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Showing {commsLogs.length} of {commsTotal} messages</p>
+                    <div className="flex gap-2">
+                      <Button onClick={() => setCommsOffset(Math.max(0, commsOffset - 50))} disabled={commsOffset === 0} variant="outline" size="sm" className="rounded-xl">Previous</Button>
+                      <Button onClick={() => setCommsOffset(commsOffset + 50)} disabled={commsOffset + 50 >= commsTotal} variant="outline" size="sm" className="rounded-xl">Next</Button>
                     </div>
                   </div>
                 </div>
