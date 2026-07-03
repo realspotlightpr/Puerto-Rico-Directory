@@ -1095,6 +1095,40 @@ export default function ManageBusiness() {
 
   const business = businessData;
 
+  // ── Analytics (real interaction data from listing_events) ──
+  const [analytics, setAnalytics] = useState<{ views: number; phone: number; website: number; maps: number; daily: { date: string; count: number }[]; sources: { source: string; count: number }[] } | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  useEffect(() => {
+    const bid = (business as any)?.id;
+    if (!bid) return;
+    let cancelled = false;
+    (async () => {
+      setAnalyticsLoading(true);
+      try {
+        const since = new Date(Date.now() - 29 * 864e5); since.setHours(0, 0, 0, 0);
+        const [{ data: biz }, { data: evts }] = await Promise.all([
+          supabase.from("businesses").select("page_views, website_clicks, maps_clicks, phone_clicks").eq("id", bid).maybeSingle(),
+          supabase.from("listing_events").select("type, source, created_at").eq("business_id", bid).gte("created_at", since.toISOString()).order("created_at", { ascending: true }).limit(5000),
+        ]);
+        const map: Record<string, number> = {};
+        const days: { date: string; count: number }[] = [];
+        for (let i = 0; i < 30; i++) { const d = new Date(since); d.setDate(since.getDate() + i); const k = d.toISOString().slice(0, 10); map[k] = 0; days.push({ date: k, count: 0 }); }
+        const srcMap: Record<string, number> = {};
+        (evts || []).forEach((e: any) => {
+          if (e.type === "page_view") {
+            const k = String(e.created_at).slice(0, 10); if (k in map) map[k]++;
+            const s = e.source || "direct"; srcMap[s] = (srcMap[s] || 0) + 1;
+          }
+        });
+        days.forEach((d) => { d.count = map[d.date] || 0; });
+        const sources = Object.entries(srcMap).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count).slice(0, 6);
+        if (!cancelled) setAnalytics({ views: (biz as any)?.page_views ?? 0, phone: (biz as any)?.phone_clicks ?? 0, website: (biz as any)?.website_clicks ?? 0, maps: (biz as any)?.maps_clicks ?? 0, daily: days, sources });
+      } catch { if (!cancelled) setAnalytics(null); }
+      finally { if (!cancelled) setAnalyticsLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [(business as any)?.id]);
+
   // Hours state
   const [hours, setHours] = useState<Record<string, string>>({});
 
@@ -2097,44 +2131,82 @@ export default function ManageBusiness() {
                 <BarChart3 className="w-5 h-5 text-primary" /> Performance Analytics
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Page Views Card */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-blue-900">Page Views</p>
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-blue-600">{business?.pageViews || 0}</p>
-                  <p className="text-xs text-blue-700 mt-2">Total times your spotlight page was viewed</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-blue-900">Page Views</p><Eye className="w-5 h-5 text-blue-600" /></div>
+                  <p className="text-3xl font-bold text-blue-600">{analytics?.views ?? (business as any)?.pageViews ?? 0}</p>
+                  <p className="text-xs text-blue-700 mt-2">Total page views</p>
                 </div>
-
-                {/* Website Clicks Card */}
-                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-emerald-900">Website Clicks</p>
-                    <Globe className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-600">{business?.websiteClicks || 0}</p>
-                  <p className="text-xs text-emerald-700 mt-2">Visitors clicked on your website link</p>
+                <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-5 border border-amber-200">
+                  <div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-amber-900">Phone Clicks</p><Phone className="w-5 h-5 text-amber-600" /></div>
+                  <p className="text-3xl font-bold text-amber-600">{analytics?.phone ?? 0}</p>
+                  <p className="text-xs text-amber-700 mt-2">Tapped your phone number</p>
                 </div>
-
-                {/* Maps Clicks Card */}
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-purple-900">Map Clicks</p>
-                    <MapPin className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-purple-600">{business?.mapsClicks || 0}</p>
-                  <p className="text-xs text-purple-700 mt-2">Visitors clicked on map/directions</p>
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-5 border border-emerald-200">
+                  <div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-emerald-900">Website Clicks</p><Globe className="w-5 h-5 text-emerald-600" /></div>
+                  <p className="text-3xl font-bold text-emerald-600">{analytics?.website ?? (business as any)?.websiteClicks ?? 0}</p>
+                  <p className="text-xs text-emerald-700 mt-2">Clicked your website</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-5 border border-purple-200">
+                  <div className="flex items-center justify-between mb-2"><p className="text-sm font-semibold text-purple-900">Map Clicks</p><MapPin className="w-5 h-5 text-purple-600" /></div>
+                  <p className="text-3xl font-bold text-purple-600">{analytics?.maps ?? (business as any)?.mapsClicks ?? 0}</p>
+                  <p className="text-xs text-purple-700 mt-2">Opened directions</p>
                 </div>
               </div>
+
+              {/* 30-day page views trend */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-semibold text-sm">Page views — last 30 days</p>
+                  {analyticsLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                </div>
+                {(() => {
+                  const daily = analytics?.daily ?? [];
+                  const max = Math.max(1, ...daily.map((d) => d.count));
+                  const total = daily.reduce((s, d) => s + d.count, 0);
+                  if (!total) return <p className="text-sm text-muted-foreground bg-slate-50 border rounded-xl p-6 text-center">No views yet in the last 30 days. This chart fills in as visitors view your page.</p>;
+                  return (
+                    <div className="bg-slate-50 border rounded-xl p-4">
+                      <div className="flex items-end gap-[3px] h-32">
+                        {daily.map((d, i) => (
+                          <div key={i} className="flex-1 bg-primary/80 rounded-t hover:bg-primary transition-colors" style={{ height: `${Math.round((d.count / max) * 100)}%`, minHeight: d.count ? 4 : 1 }} title={`${d.date}: ${d.count} view${d.count !== 1 ? "s" : ""}`} />
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground mt-2">
+                        <span>{daily[0]?.date.slice(5)}</span>
+                        <span className="font-semibold">{total} views</span>
+                        <span>{daily[daily.length - 1]?.date.slice(5)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Traffic sources */}
+              {(analytics?.sources?.length ?? 0) > 0 && (
+                <div className="mt-8">
+                  <p className="font-semibold text-sm mb-3">Where your views come from</p>
+                  <div className="space-y-2">
+                    {analytics!.sources.map((s) => {
+                      const smax = analytics!.sources[0].count || 1;
+                      return (
+                        <div key={s.source} className="flex items-center gap-3">
+                          <span className="text-xs w-32 shrink-0 truncate text-muted-foreground">{s.source === "direct" ? "Direct / typed" : s.source}</span>
+                          <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden"><div className="bg-primary h-full rounded-full" style={{ width: `${Math.round((s.count / smax) * 100)}%` }} /></div>
+                          <span className="text-xs font-semibold w-8 text-right">{s.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Info Box */}
               <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
                 <MessageSquare className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-blue-900">
                   <p className="font-semibold mb-1">How we track analytics</p>
-                  <p>We automatically track when someone views your business page, clicks the "Visit Website" link, or clicks on map/directions buttons. This helps you understand customer interest and engagement.</p>
+                  <p>Every time someone views your page, taps your phone number, clicks your website, or opens directions, it's counted here in real time — so you can see the value your Spotlight listing delivers.</p>
                 </div>
               </div>
             </div>
