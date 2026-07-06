@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
-import { X, Mail, Lock, User, Loader2 } from "lucide-react";
+import { X, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ export function AuthModal() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function AuthModal() {
           password,
           options: {
             emailRedirectTo: redirectUrl,
-            data: { first_name: firstName, last_name: lastName, full_name: fullName },
+            data: { first_name: firstName, last_name: lastName, full_name: fullName, phone: phone.trim() || undefined, signup_via: "web" },
           },
         });
         if (error) throw error;
@@ -139,6 +140,23 @@ export function AuthModal() {
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-9"
                     required
+                  />
+                </div>
+              </div>
+            )}
+
+            {mode === "sign-up" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(optional — for text updates)</span></Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(787) 555-1234"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="pl-9"
                   />
                 </div>
               </div>
