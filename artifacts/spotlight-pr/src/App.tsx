@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Directory from "@/pages/Directory";
 import BusinessDetail from "@/pages/BusinessDetail";
+import SignUp from "@/pages/SignUp";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
@@ -163,6 +164,8 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/directory" component={Directory} />
           <Route path="/businesses/:id" component={BusinessDetail} />
+          <Route path="/signup" component={SignUp} />
+          <Route path="/sign-up" component={SignUp} />
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
