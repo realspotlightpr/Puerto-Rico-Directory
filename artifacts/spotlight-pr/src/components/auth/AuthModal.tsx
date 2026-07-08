@@ -31,6 +31,25 @@ export function AuthModal() {
     reset();
   }
 
+  async function handleForgotPassword() {
+    reset();
+    if (!email.trim()) {
+      setError("Enter your email above, then tap “Forgot password”.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (error) throw error;
+      setSuccess("Password reset link sent! Check your email and follow the link to set a new password.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Couldn't send the reset link. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -194,6 +213,14 @@ export function AuthModal() {
                 />
               </div>
             </div>
+
+            {mode === "sign-in" && (
+              <div className="text-right -mt-2">
+                <button type="button" onClick={handleForgotPassword} className="text-xs font-medium text-primary hover:underline">
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
