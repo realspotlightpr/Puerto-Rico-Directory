@@ -1,706 +1,177 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { Search, MapPin, TrendingUp, Shuffle, ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { Search, MapPin, Shuffle, ArrowRight, Sparkles, Store, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MUNICIPALITIES } from "@/lib/constants";
 import { supabase } from "@/lib/supabase";
 import { BusinessCard } from "@/components/business/BusinessCard";
-import { motion } from "framer-motion";
 
-type BusinessRow = {
-  id: number;
-  slug: string | null;
-  name: string;
-  description: string | null;
-  category_name: string | null;
-  municipality: string | null;
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  logo_url: string | null;
-  cover_url: string | null;
-  featured: boolean | null;
-  status: string | null;
-  average_rating: number | null;
-  review_count: number | null;
-  created_at: string | null;
-};
-
-const mapBusiness = (b: BusinessRow) => ({
-  id: b.id,
-  slug: b.slug,
-  name: b.name,
-  description: b.description,
-  categoryName: b.category_name,
-  municipality: b.municipality,
-  address: b.address,
-  phone: b.phone,
-  email: b.email,
-  website: b.website,
-  logoUrl: b.logo_url,
-  coverUrl: b.cover_url,
-  featured: !!b.featured,
-  status: b.status ?? "approved",
-  averageRating: Number(b.average_rating ?? 0),
-  reviewCount: Number(b.review_count ?? 0),
-  createdAt: b.created_at ?? new Date().toISOString(),
+const mapBiz = (b: any) => ({
+  id: b.id, slug: b.slug, name: b.name,
+  categoryName: b.categories?.name || "Local Business",
+  municipality: b.municipality, coverUrl: b.cover_url, logoUrl: b.logo_url,
+  averageRating: b.average_rating, reviewCount: b.review_count,
+  featured: b.featured, status: b.status, phone: b.phone,
+  description: b.description, isClaimed: b.is_claimed,
 });
 
-interface SliderImage {
-  id: number;
-  imageUrl: string;
-  city: string;
-  region: string;
-  sortOrder: number;
-}
-
-function TownTile({ town, index }: { town: typeof FEATURED_TOWNS[0]; index: number }) {
-  const count = null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.06 }}
-      whileHover={{ y: -3, transition: { duration: 0.15 } }}
-    >
-      <Link href={`/directory?municipality=${encodeURIComponent(town.name)}`}>
-        <div className="group bg-card border border-border hover:border-primary/40 hover:bg-primary/5 rounded-2xl p-4 md:p-5 text-center cursor-pointer transition-all duration-300 hover:shadow-lg">
-          <div className="text-3xl mb-2">{town.emoji}</div>
-          <h3 className="font-display font-bold text-foreground group-hover:text-primary transition-colors text-sm md:text-base">{town.name}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{town.region} PR</p>
-          {count !== null ? (
-            <p className="mt-1.5 text-xs font-semibold text-primary/80">
-              {count} {count === 1 ? "business" : "businesses"}
-            </p>
-          ) : (
-            <div className="mt-1.5 h-3 w-12 mx-auto bg-muted rounded animate-pulse" />
-          )}
-          <div className="mt-2 text-xs text-primary/70 font-medium group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1">
-            Browse <ArrowRight className="w-3 h-3" />
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
-
-const VIBE_CARDS = [
-  {
-    emoji: "🌙",
-    label: "Date Night",
-    tagline: "Romantic spots for two",
-    href: "/directory?category=restaurants-food",
-    gradient: "from-violet-600 to-fuchsia-500",
-    shadowColor: "shadow-violet-500/30",
-    bgHover: "hover:from-violet-700 hover:to-fuchsia-600",
-  },
-  {
-    emoji: "👨‍👩‍👧",
-    label: "Family Fun",
-    tagline: "Everyone's invited",
-    href: "/directory?category=entertainment",
-    gradient: "from-orange-500 to-amber-400",
-    shadowColor: "shadow-orange-400/30",
-    bgHover: "hover:from-orange-600 hover:to-amber-500",
-  },
-  {
-    emoji: "☕",
-    label: "Morning Fuel",
-    tagline: "Cafés & breakfast spots",
-    href: "/directory?search=coffee",
-    gradient: "from-amber-700 to-yellow-500",
-    shadowColor: "shadow-amber-500/30",
-    bgHover: "hover:from-amber-800 hover:to-yellow-600",
-  },
-  {
-    emoji: "💎",
-    label: "Hidden Gems",
-    tagline: "Our community's favorites",
-    href: "/directory?featured=true",
-    gradient: "from-emerald-500 to-teal-400",
-    shadowColor: "shadow-emerald-400/30",
-    bgHover: "hover:from-emerald-600 hover:to-teal-500",
-  },
-  {
-    emoji: "🔧",
-    label: "Get It Done",
-    tagline: "Services & professionals",
-    href: "/directory?category=professional-services",
-    gradient: "from-blue-600 to-indigo-500",
-    shadowColor: "shadow-blue-500/30",
-    bgHover: "hover:from-blue-700 hover:to-indigo-600",
-  },
-  {
-    emoji: "🌴",
-    label: "Explore the Island",
-    tagline: "Discover something new",
-    href: "/directory",
-    gradient: "from-green-500 to-emerald-400",
-    shadowColor: "shadow-green-400/30",
-    bgHover: "hover:from-green-600 hover:to-emerald-500",
-  },
+const DISCOVER = [
+  { href: "/directory", label: "Businesses", sub: "Shops, food & services", emoji: "🏪", grad: "from-blue-500 to-cyan-500" },
+  { href: "/activities", label: "Activities", sub: "Beaches, caves, waterfalls", emoji: "🌴", grad: "from-teal-500 to-emerald-500" },
+  { href: "/surf", label: "Surf Cams", sub: "Live spots & conditions", emoji: "🏄", grad: "from-cyan-600 to-blue-700" },
+  { href: "/experiences", label: "Experiences", sub: "Book local guides", emoji: "🧭", grad: "from-emerald-500 to-teal-600" },
 ];
 
-const FEATURED_TOWNS = [
-  { name: "San Juan", region: "Metro", emoji: "🏙" },
-  { name: "Bayamón", region: "Metro", emoji: "🌆" },
-  { name: "Ponce", region: "South", emoji: "🎭" },
-  { name: "Mayagüez", region: "West", emoji: "🌊" },
-  { name: "Caguas", region: "Central", emoji: "⛰" },
-  { name: "Arecibo", region: "North", emoji: "🔭" },
-  { name: "Humacao", region: "East", emoji: "🌺" },
-  { name: "Aguadilla", region: "West", emoji: "🏄" },
-];
+const ACT_EMOJI: Record<string, string> = { beach: "🏖️", snorkeling: "🤿", surfing: "🏄", cave: "🕳️", waterfall: "💧", bioluminescent: "✨", hiking: "🥾", scenic: "🌅", zipline: "🪂", diving: "🐠" };
+const ACT_GRAD: Record<string, string> = { beach: "from-cyan-400 to-blue-500", snorkeling: "from-teal-400 to-cyan-600", surfing: "from-blue-500 to-indigo-600", cave: "from-amber-700 to-stone-800", waterfall: "from-emerald-400 to-teal-600", bioluminescent: "from-indigo-600 to-purple-700", hiking: "from-green-500 to-emerald-700", scenic: "from-orange-400 to-pink-500", zipline: "from-lime-400 to-green-600", diving: "from-cyan-500 to-blue-700" };
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [municipality, setMunicipality] = useState("");
-  const [surpriseMeLoading, setSurpriseMeLoading] = useState(false);
-  const [heroImageIndex, setHeroImageIndex] = useState(0);
-  const [sliderImages, setSliderImages] = useState<SliderImage[]>([]);
-  const [sliderLoading, setSliderLoading] = useState(true);
-  const [randomDiscoverBusinesses, setRandomDiscoverBusinesses] = useState<any[]>([]);
-
-  const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [featuredData, setFeaturedData] = useState<{ businesses: any[] }>({ businesses: [] });
-
-  const [allBusinessesLoading, setAllBusinessesLoading] = useState(true);
-  const [allBusinessesData, setAllBusinessesData] = useState<{ businesses: any[] }>({ businesses: [] });
+  const [featured, setFeatured] = useState<any[]>([]);
+  const [cats, setCats] = useState<any[]>([]);
+  const [acts, setActs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [surprising, setSurprising] = useState(false);
 
   useEffect(() => {
-    const loadBusinesses = async () => {
+    (async () => {
       try {
-        setFeaturedLoading(true);
-        setAllBusinessesLoading(true);
-
-        const [{ data: featuredRows, error: featuredErr }, { data: allRows, error: allErr }] = await Promise.all([
-          supabase
-            .from("businesses")
-            .select("*")
-            .eq("status", "approved")
-            .eq("featured", true)
-            .order("created_at", { ascending: false })
-            .limit(20),
-          supabase
-            .from("businesses")
-            .select("*")
-            .eq("status", "approved")
-            .order("created_at", { ascending: false })
-            .limit(50),
+        const [{ data: feat }, { data: recent }, { data: c }, { data: a }] = await Promise.all([
+          supabase.from("businesses").select("*, categories(name)").eq("status", "approved").eq("featured", true).limit(8),
+          supabase.from("businesses").select("*, categories(name)").eq("status", "approved").order("created_at", { ascending: false }).limit(8),
+          supabase.from("categories").select("id, name, slug").order("id"),
+          supabase.from("activities").select("id, name, slug, activity_type, municipality, featured").eq("status", "approved").order("featured", { ascending: false }).limit(6),
         ]);
-
-        if (featuredErr) throw featuredErr;
-        if (allErr) throw allErr;
-
-        setFeaturedData({ businesses: (featuredRows ?? []).map(mapBusiness) });
-        setAllBusinessesData({ businesses: (allRows ?? []).map(mapBusiness) });
-      } catch (err) {
-        console.error("Failed loading businesses from Supabase:", err);
-        setFeaturedData({ businesses: [] });
-        setAllBusinessesData({ businesses: [] });
-      } finally {
-        setFeaturedLoading(false);
-        setAllBusinessesLoading(false);
-      }
-    };
-
-    loadBusinesses();
+        const list = (feat && feat.length >= 3 ? feat : recent) ?? [];
+        setFeatured(list.map(mapBiz));
+        setCats(c ?? []);
+        setActs(a ?? []);
+      } catch (e) { console.error(e); } finally { setLoading(false); }
+    })();
   }, []);
 
-  // Randomize all businesses for "Discover Something New" section
-  useEffect(() => {
-    if (allBusinessesData?.businesses && allBusinessesData.businesses.length > 0) {
-      const shuffled = [...allBusinessesData.businesses].sort(() => Math.random() - 0.5);
-      setRandomDiscoverBusinesses(shuffled.slice(0, Math.min(6, shuffled.length)));
-    }
-  }, [allBusinessesData.businesses]);
+  const doSearch = () => setLocation(`/directory${search.trim() ? `?search=${encodeURIComponent(search.trim())}` : ""}`);
 
-  // Fetch slider settings
-  useEffect(() => {
-    const fetchSliders = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.BASE_URL}api/slider-settings`);
-        if (res.ok) {
-          const { sliders } = await res.json();
-          setSliderImages(sliders);
-        }
-      } catch (err) {
-        console.error("Failed to fetch slider settings:", err);
-      } finally {
-        setSliderLoading(false);
-      }
-    };
-    fetchSliders();
-  }, []);
-
-  // Cycle through hero images every 5 seconds
-  useEffect(() => {
-    if (sliderImages.length === 0) return;
-    const interval = setInterval(() => {
-      setHeroImageIndex(prev => (prev + 1) % sliderImages.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [sliderImages]);
-
-  const nextHeroImage = () => {
-    if (sliderImages.length === 0) return;
-    setHeroImageIndex(prev => (prev + 1) % sliderImages.length);
-  };
-
-  const prevHeroImage = () => {
-    if (sliderImages.length === 0) return;
-    setHeroImageIndex(prev => (prev - 1 + sliderImages.length) % sliderImages.length);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (municipality && municipality !== "all") params.set("municipality", municipality);
-    setLocation(`/directory?${params.toString()}`);
-  };
-
-  const handleSurpriseMe = async () => {
-    setSurpriseMeLoading(true);
+  const surprise = async () => {
+    setSurprising(true);
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}api/businesses/random`);
-      if (res.ok) {
-        const business = await res.json();
-        setLocation(`/businesses/${business.slug || business.id}`);
+      const { data } = await supabase.from("businesses").select("id, slug").eq("status", "approved").limit(60);
+      if (data && data.length) {
+        const pick = data[Math.floor(Math.random() * data.length)];
+        setLocation(`/businesses/${pick.slug || pick.id}`);
       }
-    } catch {
-      // silent fail — just do nothing
-    } finally {
-      setSurpriseMeLoading(false);
-    }
+    } finally { setSurprising(false); }
   };
 
   return (
-    <div className="w-full flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative w-full py-24 lg:py-32 overflow-hidden flex items-center justify-center group">
-        <div className="absolute inset-0 z-0">
-          {/* Image carousel */}
-          {sliderImages.map((img, idx) => (
-            <motion.img
-              key={idx}
-              src={`${import.meta.env.BASE_URL}${img.imageUrl}`}
-              alt={`${img.city}, ${img.region} - Puerto Rico`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: idx === heroImageIndex ? 0.9 : 0 }}
-              transition={{ duration: 0.8 }}
-              className="absolute w-full h-full object-cover"
-            />
-          ))}
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
-        </div>
-
-        {/* Navigation arrows */}
-        <button
-          onClick={prevHeroImage}
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <button
-          onClick={nextHeroImage}
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-
-        {/* Indicator dots */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {sliderImages.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setHeroImageIndex(idx)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                idx === heroImageIndex ? 'bg-white w-6' : 'bg-white/50'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* City label */}
-        {sliderImages[heroImageIndex] && (
-          <div className="absolute top-6 right-6 z-20 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
-            {sliderImages[heroImageIndex].city}, {sliderImages[heroImageIndex].region}
-          </div>
-        )}
-
-        <div className="container relative z-10 px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-
-            {/* ── Left: Search ── */}
-            <div className="flex flex-col items-start text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6"
-              >
-                <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-                Discover the best of Puerto Rico
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold text-white leading-tight mb-5 drop-shadow-lg"
-              >
-                Find Local Businesses You Can{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-secondary">Trust</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-base md:text-lg text-white/85 max-w-xl mb-8 font-medium drop-shadow"
-              >
-                Explore restaurants, services, shops, and experiences verified by the local community across all 78 municipalities.
-              </motion.p>
-
-              <motion.form
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                onSubmit={handleSearch}
-                className="w-full glass-panel p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-2xl"
-              >
-                <div className="relative flex-1 flex items-center">
-                  <Search className="absolute left-4 text-muted-foreground w-5 h-5" />
-                  <Input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="What are you looking for?"
-                    className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus-visible:ring-1 focus-visible:ring-primary/50 bg-transparent"
-                  />
-                </div>
-
-                <div className="hidden md:block w-px h-8 bg-border my-auto mx-2" />
-
-                <div className="relative flex-1 flex items-center border-t md:border-t-0 border-border pt-2 md:pt-0">
-                  <MapPin className="absolute left-4 text-muted-foreground w-5 h-5 z-10" />
-                  <Select value={municipality} onValueChange={setMunicipality}>
-                    <SelectTrigger className="pl-12 h-14 border-none shadow-none text-base rounded-xl focus:ring-1 focus:ring-primary/50 bg-transparent">
-                      <SelectValue placeholder="Any Municipality" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px] rounded-xl">
-                      <SelectItem value="all">Any Municipality</SelectItem>
-                      {MUNICIPALITIES.map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button type="submit" size="lg" className="h-14 px-8 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/25 mt-2 md:mt-0 w-full md:w-auto">
-                  Search
-                </Button>
-              </motion.form>
-
-              {/* Surprise Me */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.45 }}
-                className="mt-5 flex items-center gap-3"
-              >
-                <span className="text-white/60 text-sm">or</span>
-                <button
-                  onClick={handleSurpriseMe}
-                  disabled={surpriseMeLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold backdrop-blur-md transition-all duration-200 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <Shuffle className={`w-4 h-4 ${surpriseMeLoading ? "animate-spin" : ""}`} />
-                  {surpriseMeLoading ? "Finding a surprise…" : "Surprise Me 🎲"}
-                </button>
-              </motion.div>
+    <div className="min-h-screen">
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 text-white">
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 15% 25%, white 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
+        <div className="relative container mx-auto px-4 py-12 md:py-20 text-center">
+          <p className="inline-flex items-center gap-2 text-sm font-medium bg-white/15 rounded-full px-3 py-1 mb-4">🇵🇷 Your guide to the island</p>
+          <h1 className="font-display text-3xl md:text-5xl font-bold mb-3 leading-tight">Discover the best of<br className="hidden sm:block" /> Puerto Rico</h1>
+          <p className="text-white/85 max-w-xl mx-auto mb-6 text-base md:text-lg">Local businesses, hidden beaches, surf breaks, waterfalls, and guided adventures — all in one place.</p>
+          <div className="max-w-lg mx-auto flex gap-2 bg-white rounded-2xl p-2 shadow-xl">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && doSearch()} placeholder="Search businesses, food, services…" className="pl-10 border-0 focus-visible:ring-0 text-foreground h-11" />
             </div>
+            <Button onClick={doSearch} className="rounded-xl h-11 px-5">Search</Button>
+          </div>
+          <button onClick={surprise} disabled={surprising} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 rounded-full px-4 py-2 transition-colors">
+            <Shuffle className="w-4 h-4" /> {surprising ? "Finding a gem…" : "Surprise me"}
+          </button>
+        </div>
+      </section>
 
-            {/* ── Right: Featured Businesses ── */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="hidden lg:flex flex-col gap-3"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-secondary" />
-                  <span className="text-white/90 font-bold text-sm uppercase tracking-wider">Featured Businesses</span>
-                </div>
-                <Link href="/directory?featured=true">
-                  <span className="text-white/60 hover:text-white text-xs font-medium transition-colors flex items-center gap-1">
-                    View all <ArrowRight className="w-3 h-3" />
-                  </span>
-                </Link>
+      {/* Discover tiles */}
+      <section className="container mx-auto px-4 -mt-8 relative z-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {DISCOVER.map((d) => (
+            <Link key={d.href} href={d.href}>
+              <div className={`group cursor-pointer rounded-2xl p-4 bg-gradient-to-br ${d.grad} text-white shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full`}>
+                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{d.emoji}</div>
+                <p className="font-display font-bold leading-tight">{d.label}</p>
+                <p className="text-white/80 text-xs mt-0.5">{d.sub}</p>
               </div>
-
-              {featuredLoading ? (
-                <>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="h-20 bg-white/10 rounded-2xl animate-pulse" />
-                  ))}
-                </>
-              ) : featuredData?.businesses?.length ? (
-                featuredData.businesses.slice(0, 4).map((biz, i) => (
-                  <motion.div
-                    key={biz.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + i * 0.08 }}
-                  >
-                    <Link href={`/businesses/${biz.slug || biz.id}`}>
-                      <div className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 hover:border-white/30 rounded-2xl p-3 cursor-pointer transition-all duration-200 group">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white/20">
-                          {biz.logoUrl ? (
-                            <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl">🏢</div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-semibold text-sm leading-tight truncate group-hover:text-secondary transition-colors">
-                            {biz.name}
-                          </p>
-                          <p className="text-white/60 text-xs mt-0.5 truncate">
-                            {[biz.categoryName, biz.municipality].filter(Boolean).join(" · ")}
-                          </p>
-                          {(biz.averageRating ?? 0) > 0 && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                              <span className="text-white/80 text-xs font-medium">{Number(biz.averageRating).toFixed(1)}</span>
-                              <span className="text-white/40 text-xs">({biz.reviewCount})</span>
-                            </div>
-                          )}
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-white/70 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-                      <div className="w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center text-2xl">🏢</div>
-                      <div>
-                        <p className="text-white/40 text-sm font-medium">Business listing</p>
-                        <p className="text-white/25 text-xs">Be the first to get featured</p>
-                      </div>
-                    </div>
-                  ))}
-                  <Link href="/list-your-business">
-                    <div className="text-center py-2">
-                      <span className="text-secondary/80 hover:text-secondary text-xs font-semibold transition-colors">
-                        + Add your business for free
-                      </span>
-                    </div>
-                  </Link>
-                </div>
-              )}
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* What's Your Vibe? */}
-      <section className="py-20 bg-background">
-        <div className="container px-4 mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">What's Your Vibe?</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">Pick a mood and we'll find the perfect spot for you.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5 max-w-4xl mx-auto">
-            {VIBE_CARDS.map((vibe, i) => (
-              <motion.div
-                key={vibe.label}
-                initial={{ opacity: 0, scale: 0.93 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              >
-                <Link href={vibe.href}>
-                  <div className={`
-                    relative group overflow-hidden rounded-2xl p-5 md:p-6 cursor-pointer
-                    bg-gradient-to-br ${vibe.gradient} ${vibe.bgHover}
-                    shadow-lg ${vibe.shadowColor}
-                    transition-all duration-300
-                  `}>
-                    <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-white/10 blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors" />
-                    <div className="relative z-10">
-                      <div className="text-3xl md:text-4xl mb-3">{vibe.emoji}</div>
-                      <h3 className="text-white font-display font-bold text-lg md:text-xl leading-tight">{vibe.label}</h3>
-                      <p className="text-white/75 text-xs md:text-sm mt-1">{vibe.tagline}</p>
-                      <div className="mt-3 flex items-center gap-1 text-white/90 text-xs font-semibold">
-                        Explore <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Explore by Town */}
-      <section className="py-20 bg-muted/30">
-        <div className="container px-4 mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Explore by Town</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">From mountain towns to coastal cities — find businesses across the island.</p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
-            {FEATURED_TOWNS.map((town, i) => (
-              <TownTile key={town.name} town={town} index={i} />
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link href="/directory">
-              <Button variant="outline" className="rounded-full">View all 78 municipalities</Button>
             </Link>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Discover Something New - Random All Businesses */}
-      {randomDiscoverBusinesses.length > 0 && (
-        <section className="py-20 bg-gradient-to-b from-emerald-50/30 to-teal-50/30">
-          <div className="container px-4 mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Discover Something New</h2>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Explore a curated mix of local businesses across Puerto Rico. New recommendations every visit.</p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {randomDiscoverBusinesses.map((business, i) => (
-                <motion.div
-                  key={business.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                >
-                  <BusinessCard business={business} />
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <button
-                onClick={() => window.location.reload()}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-semibold transition-colors border border-emerald-300 hover:border-emerald-400"
-              >
-                <Shuffle className="w-4 h-4" />
-                Show Different Businesses
-              </button>
-            </div>
+      {/* Categories */}
+      {cats.length > 0 && (
+        <section className="container mx-auto px-4 pt-8">
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {cats.map((c) => (
+              <Link key={c.id} href={`/directory?category=${encodeURIComponent(c.slug || c.name)}`}>
+                <span className="shrink-0 inline-block px-4 py-2 rounded-full bg-muted hover:bg-primary hover:text-white text-sm font-semibold whitespace-nowrap transition-colors cursor-pointer">{c.name}</span>
+              </Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* Featured Businesses */}
-      <section className="py-24 bg-muted/50 border-y border-border relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 z-0" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 z-0" />
-        
-        <div className="container px-4 mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-secondary" />
-                <span className="text-secondary font-bold tracking-wider uppercase text-sm">Spotlight</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-display font-bold">Featured Places</h2>
-            </div>
-            <Link href="/directory?featured=true">
-              <Button variant="outline" className="rounded-full bg-white">View All Featured</Button>
-            </Link>
-          </div>
-          
-          {featuredLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-96 bg-card rounded-2xl animate-pulse border border-border" />
-              ))}
-            </div>
-          ) : featuredData?.businesses?.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredData.businesses.map((business, i) => (
-                <motion.div
-                  key={business.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <BusinessCard business={business} featured={true} />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-card rounded-2xl border border-dashed border-border">
-              <p className="text-muted-foreground">No featured businesses yet.</p>
-            </div>
-          )}
+      {/* Featured businesses */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-xl md:text-2xl font-bold flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-500" /> Featured businesses</h2>
+          <Link href="/directory"><span className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer">See all <ArrowRight className="w-4 h-4" /></span></Link>
         </div>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">{[0, 1, 2, 3].map((i) => <div key={i} className="h-72 rounded-2xl bg-muted animate-pulse" />)}</div>
+        ) : featured.length ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {featured.slice(0, 8).map((b) => <BusinessCard key={b.id} business={b as any} />)}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">No businesses yet — <Link href="/list-your-business"><span className="text-primary font-medium cursor-pointer">be the first to list</span></Link>.</p>
+        )}
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-secondary">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+      {/* Activities rail */}
+      {acts.length > 0 && (
+        <section className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl md:text-2xl font-bold flex items-center gap-2">🌴 Adventures on the island</h2>
+            <Link href="/activities"><span className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer">Explore <ArrowRight className="w-4 h-4" /></span></Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {acts.map((a) => (
+              <Link key={a.id} href="/activities">
+                <div className="group cursor-pointer rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all">
+                  <div className={`h-24 bg-gradient-to-br ${ACT_GRAD[a.activity_type] || "from-teal-400 to-cyan-600"} flex items-center justify-center text-4xl group-hover:scale-105 transition-transform`}>{ACT_EMOJI[a.activity_type] || "🌴"}</div>
+                  <div className="p-2.5">
+                    <p className="font-semibold text-sm leading-tight line-clamp-1">{a.name}</p>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-0.5 mt-0.5"><MapPin className="w-3 h-3" />{a.municipality}</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
-        <div className="container px-4 mx-auto relative z-10 text-center max-w-3xl">
-          <p className="text-white/80 font-semibold tracking-widest uppercase text-sm mb-4">For Business Owners</p>
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-white drop-shadow">
-            Own a business in Puerto Rico?
-          </h2>
-          <p className="text-lg text-white/90 mb-10 leading-relaxed max-w-xl mx-auto">
-            Get listed, manage your reputation, and connect with customers across all 78 municipalities — completely free.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/list-your-business">
-              <Button size="lg" className="h-14 px-8 rounded-xl bg-white text-primary hover:bg-white/90 font-bold text-lg w-full sm:w-auto shadow-xl">
-                Add Your Business Free
-              </Button>
-            </Link>
-            <Link href="/directory">
-              <Button size="lg" variant="outline" className="h-14 px-8 rounded-xl border-white/40 text-white hover:bg-white/10 font-bold text-lg w-full sm:w-auto">
-                Explore Directory
-              </Button>
-            </Link>
+      {/* CTA band */}
+      <section className="container mx-auto px-4 py-10">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="rounded-2xl bg-gradient-to-br from-primary to-cyan-600 text-white p-6 flex flex-col justify-between">
+            <div>
+              <Store className="w-8 h-8 mb-2" />
+              <p className="font-display font-bold text-xl mb-1">Own a business?</p>
+              <p className="text-white/85 text-sm mb-4">List it free and reach visitors and locals across all 78 municipalities.</p>
+            </div>
+            <Link href="/list-your-business"><button className="self-start px-5 py-2.5 rounded-xl bg-white text-primary text-sm font-bold hover:bg-white/90">Add your business</button></Link>
+          </div>
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-6 flex flex-col justify-between">
+            <div>
+              <Compass className="w-8 h-8 mb-2" />
+              <p className="font-display font-bold text-xl mb-1">Are you a local guide?</p>
+              <p className="text-white/85 text-sm mb-4">Offer snorkeling trips, hikes, and tours — and take bookings on Spotlight.</p>
+            </div>
+            <Link href="/guide"><button className="self-start px-5 py-2.5 rounded-xl bg-white text-emerald-700 text-sm font-bold hover:bg-white/90">Become a guide</button></Link>
           </div>
         </div>
       </section>
