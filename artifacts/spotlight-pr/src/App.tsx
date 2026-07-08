@@ -16,6 +16,7 @@ import BusinessDetail from "@/pages/BusinessDetail";
 import SignUp from "@/pages/SignUp";
 import { BottomNav } from "@/components/layout/BottomNav";
 import Activities from "@/pages/Activities";
+import ActivityDetail from "@/pages/ActivityDetail";
 import Surf from "@/pages/Surf";
 import Experiences from "@/pages/Experiences";
 import GuideDashboard from "@/pages/GuideDashboard";
@@ -75,7 +76,8 @@ function MagicLinkHandler() {
     const hash = window.location.hash;
     if (
       hash.includes("type=magiclink") ||
-      hash.includes("type=signup")
+      hash.includes("type=signup") ||
+      hash.includes("type=recovery")
     ) {
       detectedRef.current = true;
     }
@@ -172,6 +174,7 @@ function Router() {
           <Route path="/signup" component={SignUp} />
           <Route path="/sign-up" component={SignUp} />
           <Route path="/activities" component={Activities} />
+          <Route path="/activities/:slug" component={ActivityDetail} />
           <Route path="/surf" component={Surf} />
           <Route path="/experiences" component={Experiences} />
           <Route path="/guide" component={GuideDashboard} />
