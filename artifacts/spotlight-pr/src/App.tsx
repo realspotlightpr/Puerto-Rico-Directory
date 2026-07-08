@@ -17,6 +17,8 @@ import SignUp from "@/pages/SignUp";
 import { BottomNav } from "@/components/layout/BottomNav";
 import Activities from "@/pages/Activities";
 import Surf from "@/pages/Surf";
+import Experiences from "@/pages/Experiences";
+import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
@@ -171,6 +173,8 @@ function Router() {
           <Route path="/sign-up" component={SignUp} />
           <Route path="/activities" component={Activities} />
           <Route path="/surf" component={Surf} />
+          <Route path="/experiences" component={Experiences} />
+          <Route path="/guide" component={GuideDashboard} />
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
