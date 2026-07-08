@@ -60,6 +60,11 @@ export function AuthModal() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
+        if (!phone.trim()) {
+          setError("Please enter your phone number — we use it for updates and quick login.");
+          setLoading(false);
+          return;
+        }
         const nameParts = fullName.trim().split(" ");
         const firstName = nameParts[0] ?? "";
         const lastName = nameParts.slice(1).join(" ") || undefined;
@@ -166,7 +171,7 @@ export function AuthModal() {
 
             {mode === "sign-up" && (
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(optional — for text updates)</span></Label>
+                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(for text updates &amp; quick login)</span></Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -176,6 +181,7 @@ export function AuthModal() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="pl-9"
+                    required
                   />
                 </div>
               </div>
