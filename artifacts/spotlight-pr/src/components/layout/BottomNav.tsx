@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Home, Compass, Heart, User } from "lucide-react";
+import { Home, Compass, Palmtree, Heart, User } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 
 type Tab = {
@@ -12,7 +12,8 @@ type Tab = {
 
 const TABS: Tab[] = [
   { href: "/", label: "Discover", icon: Home, match: (p) => p === "/" },
-  { href: "/directory", label: "Explore", icon: Compass, match: (p) => p.startsWith("/directory") || p.startsWith("/businesses") },
+  { href: "/directory", label: "Businesses", icon: Compass, match: (p) => p.startsWith("/directory") || p.startsWith("/businesses") },
+  { href: "/activities", label: "Activities", icon: Palmtree, match: (p) => p.startsWith("/activities") },
   { href: "/profile", label: "Saved", icon: Heart, match: (p) => p.startsWith("/profile"), requiresAuth: true },
   { href: "/dashboard", label: "Account", icon: User, match: (p) => p.startsWith("/dashboard"), requiresAuth: true },
 ];
@@ -38,7 +39,7 @@ export function BottomNav() {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-white/90 backdrop-blur-lg shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {TABS.map((t) => {
           const active = t.match(location);
           const Icon = t.icon;
