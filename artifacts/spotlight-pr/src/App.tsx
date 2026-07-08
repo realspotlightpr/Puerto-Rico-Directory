@@ -14,6 +14,7 @@ import Home from "@/pages/Home";
 import Directory from "@/pages/Directory";
 import BusinessDetail from "@/pages/BusinessDetail";
 import SignUp from "@/pages/SignUp";
+import { BottomNav } from "@/components/layout/BottomNav";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
@@ -159,7 +160,7 @@ function Router() {
       <ForcePasswordGate />
       <ImpersonationBar />
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/directory" component={Directory} />
@@ -185,6 +186,7 @@ function Router() {
         </Switch>
       </main>
       <Footer />
+      <BottomNav />
       <AuthModal />
     </div>
   );
