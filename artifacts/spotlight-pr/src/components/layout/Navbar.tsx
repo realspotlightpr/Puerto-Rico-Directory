@@ -27,7 +27,9 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/directory", label: "Directory" },
+    { href: "/directory", label: "Businesses" },
+    { href: "/activities", label: "Activities" },
+    { href: "/surf", label: "Surf" },
     { href: "/business", label: "For Business" },
   ];
 
