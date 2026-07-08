@@ -2,7 +2,8 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
   Menu, X, User as UserIcon, PlusCircle, LayoutDashboard,
-  Shield, LogOut, Store, Star,
+  Shield, LogOut, Store, Star, ChevronDown, Compass, Waves,
+  Palmtree, Megaphone, Crown, Anchor,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,40 @@ export function Navbar() {
     { href: "/directory", label: "Businesses" },
     { href: "/activities", label: "Activities" },
     { href: "/surf", label: "Surf" },
+    { href: "/experiences", label: "Experiences" },
     { href: "/business", label: "For Business" },
+  ];
+
+  // Mega-menu groups (desktop)
+  const megaGroups: {
+    heading: string;
+    items: { href: string; label: string; desc: string; icon: any; accent: string }[];
+  }[] = [
+    {
+      heading: "Discover",
+      items: [
+        { href: "/directory", label: "Businesses", desc: "Shops, food & services", icon: Store, accent: "text-blue-600 bg-blue-50" },
+        { href: "/activities", label: "Activities", desc: "Beaches, caves, waterfalls", icon: Palmtree, accent: "text-teal-600 bg-teal-50" },
+        { href: "/surf", label: "Surf Cams", desc: "Live spots & conditions", icon: Waves, accent: "text-cyan-600 bg-cyan-50" },
+        { href: "/experiences", label: "Experiences", desc: "Book local guides", icon: Compass, accent: "text-emerald-600 bg-emerald-50" },
+      ],
+    },
+    {
+      heading: "For Business",
+      items: [
+        { href: "/list-your-business", label: "Add your business", desc: "List free in minutes", icon: PlusCircle, accent: "text-primary bg-primary/10" },
+        { href: "/business", label: "Why Spotlight", desc: "Reach locals & visitors", icon: Store, accent: "text-indigo-600 bg-indigo-50" },
+        { href: "/business", label: "Go Premium", desc: "Menus, analytics & more", icon: Crown, accent: "text-amber-600 bg-amber-50" },
+        { href: "/advertise", label: "Advertise", desc: "Feature your brand", icon: Megaphone, accent: "text-rose-600 bg-rose-50" },
+      ],
+    },
+    {
+      heading: "Guides & Community",
+      items: [
+        { href: "/guide", label: "Become a guide", desc: "Sell tours & experiences", icon: Anchor, accent: "text-emerald-700 bg-emerald-50" },
+        { href: "/experiences", label: "Book a guide", desc: "Local-led adventures", icon: Compass, accent: "text-teal-700 bg-teal-50" },
+      ],
+    },
   ];
 
   // Admin shortcut — always visible in the top nav when logged in as admin
@@ -58,18 +92,46 @@ export function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <div className="flex items-center gap-6">
-            {[...navLinks, ...adminNavLinks].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === link.href ? "text-primary font-semibold" : link.href === "/admin" ? "text-purple-600 hover:text-purple-700" : "text-muted-foreground"
-                }`}
-              >
+            <Link href="/" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/" ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+              Home
+            </Link>
+
+            {/* Mega menu */}
+            <div className="relative group">
+              <button className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2">
+                Explore <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+              </button>
+              {/* Panel */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150">
+                <div className="w-[640px] bg-white rounded-2xl shadow-2xl border border-border/60 p-5 grid grid-cols-3 gap-5">
+                  {megaGroups.map((g) => (
+                    <div key={g.heading}>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2 px-1">{g.heading}</p>
+                      <div className="flex flex-col gap-0.5">
+                        {g.items.map((it, i) => (
+                          <Link key={g.heading + i} href={it.href} className="flex items-start gap-3 p-2 rounded-xl hover:bg-muted transition-colors">
+                            <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${it.accent}`}>
+                              <it.icon className="w-4 h-4" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-sm font-semibold leading-tight text-foreground">{it.label}</span>
+                              <span className="block text-xs text-muted-foreground leading-tight mt-0.5">{it.desc}</span>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {adminNavLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors">
                 {link.label}
               </Link>
             ))}
-            
+
             {showAddBusinessNav && (
               <Link href="/list-your-business">
                 <Button variant="outline" className="gap-2 rounded-full border-primary/20 text-primary hover:bg-primary/5">
