@@ -416,9 +416,54 @@ export default function ForBusiness() {
             </motion.p>
           </div>
 
+          {/* Entry-level Promoted plan */}
+          <div className="max-w-3xl mx-auto mb-10">
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-4">Start here — our entry plan</p>
+            <motion.div
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className="relative rounded-2xl border border-emerald-400/50 bg-gradient-to-br from-emerald-500/20 to-teal-600/10 ring-2 ring-emerald-400/30 p-6 md:p-7"
+            >
+              <span className="absolute -top-2.5 left-6 inline-flex items-center gap-1 bg-emerald-500 text-white text-xs font-bold px-3 py-0.5 rounded-full shadow">
+                <Star className="w-2.5 h-2.5" /> Entry level
+              </span>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+                <div className="flex-1">
+                  <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wide mb-1">Promoted</p>
+                  <div className="flex items-end gap-1.5 mb-2">
+                    <span className="text-4xl font-display font-bold text-white">$29</span>
+                    <span className="text-white/70 text-sm mb-1">for 3 months</span>
+                  </div>
+                  <ul className="space-y-2">
+                    {[
+                      "Featured placement across the site (homepage & category sections)",
+                      "2 promotional reels every month — produced & posted free from @spotlightpromopr, tagging your business",
+                      "Extra listing features: menu, higher customization & more",
+                    ].map((f, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm text-white/90">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-white/55 text-xs mt-3">
+                    For higher-level marketing, see our other plans below or consult with a rep.
+                  </p>
+                </div>
+                <div className="md:w-48 shrink-0">
+                  <Link href="/list-your-business">
+                    <Button className="w-full rounded-xl text-sm font-semibold py-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-900/30">
+                      Get Promoted
+                      <ChevronRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
           {/* Growth Plans */}
           <div className="max-w-3xl mx-auto">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-6">Optional Premium Features</p>
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-6">Higher-level marketing plans</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
                 {
@@ -505,7 +550,7 @@ export default function ForBusiness() {
               size="lg"
               variant="outline"
               className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent"
-              onClick={() => window.open("/advertise-with-us", "_blank")}
+              onClick={() => window.open("/advertise", "_blank")}
             >
               View All Plans
               <ChevronRight className="w-4 h-4 ml-1" />
