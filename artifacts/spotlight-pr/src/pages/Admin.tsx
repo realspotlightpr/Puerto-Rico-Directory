@@ -60,7 +60,7 @@ import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 
 type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
-type BusinessTab = "approved" | "pending" | "rejected" | "all";
+type BusinessTab = "approved" | "claimed" | "unclaimed" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "admin";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
@@ -932,13 +932,21 @@ export default function Admin() {
   const claimedLeads = leadsData?.leads?.filter(l => l.isClaimed).length ?? 0;
   const totalNotifications = pendingCount;
 
+  const approvedList = approvedData?.businesses ?? [];
+  const isBizClaimed = (b: any) => !!(b.isClaimed ?? b.is_claimed ?? b.ownerId ?? b.owner_id);
+  const claimedList = approvedList.filter(isBizClaimed);
+  const unclaimedList = approvedList.filter((b: any) => !isBizClaimed(b));
+
   const tabBusinesses = {
-    approved: approvedData?.businesses ?? [],
+    approved: approvedList,
+    claimed: claimedList,
+    unclaimed: unclaimedList,
     pending: pendingData?.businesses ?? [],
     rejected: rejectedData?.businesses ?? [],
     all: allData?.businesses ?? [],
   }[businessTab];
 
+  const showStatusCol = businessTab === "pending" || businessTab === "rejected" || businessTab === "all";
   const filteredBusinesses = tabBusinesses.filter(b =>
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (b as any).ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1062,19 +1070,16 @@ export default function Admin() {
   const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
   const handleSendPasswordReset = async () => {
     if (!editingUser) return;
+    if (!editingUser.email) {
+      toast({ title: "No email on file", description: "This user has no email address to send a reset link to.", variant: "destructive" });
+      return;
+    }
     setSendingPasswordReset(true);
     try {
-      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/api/admin/users/${editingUser.id}/send-password-reset`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.error || "Failed to send password reset");
-      }
-      toast({ title: "Password reset email sent", description: `Temporary password sent to ${editingUser.email}` });
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`;
+      const { error } = await supabase.auth.resetPasswordForEmail(editingUser.email, { redirectTo });
+      if (error) throw error;
+      toast({ title: "Password reset email sent", description: `A reset link was emailed to ${editingUser.email}` });
     } catch (err: any) {
       toast({ title: "Failed to send password reset", description: err.message, variant: "destructive" });
     } finally {
@@ -1262,8 +1267,18 @@ export default function Admin() {
     { id: "settings", label: "Page Settings", icon: Settings },
   ];
 
+  const navGroups: { heading: string | null; ids: AdminSection[] }[] = [
+    { heading: null, ids: ["dashboard"] },
+    { heading: "Listings", ids: ["leads", "businesses", "claims"] },
+    { heading: "People", ids: ["users", "team"] },
+    { heading: "Messaging", ids: ["reviews", "communications", "email-logs"] },
+    { heading: "System", ids: ["settings"] },
+  ];
+
   const businessTabs: { id: BusinessTab; label: string; count: number; color: string; activeColor: string }[] = [
-    { id: "approved", label: "Active Listings", count: approvedData?.total ?? 0, color: "text-emerald-600", activeColor: "bg-emerald-600 text-white" },
+    { id: "approved", label: "All Active", count: approvedData?.total ?? approvedList.length, color: "text-emerald-600", activeColor: "bg-emerald-600 text-white" },
+    { id: "claimed", label: "Claimed", count: claimedList.length, color: "text-teal-600", activeColor: "bg-teal-600 text-white" },
+    { id: "unclaimed", label: "Unclaimed", count: unclaimedList.length, color: "text-orange-600", activeColor: "bg-orange-500 text-white" },
     { id: "pending", label: "Pending Review", count: pendingData?.total ?? 0, color: "text-amber-600", activeColor: "bg-amber-500 text-white" },
     { id: "rejected", label: "Rejected", count: rejectedData?.total ?? 0, color: "text-red-600", activeColor: "bg-red-500 text-white" },
     { id: "all", label: "All", count: stats?.totalBusinesses ?? 0, color: "text-muted-foreground", activeColor: "bg-slate-700 text-white" },
@@ -1285,46 +1300,35 @@ export default function Admin() {
           </div>
         </div>
 
-        <nav className="p-3 space-y-1 flex-1">
-          {navItems.map(item => {
-            const Icon = item.icon;
-            const active = section === item.id;
-            const isLeads = item.id === "leads";
-            
-            if (isLeads) {
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => { setSection(item.id); setSearchTerm(""); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium border-2 ${active ? "bg-violet-50 text-violet-700 border-violet-500 shadow-md shadow-violet-500/20" : "text-violet-600 border-violet-300 hover:bg-violet-50 hover:border-violet-400"}`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0 text-violet-600" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {item.badge ? (
-                    <span className={`text-xs min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${active ? "bg-violet-600 text-white" : "bg-violet-500 text-white"}`}>
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            }
-            
-            return (
-              <button
-                key={item.id}
-                onClick={() => { setSection(item.id); setSearchTerm(""); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm font-medium ${active ? "bg-primary text-white shadow-md shadow-primary/20" : "text-foreground hover:bg-muted/60"}`}
-              >
-                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-white" : "text-muted-foreground"}`} />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge ? (
-                  <span className={`text-xs min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${active ? "bg-white/20 text-white" : `${item.badgeColor ?? "bg-amber-100"} text-white`}`}>
-                    {item.badge}
-                  </span>
-                ) : active ? <ChevronRight className="w-3 h-3 text-white/60" /> : null}
-              </button>
-            );
-          })}
+        <nav className="p-3 space-y-3 flex-1 overflow-y-auto">
+          {navGroups.map((group, gi) => (
+            <div key={gi} className="space-y-0.5">
+              {group.heading && (
+                <p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">{group.heading}</p>
+              )}
+              {group.ids.map(id => {
+                const item = navItems.find(n => n.id === id);
+                if (!item) return null;
+                const Icon = item.icon;
+                const active = section === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => { setSection(item.id); setSearchTerm(""); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium ${active ? "bg-primary text-white shadow-sm shadow-primary/20" : "text-foreground hover:bg-muted/60"}`}
+                  >
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-white" : "text-muted-foreground"}`} />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {item.badge ? (
+                      <span className={`text-xs min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${active ? "bg-white/20 text-white" : `${item.badgeColor ?? "bg-amber-500"} text-white`}`}>
+                        {item.badge}
+                      </span>
+                    ) : active ? <ChevronRight className="w-3 h-3 text-white/60" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-border">
@@ -1650,7 +1654,7 @@ export default function Admin() {
                           <th className="p-4 font-medium">Business</th>
                           <th className="p-4 font-medium">Owner</th>
                           <th className="p-4 font-medium">Location</th>
-                          {businessTab !== "approved" && <th className="p-4 font-medium">Status</th>}
+                          {showStatusCol && <th className="p-4 font-medium">Status</th>}
                           <th className="p-4 font-medium">Badges</th>
                           <th className="p-4 font-medium text-right">Actions</th>
                         </tr>
@@ -1683,7 +1687,7 @@ export default function Admin() {
                               ) : <span className="text-xs text-muted-foreground italic">No owner</span>}
                             </td>
                             <td className="p-4 text-sm text-muted-foreground">{b.municipality ?? "—"}</td>
-                            {businessTab !== "approved" && (
+                            {showStatusCol && (
                               <td className="p-4">
                                 {b.status === "pending" && <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>}
                                 {b.status === "approved" && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Approved</Badge>}

@@ -140,7 +140,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {acts.map((a) => (
-              <Link key={a.id} href="/activities">
+              <Link key={a.id} href={`/activities/${a.slug}`}>
                 <div className="group cursor-pointer rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all">
                   <div className={`h-24 bg-gradient-to-br ${ACT_GRAD[a.activity_type] || "from-teal-400 to-cyan-600"} flex items-center justify-center text-4xl group-hover:scale-105 transition-transform`}>{ACT_EMOJI[a.activity_type] || "🌴"}</div>
                   <div className="p-2.5">

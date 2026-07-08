@@ -47,6 +47,7 @@ const vis = (t: string): [string, string] => VISUAL[t] || ["from-teal-400 to-cya
 function ActivityCard({ a }: { a: Activity }) {
   const [grad, emoji] = vis(a.activity_type);
   return (
+    <Link href={`/activities/${a.slug}`} className="block cursor-pointer">
     <div className="group rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
       <div className={`relative h-40 bg-gradient-to-br ${grad} flex items-center justify-center overflow-hidden`}>
         {a.image_url ? (
@@ -76,6 +77,7 @@ function ActivityCard({ a }: { a: Activity }) {
         </div>
       </div>
     </div>
+    </Link>
   );
 }
 

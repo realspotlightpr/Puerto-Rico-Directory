@@ -10,6 +10,7 @@ import { MapPin, Phone, Globe, Mail, ShieldCheck, BadgeCheck, Star, Clock, Tag, 
 import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
+import { MapEmbed } from "@/pages/ActivityDetail";
 
 // ── Analytics: log listing interactions via the log_listing_event RPC ──────────
 // Never let analytics break the page — every call is best-effort.
@@ -430,6 +431,20 @@ export default function BusinessDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Map / location */}
+      {(b.address || b.municipality) && (
+        <div className="mt-8">
+          <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /> Location</h2>
+          <MapEmbed
+            query={[b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", ")}
+            lat={(b as any).latitude}
+            lon={(b as any).longitude}
+            title={b.name}
+          />
+          <a href={mapsUrl(b.address || "", b.municipality)} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-2 hover:underline"><MapPin className="w-4 h-4" /> Get directions</a>
+        </div>
+      )}
 
       {/* Reviews section */}
       <div className="mt-8">
