@@ -18,6 +18,8 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [smsMode, setSmsMode] = useState(false);
+  const [smsPhone, setSmsPhone] = useState("");
 
   if (!showAuthModal) return null;
 
@@ -45,6 +47,24 @@ export function AuthModal() {
       setSuccess("Password reset link sent! Check your email and follow the link to set a new password.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Couldn't send the reset link. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handlePhoneLogin() {
+    reset();
+    if (!smsPhone.trim()) {
+      setError("Enter your phone number to get a login link by text.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("phone-login", { body: { phone: smsPhone.trim() } });
+      if (error) throw error;
+      setSuccess((data as any)?.message || "If that number is registered, a login link is on its way by text. Tap it to sign in.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Couldn't send the text link. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -232,6 +252,32 @@ export function AuthModal() {
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {mode === "sign-in" ? "Sign In" : "Create Account"}
             </Button>
+
+            {mode === "sign-in" && (
+              <div className="pt-1">
+                <div className="relative my-3 text-center">
+                  <div className="absolute inset-x-0 top-1/2 border-t border-border" />
+                  <span className="relative z-10 text-xs text-muted-foreground bg-white px-2">or</span>
+                </div>
+                {!smsMode ? (
+                  <button type="button" onClick={() => { reset(); setSmsMode(true); }} className="w-full text-sm font-medium text-primary hover:underline">
+                    📱 Log in with a text link instead
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="smsPhone">Phone number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input id="smsPhone" type="tel" placeholder="(787) 555-1234" value={smsPhone} onChange={(e) => setSmsPhone(e.target.value)} className="pl-9" />
+                    </div>
+                    <Button type="button" variant="outline" className="w-full" disabled={loading} onClick={handlePhoneLogin}>
+                      {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Text me a login link
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </form>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
