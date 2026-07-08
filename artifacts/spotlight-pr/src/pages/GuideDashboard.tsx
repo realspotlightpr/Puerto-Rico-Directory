@@ -182,6 +182,9 @@ export default function GuideDashboard() {
       {showServiceForm && (
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6 space-y-4 mb-6">
           <h2 className="font-display font-bold">List a new experience</h2>
+          <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+            Listing is <strong>free</strong>. Spotlight keeps a <strong>10% service fee</strong> on completed bookings — you keep 90% of every tour.
+          </p>
           <div className="space-y-1.5"><Label>Title *</Label><Input value={svcTitle} onChange={(e) => setSvcTitle(e.target.value)} placeholder="Sunset snorkel tour at Escambrón" /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5"><Label>Type</Label>
