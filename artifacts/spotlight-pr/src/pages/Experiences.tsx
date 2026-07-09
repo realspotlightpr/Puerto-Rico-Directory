@@ -146,6 +146,7 @@ export default function Experiences() {
                 <div className="h-28 bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-5xl">{TYPE_EMOJI[s.activity_type || ""] || "🌴"}</div>
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="font-display font-bold leading-tight">{s.title}</h3>
+                  {(s as any).provider && <span className="inline-flex w-fit mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-600 text-white">✦ {(s as any).provider}</span>}
                   {s.guide?.display_name && (
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                       by {s.guide.display_name}{s.guide.is_verified && <ShieldCheck className="w-3 h-3 text-emerald-500" />}

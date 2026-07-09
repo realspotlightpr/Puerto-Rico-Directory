@@ -70,6 +70,7 @@ function ActivityCard({ a }: { a: Activity }) {
         </div>
         {a.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{a.description}</p>}
         <div className="flex items-center gap-2 mt-3">
+          {(a as any).provider && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-600 text-white">✦ {(a as any).provider}</span>}
           {a.difficulty && <span className="text-[11px] font-medium capitalize px-2 py-0.5 rounded-full bg-muted">{a.difficulty}</span>}
           <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${a.is_free ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
             {a.is_free ? "Free" : "Paid / Tour"}

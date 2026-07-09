@@ -61,6 +61,7 @@ export default function ActivityDetail() {
 
       <div className="container mx-auto px-4 py-6 max-w-3xl space-y-6">
         <div className="flex flex-wrap gap-2">
+          {a.provider && <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-600 text-white">✦ {a.provider}</span>}
           {a.difficulty && <span className="text-xs font-medium capitalize px-3 py-1 rounded-full bg-muted flex items-center gap-1"><Signal className="w-3.5 h-3.5" /> {a.difficulty}</span>}
           {a.best_season && <span className="text-xs font-medium px-3 py-1 rounded-full bg-muted flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {a.best_season}</span>}
           <span className={`text-xs font-medium px-3 py-1 rounded-full ${a.is_free ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{a.is_free ? "Free" : "Paid / Tour"}</span>
