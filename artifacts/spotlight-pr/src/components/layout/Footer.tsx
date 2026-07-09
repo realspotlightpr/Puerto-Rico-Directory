@@ -48,6 +48,11 @@ export function Footer() {
             <h4 className="font-display font-bold text-sm mb-4 text-foreground">For the People</h4>
             <ul className="space-y-3">
               <li>
+                <Link href="/launch" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Explore Puerto Rico
+                </Link>
+              </li>
+              <li>
                 <Link href="/directory" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Browse Directory
                 </Link>
@@ -126,6 +131,11 @@ export function Footer() {
           <div>
             <h4 className="font-display font-bold text-sm mb-4 text-foreground">Work with Us</h4>
             <ul className="space-y-3">
+              <li>
+                <Link href="/for-guides" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Become a Guide
+                </Link>
+              </li>
               <li>
                 <Link href="/team" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Join Our Team
