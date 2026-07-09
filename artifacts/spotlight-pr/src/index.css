@@ -111,14 +111,13 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
 }
 
-/* Keep the GTranslate language widget clear of the mobile bottom nav / menu.
-   On phones, dock it top-right under the header instead of floating bottom-left. */
-@media (max-width: 767px) {
-  .gt_float_switcher,
-  .gtranslate_wrapper .gt_float_switcher {
-    top: 72px !important;
-    bottom: auto !important;
-    left: auto !important;
-    right: 10px !important;
-  }
+/* Language: hide GTranslate's floating widget entirely — the EN/ES toggle
+   now lives in the header menu (Navbar), so nothing floats over the UI. */
+.gt_float_switcher,
+.gtranslate_wrapper,
+[class^="gt_float"],
+.skiptranslate {
+  display: none !important;
 }
+/* Google Translate injects a top banner/body offset — neutralize it. */
+body { top: 0 !important; }
