@@ -1805,6 +1805,7 @@ export default function Admin() {
                       <tr>
                         <th className="p-4 font-medium">User</th>
                         <th className="p-4 font-medium">Email</th>
+                        <th className="p-4 font-medium">Phone</th>
                         <th className="p-4 font-medium">Status</th>
                         <th className="p-4 font-medium">Role</th>
                         <th className="p-4 font-medium">Joined</th>
@@ -1831,6 +1832,9 @@ export default function Admin() {
                                 <p className="text-sm font-medium text-foreground truncate">{(u as any).email ?? "—"}</p>
                               </div>
                             </div>
+                          </td>
+                          <td className="p-4">
+                            {(u as any).phone ? <a href={`tel:${(u as any).phone}`} className="text-sm text-primary hover:underline whitespace-nowrap">{(u as any).phone}</a> : <span className="text-sm text-muted-foreground">—</span>}
                           </td>
                           <td className="p-4">
                             {(u as any).emailVerified ? (
