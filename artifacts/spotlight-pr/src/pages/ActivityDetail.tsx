@@ -13,6 +13,20 @@ const VISUAL: Record<string, [string, string]> = {
 };
 const vis = (t: string): [string, string] => VISUAL[t] || ["from-teal-400 to-cyan-600", "🌴"];
 
+const THINGS_TO_DO: Record<string, { icon: string; label: string }[]> = {
+  beach: [{ icon: "🏊", label: "Swim & relax" }, { icon: "🤿", label: "Snorkel the shallows" }, { icon: "🌅", label: "Watch the sunset" }, { icon: "🧺", label: "Beach picnic" }, { icon: "🏐", label: "Beach volleyball" }],
+  surfing: [{ icon: "🏄", label: "Catch a wave" }, { icon: "📚", label: "Take a surf lesson" }, { icon: "📸", label: "Watch the surfers" }, { icon: "🌇", label: "Sunset session" }],
+  snorkeling: [{ icon: "🤿", label: "Snorkel the reef" }, { icon: "🐠", label: "Spot tropical fish" }, { icon: "🏊", label: "Swim & float" }, { icon: "📸", label: "Underwater photos" }],
+  cave: [{ icon: "🔦", label: "Guided cave tour" }, { icon: "📸", label: "Photograph formations" }, { icon: "🚶", label: "Explore the caverns" }],
+  waterfall: [{ icon: "🏊", label: "Swim in the pool" }, { icon: "🥾", label: "Hike to the falls" }, { icon: "📸", label: "Photo spot" }, { icon: "🧺", label: "Picnic nearby" }],
+  bioluminescent: [{ icon: "🛶", label: "Night kayak tour" }, { icon: "🚤", label: "Guided boat tour" }, { icon: "✨", label: "See the glow" }, { icon: "⭐", label: "Stargaze" }],
+  hiking: [{ icon: "🥾", label: "Hike the trail" }, { icon: "🐦", label: "Birdwatching" }, { icon: "📸", label: "Scenic photos" }, { icon: "🧺", label: "Trailside picnic" }],
+  scenic: [{ icon: "📸", label: "Take photos" }, { icon: "🌅", label: "Watch the sunset" }, { icon: "😌", label: "Relax & take it in" }],
+  zipline: [{ icon: "🪂", label: "Zipline course" }, { icon: "🌳", label: "Canopy tour" }, { icon: "🧗", label: "Adventure park" }],
+  diving: [{ icon: "🐠", label: "Scuba dive" }, { icon: "🪸", label: "Explore reefs" }, { icon: "📸", label: "Underwater photography" }],
+};
+const thingsToDo = (t: string) => THINGS_TO_DO[t] || [{ icon: "🧭", label: "Explore the area" }, { icon: "📸", label: "Take photos" }, { icon: "😌", label: "Relax & enjoy" }];
+
 export function MapEmbed({ query, lat, lon, title }: { query: string; lat?: number | null; lon?: number | null; title?: string }) {
   const src = (lat != null && lon != null)
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${lon - 0.02}%2C${lat - 0.015}%2C${lon + 0.02}%2C${lat + 0.015}&layer=mapnik&marker=${lat}%2C${lon}`
@@ -52,6 +66,23 @@ function NearbyCard({ p }: { p: any }) {
   );
 }
 
+function ExperienceCard({ ex }: { ex: any }) {
+  const img = Array.isArray(ex.images) && ex.images[0] ? ex.images[0] : null;
+  return (
+    <Link href="/experiences" className="block group">
+      <div className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+        <div className="h-24 bg-muted overflow-hidden">
+          {img ? <img src={img} alt={ex.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-600" />}
+        </div>
+        <div className="p-3">
+          <p className="font-semibold text-sm leading-tight line-clamp-1">{ex.title}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{ex.price ? `$${ex.price}${ex.price_unit ? ` / ${ex.price_unit}` : ""}` : "See details"}{ex.provider ? ` · ${ex.provider}` : ""}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function ActivityDetail() {
   const { slug } = useParams();
   const { toast } = useToast();
@@ -60,6 +91,7 @@ export default function ActivityDetail() {
   const [a, setA] = useState<any | null>(null);
   const [photos, setPhotos] = useState<any[]>([]);
   const [nearby, setNearby] = useState<any[]>([]);
+  const [experiences, setExperiences] = useState<any[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -85,6 +117,16 @@ export default function ActivityDetail() {
           if (nb.length < 8 && data.region) { const { data: r } = await supabase.from("activities").select(cols).eq("status", "approved").eq("region", data.region).limit(10); add(r); }
           if (nb.length < 8) { const { data: f } = await supabase.from("activities").select(cols).eq("status", "approved").order("featured", { ascending: false }).limit(12); add(f); }
           setNearby(nb);
+          // Guided experiences you can book at (or near) this place
+          const expCols = "id, title, slug, activity_type, price, price_unit, images, municipality, provider";
+          const expRows: any[] = [];
+          const { data: e1 } = await supabase.from("services").select(expCols).eq("status", "approved").eq("activity_id", data.id).limit(6);
+          (e1 || []).forEach((x) => expRows.push(x));
+          if (expRows.length < 6 && data.municipality) {
+            const { data: e2 } = await supabase.from("services").select(expCols).eq("status", "approved").eq("municipality", data.municipality).limit(6);
+            (e2 || []).forEach((x) => { if (!expRows.find((y) => y.id === x.id) && expRows.length < 6) expRows.push(x); });
+          }
+          setExperiences(expRows);
         }
       } catch { setA(null); } finally { setLoading(false); }
     })();
@@ -216,10 +258,31 @@ export default function ActivityDetail() {
           <Link href="/surf"><Button variant="outline" className="w-full">🏄 Check live surf cams for this area</Button></Link>
         )}
 
+        {/* Things to do here */}
+        <div>
+          <h2 className="font-display text-xl font-bold mb-1 flex items-center gap-2"><Compass className="w-5 h-5 text-primary" /> Things to do here</h2>
+          <p className="text-sm text-muted-foreground mb-4">Popular ways to enjoy {a.name}.</p>
+          <div className="flex flex-wrap gap-2">
+            {thingsToDo(a.activity_type).map((it, i) => (
+              <span key={i} className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-muted/70 border border-border/50 text-sm font-medium">
+                <span className="text-base leading-none">{it.icon}</span>{it.label}
+              </span>
+            ))}
+          </div>
+          {experiences.length > 0 && (
+            <div className="mt-6">
+              <p className="text-sm font-semibold mb-3 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-teal-600" /> Book a guided experience here</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {experiences.map((ex) => <ExperienceCard key={ex.id} ex={ex} />)}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Nearby */}
         {nearby.length > 0 && (
           <div>
-            <h2 className="font-display text-xl font-bold mb-1 flex items-center gap-2"><Compass className="w-5 h-5 text-primary" /> Nearby things to do</h2>
+            <h2 className="font-display text-xl font-bold mb-1 flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /> Nearby places to explore</h2>
             <p className="text-sm text-muted-foreground mb-4">More places to explore {a.municipality ? "around " + a.municipality : "on the island"}.</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {nearby.map((p) => <NearbyCard key={p.id} p={p} />)}
