@@ -406,156 +406,62 @@ export default function ForBusiness() {
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
               className="text-3xl md:text-4xl font-display font-bold leading-tight mb-4 text-white"
             >
-              Upgrade to Premium Features
+              Get Featured Across the Island
             </motion.h2>
             <motion.p
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}
               className="text-white/80 text-lg max-w-2xl mx-auto"
             >
-              Your free listing gets you discovered. Our paid plans help you dominate your market with AI tools, ads, and dedicated support.
+              Your free listing gets you discovered. Our Promoted plan puts you in front of thousands — featured across the site, with monthly promo reels and premium listing features.
             </motion.p>
           </div>
 
-          {/* Entry-level Promoted plan */}
-          <div className="max-w-3xl mx-auto mb-10">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-4">Start here — our entry plan</p>
+          {/* Main offer — Promoted */}
+          <div className="max-w-2xl mx-auto">
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-              className="relative rounded-2xl border border-emerald-400/50 bg-gradient-to-br from-emerald-500/20 to-teal-600/10 ring-2 ring-emerald-400/30 p-6 md:p-7"
+              className="relative rounded-2xl border border-emerald-400/50 bg-gradient-to-br from-emerald-500/20 to-teal-600/10 ring-2 ring-emerald-400/30 p-6 md:p-8"
             >
-              <span className="absolute -top-2.5 left-6 inline-flex items-center gap-1 bg-emerald-500 text-white text-xs font-bold px-3 py-0.5 rounded-full shadow">
-                <Star className="w-2.5 h-2.5" /> Entry level
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-emerald-500 text-white text-xs font-bold px-3 py-0.5 rounded-full shadow text-nowrap">
+                <Star className="w-2.5 h-2.5" /> Most popular
               </span>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-                <div className="flex-1">
-                  <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wide mb-1">Promoted</p>
-                  <div className="flex items-end gap-1.5 mb-2">
-                    <span className="text-4xl font-display font-bold text-white">$29</span>
-                    <span className="text-white/70 text-sm mb-1">for 3 months</span>
-                  </div>
-                  <ul className="space-y-2">
-                    {[
-                      "Featured placement across the site (homepage & category sections)",
-                      "2 promotional reels every month — produced & posted free from @spotlightpromopr, tagging your business",
-                      "Extra listing features: menu, higher customization & more",
-                    ].map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm text-white/90">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-white/55 text-xs mt-3">
-                    For higher-level marketing, see our other plans below or consult with a rep.
-                  </p>
+              <div className="text-center mb-5">
+                <p className="text-emerald-200 text-sm font-semibold uppercase tracking-wide mb-2">Get Promoted</p>
+                <div className="flex items-end justify-center gap-2">
+                  <span className="text-white/40 text-2xl font-display line-through mb-1.5">$87</span>
+                  <span className="text-5xl font-display font-bold text-white">$29</span>
+                  <span className="text-white/70 text-base mb-1.5">/ 3 months</span>
                 </div>
-                <div className="md:w-48 shrink-0">
-                  <Link href="/list-your-business">
-                    <Button className="w-full rounded-xl text-sm font-semibold py-3 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-900/30">
-                      Get Promoted
-                      <ChevronRight className="w-3 h-3 ml-1" />
-                    </Button>
-                  </Link>
-                </div>
+                <p className="text-emerald-300 text-xs font-semibold mt-1.5">Limited-time launch price — save $58</p>
+              </div>
+              <ul className="space-y-2.5 max-w-md mx-auto">
+                {[
+                  "Featured placement across the site — homepage & category sections",
+                  "2 promotional reels every month, produced & posted free from @spotlightpromopr and tagging your business",
+                  "Menu, higher customization & premium listing features",
+                  "Local business community & events access",
+                ].map((f, j) => (
+                  <li key={j} className="flex items-start gap-2 text-sm text-white/90">
+                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 max-w-sm mx-auto">
+                <Button
+                  className="w-full rounded-xl text-base font-bold py-6 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-900/30"
+                  onClick={() => window.open("https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0", "_blank")}
+                >
+                  Get Promoted — $29 / 3 months
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+                <p className="text-white/50 text-xs text-center mt-3">
+                  Listing is always free. Need enterprise-level marketing?{" "}
+                  <button onClick={() => window.open("/advertise", "_blank")} className="underline hover:text-white">Talk to a rep</button>.
+                </p>
               </div>
             </motion.div>
           </div>
-
-          {/* Growth Plans */}
-          <div className="max-w-3xl mx-auto">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide text-center mb-6">Higher-level marketing plans</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                {
-                  price: "$147",
-                  title: "Starter Growth",
-                  tagline: "Everything you need to build a strong local presence and manage your reputation online.",
-                  features: [
-                    "Full CRM tool to manage your customer relationships",
-                    "Advanced Spotlight Business Page features",
-                    "Reputation management dashboard",
-                    "Priority listing in search results",
-                    "Access to customer review analytics",
-                  ],
-                  highlighted: false,
-                },
-                {
-                  price: "$297",
-                  title: "Growth Pro",
-                  tagline: "Everything in Starter Growth, plus cutting-edge AI tools to automate and accelerate your growth.",
-                  features: [
-                    "Everything in the Starter Growth plan",
-                    "AI-powered tools for content & customer engagement",
-                    "AI automations to save time and drive conversions",
-                    "Smart lead follow-up sequences",
-                    "Monthly performance reports",
-                  ],
-                  highlighted: true,
-                  badge: "Most Popular",
-                },
-              ].map((plan, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={i * 0.2}
-                  className={`relative flex flex-col rounded-xl border p-5 ${
-                    plan.highlighted
-                      ? "border-orange-400 bg-gradient-to-b from-orange-500/20 to-orange-600/10 ring-2 ring-orange-400/30"
-                      : "border-white/20 bg-white/5"
-                  }`}
-                >
-                  {plan.badge && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 bg-orange-500 text-white text-xs font-bold px-3 py-0.5 rounded-full shadow text-nowrap">
-                      <Star className="w-2.5 h-2.5" /> {plan.badge}
-                    </span>
-                  )}
-                  <div className="mb-4">
-                    <p className="text-white/60 text-xs font-semibold uppercase tracking-wide mb-1">{plan.title}</p>
-                    <div className="flex items-end gap-1 mb-1.5">
-                      <span className="text-3xl font-display font-bold text-white">{plan.price}</span>
-                      <span className="text-white/60 text-xs mb-0.5">/mo</span>
-                    </div>
-                    <p className="text-white/70 text-xs leading-relaxed">{plan.tagline}</p>
-                  </div>
-                  <ul className="space-y-2 mb-5 flex-1">
-                    {plan.features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-xs text-white/90">
-                        <CheckCircle className="w-3 h-3 text-orange-400 flex-shrink-0 mt-0.5" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/list-your-business">
-                    <Button
-                      className={`w-full rounded-xl text-sm font-semibold py-2.5 ${
-                        plan.highlighted
-                          ? "bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-900/30"
-                          : "bg-white/20 hover:bg-white/30 text-white border border-white/30"
-                      }`}
-                    >
-                      Get Started
-                      <ChevronRight className="w-3 h-3 ml-1" />
-                    </Button>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <motion.div
-            variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={3}
-            className="text-center mt-8"
-          >
-            <p className="text-white/60 text-sm mb-4">Want premium features?</p>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white/30 text-white hover:bg-white/10 rounded-xl px-8 text-base bg-transparent"
-              onClick={() => window.open("/advertise", "_blank")}
-            >
-              View All Plans
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </motion.div>
         </div>
       </section>
 

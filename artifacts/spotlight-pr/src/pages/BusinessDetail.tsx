@@ -442,7 +442,18 @@ export default function BusinessDetail() {
             lon={(b as any).longitude}
             title={b.name}
           />
-          <a href={mapsUrl(b.address || "", b.municipality)} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-2 hover:underline"><MapPin className="w-4 h-4" /> Get directions</a>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <a
+              href={`https://maps.apple.com/?q=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`}
+              target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+            ><MapPin className="w-4 h-4 text-primary" /> Apple Maps</a>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`}
+              target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
+            ><MapPin className="w-4 h-4 text-primary" /> Google Maps</a>
+          </div>
         </div>
       )}
 
