@@ -116,7 +116,7 @@ export default function Activities() {
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
         <div className="relative container mx-auto px-4 py-10 md:py-14">
           <p className="text-white/80 text-sm font-medium mb-2">🌴 Explore the island</p>
-          <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">Discover Puerto Rico's Adventures</h1>
+          <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">Discover Puerto Rico's Best Places</h1>
           <p className="text-white/85 max-w-xl">Snorkel hidden reefs, chase waterfalls, glow in a bioluminescent bay, and explore ancient caves — the best natural experiences across the island.</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function Activities() {
             )}
 
             <h2 className="font-display text-xl font-bold mb-3">
-              {type === "all" ? "All experiences" : TYPES.find((t) => t.key === type)?.label}{" "}
+              {type === "all" ? "All places" : TYPES.find((t) => t.key === type)?.label}{" "}
               <span className="text-muted-foreground font-normal text-base">({filtered.length})</span>
             </h2>
             {filtered.length === 0 ? (

@@ -1301,10 +1301,6 @@ export default function Admin() {
         </div>
 
         <nav className="p-3 space-y-3 flex-1 overflow-y-auto">
-          <button onClick={() => setLocation("/admin/content")} className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 rounded-xl transition-all text-sm font-semibold border-2 border-teal-300 text-teal-700 hover:bg-teal-50 hover:border-teal-400">
-            <MapPin className="w-4 h-4 flex-shrink-0 text-teal-600" />
-            <span className="flex-1 text-left">Activities & Experiences</span>
-          </button>
           {navGroups.map((group, gi) => (
             <div key={gi} className="space-y-0.5">
               {group.heading && (
@@ -1331,12 +1327,22 @@ export default function Admin() {
                   </button>
                 );
               })}
+              {group.heading === "Listings" && (
+                <div className="pt-2 mt-1">
+                  <p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Discovery</p>
+                  {[{ label: "Places", tab: "places" }, { label: "Surf Cams", tab: "surf" }, { label: "Experiences", tab: "experiences" }].map(it => (
+                    <button key={it.tab} onClick={() => setLocation(`/admin/content?tab=${it.tab}`)} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium text-foreground hover:bg-muted/60">
+                      <MapPin className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                      <span className="flex-1 text-left">{it.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </nav>
 
-        <div className="p-3 border-t border-border space-y-2">
-          <Button variant="outline" size="sm" className="w-full rounded-xl gap-2" onClick={() => setLocation("/admin/content")}>Content Manager</Button>
+        <div className="p-3 border-t border-border">
           <Button variant="outline" size="sm" className="w-full rounded-xl" onClick={() => setLocation("/")}>Exit Admin</Button>
         </div>
       </div>

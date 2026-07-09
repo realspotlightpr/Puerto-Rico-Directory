@@ -17,7 +17,7 @@ const mapBiz = (b: any) => ({
 
 const DISCOVER = [
   { href: "/directory", label: "Businesses", sub: "Shops, food & services", emoji: "🏪", grad: "from-blue-500 to-cyan-500" },
-  { href: "/activities", label: "Activities", sub: "Beaches, caves, waterfalls", emoji: "🌴", grad: "from-teal-500 to-emerald-500" },
+  { href: "/activities", label: "Places", sub: "Beaches, caves, waterfalls", emoji: "🌴", grad: "from-teal-500 to-emerald-500" },
   { href: "/surf", label: "Surf Cams", sub: "Live spots & conditions", emoji: "🏄", grad: "from-cyan-600 to-blue-700" },
   { href: "/experiences", label: "Experiences", sub: "Book local guides", emoji: "🧭", grad: "from-emerald-500 to-teal-600" },
 ];
@@ -135,7 +135,7 @@ export default function Home() {
       {acts.length > 0 && (
         <section className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl md:text-2xl font-bold flex items-center gap-2">🌴 Adventures on the island</h2>
+            <h2 className="font-display text-xl md:text-2xl font-bold flex items-center gap-2">🌴 Places to explore</h2>
             <Link href="/activities"><span className="text-sm font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer">Explore <ArrowRight className="w-4 h-4" /></span></Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

@@ -38,7 +38,7 @@ export default function ActivityDetail() {
   }, [slug]);
 
   if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  if (!a) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4"><h2 className="text-2xl font-bold">Spot not found</h2><Link href="/activities"><Button>Back to Activities</Button></Link></div>;
+  if (!a) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4"><h2 className="text-2xl font-bold">Spot not found</h2><Link href="/activities"><Button>Back to Places</Button></Link></div>;
 
   const [grad, emoji] = vis(a.activity_type);
   const mapQuery = [a.name, a.municipality, "Puerto Rico"].filter(Boolean).join(", ");
@@ -48,7 +48,7 @@ export default function ActivityDetail() {
       <div className={`relative h-56 md:h-72 bg-gradient-to-br ${grad} flex items-center justify-center`}>
         {a.image_url ? <img src={a.image_url} alt={a.name} className="w-full h-full object-cover" /> : <span className="text-7xl drop-shadow-lg">{emoji}</span>}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute top-4 left-4"><Link href="/activities"><Button variant="outline" size="sm" className="bg-white/90 gap-1"><ArrowLeft className="w-4 h-4" /> Activities</Button></Link></div>
+        <div className="absolute top-4 left-4"><Link href="/activities"><Button variant="outline" size="sm" className="bg-white/90 gap-1"><ArrowLeft className="w-4 h-4" /> Places</Button></Link></div>
         <div className="absolute bottom-4 left-4 right-4 text-white">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold capitalize bg-black/30 backdrop-blur px-2 py-0.5 rounded-full">{a.activity_type}</span>

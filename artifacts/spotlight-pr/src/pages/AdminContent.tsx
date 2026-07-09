@@ -105,7 +105,7 @@ function ActivityEditor({ row, surf, onClose, onSaved }: any) {
     finally { setSaving(false); }
   };
   return (
-    <Modal title={(row?.id ? "Edit" : "New") + (surf ? " surf cam" : " activity")} onClose={onClose}>
+    <Modal title={(row?.id ? "Edit" : "New") + (surf ? " surf cam" : " place")} onClose={onClose}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Name *"><Input value={f.name} onChange={(e) => set("name", e.target.value)} /></Field>
         <Field label="Type">
@@ -247,7 +247,7 @@ export default function AdminContent() {
   const { user, isLoading } = useAuth();
   const isAdmin = user?.role === "admin";
   const { toast } = useToast();
-  const [tab, setTab] = useState<"activities" | "surf" | "experiences">("activities");
+  const [tab, setTab] = useState<"places" | "surf" | "experiences">(() => { const t = new URLSearchParams(window.location.search).get("tab"); return t === "surf" ? "surf" : t === "experiences" ? "experiences" : "places"; });
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any>(null);
@@ -280,11 +280,11 @@ export default function AdminContent() {
   if (!isAdmin) return <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3"><p className="font-semibold">Admins only.</p><Link href="/"><Button variant="outline">Home</Button></Link></div>;
 
   const TABS = [
-    { id: "activities", label: "Activities", icon: Palmtree },
+    { id: "places", label: "Places", icon: Palmtree },
     { id: "surf", label: "Surf Cams", icon: Waves },
     { id: "experiences", label: "Experiences", icon: Compass },
   ];
-  const newLabel = tab === "experiences" ? "experience" : tab === "surf" ? "surf cam" : "activity";
+  const newLabel = tab === "experiences" ? "experience" : tab === "surf" ? "surf cam" : "place";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -292,7 +292,7 @@ export default function AdminContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-3">
             <Link href="/admin"><Button variant="outline" size="sm" className="gap-1"><ArrowLeft className="w-4 h-4" /> Admin</Button></Link>
-            <h1 className="font-display text-xl font-bold">Content Manager</h1>
+            <h1 className="font-display text-xl font-bold">Places &amp; Experiences</h1>
           </div>
           <Button onClick={() => setEditing({ type: tab, row: null })} className="gap-2"><Plus className="w-4 h-4" /> New {newLabel}</Button>
         </div>
