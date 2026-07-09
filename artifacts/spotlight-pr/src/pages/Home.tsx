@@ -41,7 +41,7 @@ export default function Home() {
           supabase.from("businesses").select("*, categories(name)").eq("status", "approved").eq("featured", true).limit(8),
           supabase.from("businesses").select("*, categories(name)").eq("status", "approved").order("created_at", { ascending: false }).limit(8),
           supabase.from("categories").select("id, name, slug").order("id"),
-          supabase.from("activities").select("id, name, slug, activity_type, municipality, featured").eq("status", "approved").order("featured", { ascending: false }).limit(6),
+          supabase.from("activities").select("id, name, slug, activity_type, municipality, featured, image_url").eq("status", "approved").order("featured", { ascending: false }).limit(6),
         ]);
         const list = (feat && feat.length >= 3 ? feat : recent) ?? [];
         setFeatured(list.map(mapBiz));
@@ -67,7 +67,9 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 text-white">
+      <section className="relative overflow-hidden text-white">
+        <img src="https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/24.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-600/85 via-cyan-600/80 to-blue-700/85" />
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 15% 25%, white 1.5px, transparent 1.5px)", backgroundSize: "28px 28px" }} />
         <div className="relative container mx-auto px-4 py-12 md:py-20 text-center">
           <p className="inline-flex items-center gap-2 text-sm font-medium bg-white/15 rounded-full px-3 py-1 mb-4">🇵🇷 Your guide to the island</p>
@@ -142,7 +144,7 @@ export default function Home() {
             {acts.map((a) => (
               <Link key={a.id} href={`/activities/${a.slug}`}>
                 <div className="group cursor-pointer rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all">
-                  <div className={`h-24 bg-gradient-to-br ${ACT_GRAD[a.activity_type] || "from-teal-400 to-cyan-600"} flex items-center justify-center text-4xl group-hover:scale-105 transition-transform`}>{ACT_EMOJI[a.activity_type] || "🌴"}</div>
+                  <div className={`h-24 bg-gradient-to-br ${ACT_GRAD[a.activity_type] || "from-teal-400 to-cyan-600"} flex items-center justify-center text-4xl overflow-hidden group-hover:scale-105 transition-transform`}>{a.image_url ? <img src={a.image_url} alt={a.name} className="w-full h-full object-cover" /> : (ACT_EMOJI[a.activity_type] || "🌴")}</div>
                   <div className="p-2.5">
                     <p className="font-semibold text-sm leading-tight line-clamp-1">{a.name}</p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-0.5 mt-0.5"><MapPin className="w-3 h-3" />{a.municipality}</p>
