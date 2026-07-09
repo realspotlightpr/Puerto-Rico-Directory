@@ -23,6 +23,7 @@ import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
+import AdminContent from "@/pages/AdminContent";
 import ForBusiness from "@/pages/ForBusiness";
 import AdvertiseWithUs from "@/pages/AdvertiseWithUs";
 import AdditionalServices from "@/pages/AdditionalServices";
@@ -181,6 +182,7 @@ function Router() {
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
+          <Route path="/admin/content" component={AdminContent} />
           <Route path="/team" component={TeamDashboard} />
           <Route path="/business" component={ForBusiness} />
           <Route path="/negocio" component={() => <Redirect to="/business" />} />
