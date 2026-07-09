@@ -17,6 +17,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
+function readLang(): "en" | "es" {
+  try {
+    const m = document.cookie.match(/googtrans=\/[a-z]+\/([a-z]+)/i);
+    return m && m[1].toLowerCase() === "es" ? "es" : "en";
+  } catch { return "en"; }
+}
+function setLang(lang: "en" | "es") {
+  const host = window.location.hostname;
+  const past = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  if (lang === "en") {
+    document.cookie = `googtrans=;path=/;${past}`;
+    document.cookie = `googtrans=;path=/;domain=${host};${past}`;
+    document.cookie = `googtrans=;path=/;domain=.${host};${past}`;
+  } else {
+    const v = "/en/es";
+    document.cookie = `googtrans=${v};path=/`;
+    document.cookie = `googtrans=${v};path=/;domain=${host}`;
+    document.cookie = `googtrans=${v};path=/;domain=.${host}`;
+  }
+  window.location.reload();
+}
+function LangToggle({ className = "" }: { className?: string }) {
+  const current = typeof document !== "undefined" ? readLang() : "en";
+  return (
+    <div className={`inline-flex items-center rounded-full border border-border overflow-hidden text-xs font-semibold ${className}`}>
+      <button type="button" onClick={() => setLang("en")} className={`px-2.5 py-1 transition-colors ${current === "en" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>EN</button>
+      <button type="button" onClick={() => setLang("es")} className={`px-2.5 py-1 transition-colors ${current === "es" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"}`}>ES</button>
+    </div>
+  );
+}
+
 export function Navbar() {
   const [location] = useLocation();
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
@@ -142,8 +173,8 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4 border-l border-border/50 pl-6">
-            <LanguageSwitcher />
-            
+            <LangToggle />
+
             {isAuthenticated ? (
               <>
                 {/* Business owner / admin quick add */}
@@ -261,6 +292,11 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+
+          <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-border/50 pt-3">
+            <span className="text-sm font-medium text-muted-foreground">Language</span>
+            <LangToggle />
+          </div>
 
           {isAuthenticated && (
             <>
