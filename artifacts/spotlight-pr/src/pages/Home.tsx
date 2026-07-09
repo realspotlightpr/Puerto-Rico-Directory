@@ -16,10 +16,10 @@ const mapBiz = (b: any) => ({
 });
 
 const DISCOVER = [
-  { href: "/directory", label: "Businesses", sub: "Shops, food & services", emoji: "🏪", grad: "from-blue-500 to-cyan-500" },
-  { href: "/activities", label: "Places", sub: "Beaches, caves, waterfalls", emoji: "🌴", grad: "from-teal-500 to-emerald-500" },
-  { href: "/surf", label: "Surf Cams", sub: "Live spots & conditions", emoji: "🏄", grad: "from-cyan-600 to-blue-700" },
-  { href: "/experiences", label: "Experiences", sub: "Book local guides", emoji: "🧭", grad: "from-emerald-500 to-teal-600" },
+  { href: "/directory", label: "Businesses", sub: "Shops, food & services", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/24.jpg", grad: "from-blue-700 to-cyan-700" },
+  { href: "/activities", label: "Places", sub: "Beaches, caves, waterfalls", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/1.jpg", grad: "from-teal-700 to-emerald-700" },
+  { href: "/surf", label: "Surf Cams", sub: "Live spots & conditions", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/7.jpg", grad: "from-cyan-800 to-blue-900" },
+  { href: "/experiences", label: "Experiences", sub: "Book local guides", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg", grad: "from-emerald-700 to-teal-800" },
 ];
 
 const ACT_EMOJI: Record<string, string> = { beach: "🏖️", snorkeling: "🤿", surfing: "🏄", cave: "🕳️", waterfall: "💧", bioluminescent: "✨", hiking: "🥾", scenic: "🌅", zipline: "🪂", diving: "🐠" };
@@ -93,10 +93,13 @@ export default function Home() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {DISCOVER.map((d) => (
             <Link key={d.href} href={d.href}>
-              <div className={`group cursor-pointer rounded-2xl p-4 bg-gradient-to-br ${d.grad} text-white shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full`}>
-                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{d.emoji}</div>
-                <p className="font-display font-bold leading-tight">{d.label}</p>
-                <p className="text-white/80 text-xs mt-0.5">{d.sub}</p>
+              <div className="group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full min-h-[110px]">
+                <img src={d.img} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${d.grad} opacity-75`} />
+                <div className="relative p-4 text-white">
+                  <p className="font-display font-bold leading-tight text-lg drop-shadow">{d.label}</p>
+                  <p className="text-white/90 text-xs mt-0.5 drop-shadow">{d.sub}</p>
+                </div>
               </div>
             </Link>
           ))}

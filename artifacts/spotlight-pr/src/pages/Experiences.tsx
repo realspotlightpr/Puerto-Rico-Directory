@@ -143,7 +143,7 @@ export default function Experiences() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((s) => (
               <div key={s.id} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-shadow flex flex-col">
-                <div className="h-32 bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-5xl overflow-hidden">{(s as any).images && (s as any).images[0] ? <img src={(s as any).images[0]} alt={s.title} className="w-full h-full object-cover" /> : (TYPE_EMOJI[s.activity_type || ""] || "🌴")}</div>
+                <div className="h-32 bg-muted overflow-hidden">{(s as any).images && (s as any).images[0] ? <img src={(s as any).images[0]} alt={s.title} className="w-full h-full object-cover" /> : <img src="https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg" alt={s.title} className="w-full h-full object-cover" />}</div>
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="font-display font-bold leading-tight">{s.title}</h3>
                   {(s as any).provider && <span className="inline-flex w-fit mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-600 text-white">✦ {(s as any).provider}</span>}

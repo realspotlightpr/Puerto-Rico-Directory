@@ -6,10 +6,10 @@ import {
 } from "lucide-react";
 
 const TILES = [
-  { href: "/directory", label: "Local Businesses", desc: "Shops, food, services & more", emoji: "🏪", grad: "from-blue-500 to-cyan-500" },
-  { href: "/activities", label: "Places", desc: "Beaches, waterfalls, caves & bio bays", emoji: "🌴", grad: "from-teal-500 to-emerald-500" },
-  { href: "/surf", label: "Surf Cams", desc: "Live spots & conditions", emoji: "🏄", grad: "from-cyan-600 to-blue-700" },
-  { href: "/experiences", label: "Experiences", desc: "Book local guides & tours", emoji: "🧭", grad: "from-emerald-500 to-teal-600" },
+  { href: "/directory", label: "Local Businesses", desc: "Shops, food, services & more", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/24.jpg", grad: "from-blue-700 to-cyan-700" },
+  { href: "/activities", label: "Places", desc: "Beaches, waterfalls, caves & bio bays", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/1.jpg", grad: "from-teal-700 to-emerald-700" },
+  { href: "/surf", label: "Surf Cams", desc: "Live spots & conditions", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/7.jpg", grad: "from-cyan-800 to-blue-900" },
+  { href: "/experiences", label: "Experiences", desc: "Book local guides & tours", img: "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg", grad: "from-emerald-700 to-teal-800" },
 ];
 
 const BENEFITS = [
@@ -47,10 +47,13 @@ export default function Launch() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {TILES.map((t) => (
             <Link key={t.href} href={t.href}>
-              <div className={`group cursor-pointer rounded-2xl p-5 bg-gradient-to-br ${t.grad} text-white shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full`}>
-                <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">{t.emoji}</div>
-                <p className="font-display font-bold leading-tight">{t.label}</p>
-                <p className="text-white/80 text-xs mt-0.5">{t.desc}</p>
+              <div className="group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full min-h-[120px]">
+                <img src={t.img} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${t.grad} opacity-75`} />
+                <div className="relative p-5 text-white">
+                  <p className="font-display font-bold leading-tight text-lg drop-shadow">{t.label}</p>
+                  <p className="text-white/90 text-xs mt-0.5 drop-shadow">{t.desc}</p>
+                </div>
               </div>
             </Link>
           ))}
