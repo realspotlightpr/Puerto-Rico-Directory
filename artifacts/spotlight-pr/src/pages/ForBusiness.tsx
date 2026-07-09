@@ -412,7 +412,7 @@ export default function ForBusiness() {
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}
               className="text-white/80 text-lg max-w-2xl mx-auto"
             >
-              Your free listing gets you discovered. Our Promoted plan puts you in front of thousands — featured across the site, with monthly promo reels and premium listing features.
+              Your free listing gets you discovered. Our Promoted plan puts you in front of thousands — featured across the site, with a monthly Instagram feature and premium listing tools.
             </motion.p>
           </div>
 
@@ -436,10 +436,11 @@ export default function ForBusiness() {
               </div>
               <ul className="space-y-2.5 max-w-md mx-auto">
                 {[
-                  "Featured placement across the site — homepage & category sections",
-                  "2 promotional reels every month, produced & posted free from @spotlightpromopr and tagging your business",
-                  "Menu, higher customization & premium listing features",
-                  "Local business community & events access",
+                  "Featured across the site — homepage & category sections — so more locals and visitors discover you first",
+                  "1 promotional reel every month on our @spotlightpromopr Instagram — one feature alone can put your business in front of thousands and drive real attention",
+                  "Built to grow your exposure: more profile views, more calls, and more clicks",
+                  "Premium Puerto Rico business community — serious networking with local owners & founders, plus members-only events (normally $49/mo, included free)",
+                  "Your menu, higher customization & premium listing features",
                 ].map((f, j) => (
                   <li key={j} className="flex items-start gap-2 text-sm text-white/90">
                     <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />

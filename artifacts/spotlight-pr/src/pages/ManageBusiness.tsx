@@ -1647,15 +1647,15 @@ export default function ManageBusiness() {
                     <p className="font-bold font-display text-lg">Get Promoted</p>
                     <span className="text-[11px] font-bold uppercase tracking-wide bg-amber-500 text-white px-2 py-0.5 rounded-full">Most popular</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 mb-3">Turn your free listing into a customer magnet &mdash; featured across the site, AI tools to create your content, and full page customization.</p>
+                  <p className="text-sm text-muted-foreground mt-1 mb-3">Turn your free listing into a customer magnet &mdash; more views and calls, a monthly Instagram feature, AI tools to create your content, and full page customization.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 max-w-xl">
                     {[
-                      "\u2b50 Featured placement across the site",
+                      "\u2b50 Featured across the site — more views, calls & clicks",
                       "\ud83d\uddbc\ufe0f AI image generation (Image Studio)",
                       "\u270d\ufe0f AI text & content generation (AI Assistant)",
-                      "\ud83c\udfac 2 promo reels/month from @spotlightpromopr",
+                      "\ud83c\udfac 1 monthly Instagram feature on @spotlightpromopr — reach thousands",
                       "\ud83d\udccb Your menu + full page customization",
-                      "\ud83e\udd1d Local business community & events",
+                      "\ud83e\udd1d Premium PR business community + events ($49/mo value)",
                     ].map((ff, i) => (
                       <p key={i} className="text-sm text-amber-900 flex items-center gap-1.5">{ff}</p>
                     ))}
