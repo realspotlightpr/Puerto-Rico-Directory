@@ -92,7 +92,7 @@ export function Navbar() {
     {
       heading: "Guides & Community",
       items: [
-        { href: "/guide", label: "Become a guide", desc: "Sell tours & experiences", icon: Anchor, accent: "text-emerald-700 bg-emerald-50" },
+        { href: "/for-guides", label: "Become a guide", desc: "Sell tours & experiences", icon: Anchor, accent: "text-emerald-700 bg-emerald-50" },
         { href: "/experiences", label: "Book a guide", desc: "Local-led adventures", icon: Compass, accent: "text-teal-700 bg-teal-50" },
       ],
     },
