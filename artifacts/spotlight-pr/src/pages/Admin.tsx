@@ -1331,7 +1331,8 @@ export default function Admin() {
           ))}
         </nav>
 
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-2">
+          <Button variant="outline" size="sm" className="w-full rounded-xl gap-2" onClick={() => setLocation("/admin/content")}>Content Manager</Button>
           <Button variant="outline" size="sm" className="w-full rounded-xl" onClick={() => setLocation("/")}>Exit Admin</Button>
         </div>
       </div>
