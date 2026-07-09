@@ -31,6 +31,7 @@ import { supabase } from "@/lib/supabase";
 
 // Premium checkout (HighLevel payment links). Payments/invoices/receipts run through HighLevel.
 const PREMIUM_CHECKOUT = {
+  promoted: "https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0",
   monthly: "https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0",
   yearly: "https://login.spotlightpuertorico.com/payment-link/6a47d219a655fa0b802a28f2",
 };
@@ -1635,18 +1636,39 @@ export default function ManageBusiness() {
       {/* ── Content ── */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {!isPremium && (
-          <div className="mb-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+          <div className="mb-6 rounded-2xl border border-amber-300/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-5 md:p-6 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
               <div className="flex items-start gap-3">
-                <Star className="w-6 h-6 text-amber-500 shrink-0 mt-0.5 fill-amber-400" />
+                <div className="w-11 h-11 rounded-xl bg-amber-400/20 flex items-center justify-center shrink-0">
+                  <Star className="w-6 h-6 text-amber-500 fill-amber-400" />
+                </div>
                 <div>
-                  <p className="font-bold font-display text-base">Upgrade to a Premium listing</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">Unlock your menu, full page customization, featured placement &amp; a Premium badge, the local business community &amp; events, and more exposure to customers.</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold font-display text-lg">Get Promoted</p>
+                    <span className="text-[11px] font-bold uppercase tracking-wide bg-amber-500 text-white px-2 py-0.5 rounded-full">Most popular</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 mb-3">Turn your free listing into a customer magnet &mdash; featured across the site, AI tools to create your content, and full page customization.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 max-w-xl">
+                    {[
+                      "\u2b50 Featured placement across the site",
+                      "\ud83d\uddbc\ufe0f AI image generation (Image Studio)",
+                      "\u270d\ufe0f AI text & content generation (AI Assistant)",
+                      "\ud83c\udfac 2 promo reels/month from @spotlightpromopr",
+                      "\ud83d\udccb Your menu + full page customization",
+                      "\ud83e\udd1d Local business community & events",
+                    ].map((ff, i) => (
+                      <p key={i} className="text-sm text-amber-900 flex items-center gap-1.5">{ff}</p>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2 shrink-0">
-                <a href={PREMIUM_CHECKOUT.monthly} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl border border-amber-300 bg-white text-amber-800 text-sm font-semibold hover:bg-amber-50 transition-colors text-center">$29<span className="text-xs font-normal">/mo</span></a>
-                <a href={PREMIUM_CHECKOUT.yearly} target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors text-center shadow-sm">$200<span className="text-xs font-normal">/yr</span> · Best value</a>
+              <div className="shrink-0 w-full lg:w-56 bg-white rounded-2xl border border-amber-200 p-4 text-center">
+                <div className="flex items-end justify-center gap-1.5">
+                  <span className="text-muted-foreground/60 text-lg line-through mb-1">$87</span>
+                  <span className="text-3xl font-display font-bold text-amber-600">$29</span>
+                </div>
+                <p className="text-xs text-muted-foreground">for 3 months &middot; save $58</p>
+                <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="mt-3 block w-full px-4 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors text-center shadow-sm">Get Promoted</a>
               </div>
             </div>
           </div>
@@ -1658,46 +1680,46 @@ export default function ManageBusiness() {
           </div>
         )}
         <Tabs defaultValue="details">
-          <TabsList className="w-full mb-8 bg-white border border-border rounded-xl p-1 h-auto flex-wrap gap-1">
-            <TabsTrigger value="details" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+          <TabsList className="w-full mb-6 bg-white border border-border rounded-xl p-1 h-auto flex flex-nowrap gap-1 overflow-x-auto justify-start" style={{ scrollbarWidth: "thin" }}>
+            <TabsTrigger value="details" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Store className="w-4 h-4" /> Details
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="reviews" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Star className="w-4 h-4" /> Reviews {reviewCount > 0 && `(${reviewCount})`}
             </TabsTrigger>
-            <TabsTrigger value="hours" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="hours" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Clock className="w-4 h-4" /> Hours
             </TabsTrigger>
-            <TabsTrigger value="media" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="media" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Upload className="w-4 h-4" /> Media
             </TabsTrigger>
-            <TabsTrigger value="ai" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="ai" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
               <Bot className="w-4 h-4" /> AI Assistant
             </TabsTrigger>
-            <TabsTrigger value="image-studio" className="flex-1 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="image-studio" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-primary data-[state=active]:text-white gap-2 py-2">
               <Sparkles className="w-4 h-4" /> Image Studio
             </TabsTrigger>
-            <TabsTrigger value="media-library" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="media-library" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <LayoutGrid className="w-4 h-4" /> Media Library {mediaItems.length > 0 && `(${mediaItems.length})`}
             </TabsTrigger>
-            <TabsTrigger value="social-planner" disabled className="flex-1 rounded-lg gap-2 py-2 opacity-60 cursor-not-allowed">
+            <TabsTrigger value="social-planner" disabled className="shrink-0 whitespace-nowrap rounded-lg gap-2 py-2 opacity-60 cursor-not-allowed">
               <Calendar className="w-4 h-4" /> Social Planner
               <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Soon</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="analytics" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <BarChart3 className="w-4 h-4" /> Analytics
             </TabsTrigger>
-            <TabsTrigger value="social" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="social" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Globe className="w-4 h-4" /> Social Links
             </TabsTrigger>
-            <TabsTrigger value="menu" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="menu" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <FileText className="w-4 h-4" /> Menu
               <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Premium</span>
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="inbox" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <Inbox className="w-4 h-4" /> Inbox
             </TabsTrigger>
-            <TabsTrigger value="form-builder" className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="form-builder" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
               <FormInput className="w-4 h-4" /> Form Builder
             </TabsTrigger>
           </TabsList>
@@ -2235,8 +2257,8 @@ export default function ManageBusiness() {
 
               {!isPremium && (
                 <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-                  <p className="text-sm text-amber-900"><span className="font-semibold">Want bigger numbers?</span> Premium listings get featured placement and higher visibility across Spotlight — more views, calls, and clicks.</p>
-                  <a href={PREMIUM_CHECKOUT.yearly} target="_blank" rel="noopener noreferrer" className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 text-center">Upgrade to Premium</a>
+                  <p className="text-sm text-amber-900"><span className="font-semibold">Want bigger numbers?</span> Get Promoted for featured placement and higher visibility across Spotlight &mdash; plus AI tools to create your content.</p>
+                  <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 text-center">Get Promoted &mdash; $29/3mo</a>
                 </div>
               )}
 
