@@ -60,7 +60,7 @@ export function Navbar() {
   const navLinks = [
     { href: "/", label: "Home" },
     { href: "/directory", label: "Businesses" },
-    { href: "/activities", label: "Activities" },
+    { href: "/activities", label: "Places" },
     { href: "/surf", label: "Surf" },
     { href: "/experiences", label: "Experiences" },
     { href: "/business", label: "For Business" },
@@ -75,7 +75,7 @@ export function Navbar() {
       heading: "Discover",
       items: [
         { href: "/directory", label: "Businesses", desc: "Shops, food & services", icon: Store, accent: "text-blue-600 bg-blue-50" },
-        { href: "/activities", label: "Activities", desc: "Beaches, caves, waterfalls", icon: Palmtree, accent: "text-teal-600 bg-teal-50" },
+        { href: "/activities", label: "Places", desc: "Beaches, caves, waterfalls", icon: Palmtree, accent: "text-teal-600 bg-teal-50" },
         { href: "/surf", label: "Surf Cams", desc: "Live spots & conditions", icon: Waves, accent: "text-cyan-600 bg-cyan-50" },
         { href: "/experiences", label: "Experiences", desc: "Book local guides", icon: Compass, accent: "text-emerald-600 bg-emerald-50" },
       ],
