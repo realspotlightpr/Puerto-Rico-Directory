@@ -1329,6 +1329,13 @@ export default function Admin() {
               })}
             </div>
           ))}
+          <div className="space-y-0.5">
+            <p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Discovery</p>
+            <button onClick={() => setLocation("/admin/content")} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium text-foreground hover:bg-muted/60">
+              <MapPin className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+              <span className="flex-1 text-left">Activities &amp; Experiences</span>
+            </button>
+          </div>
         </nav>
 
         <div className="p-3 border-t border-border space-y-2">

@@ -329,182 +329,133 @@ export default function BusinessDetail() {
   const isClaimed = !!b.is_claimed;
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-4xl">
-      <Link href="/directory"><Button variant="outline" className="mb-6">← Back to Directory</Button></Link>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <Link href="/directory"><Button variant="outline" className="mb-5">← Back to Directory</Button></Link>
 
+      {/* Hero */}
       <Card className="overflow-hidden">
-        {/* Hero cover with logo + name overlay */}
         <div className="relative h-56 sm:h-72 w-full overflow-hidden bg-muted">
-          <img
-            src={b.cover_url || `${import.meta.env.BASE_URL}images/hero-bg.png`}
-            alt={b.name}
-            className="w-full h-full object-cover"
-          />
+          <img src={b.cover_url || `${import.meta.env.BASE_URL}images/hero-bg.png`} alt={b.name} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute top-4 left-4 z-10 flex gap-1.5 flex-wrap">
-            {isVerified && (
-              <Badge className="bg-emerald-500 hover:bg-emerald-500 text-white font-semibold shadow-lg flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> Verified
-              </Badge>
-            )}
-            {isClaimed && (
-              <Badge className="bg-blue-500 hover:bg-blue-500 text-white font-semibold shadow-lg flex items-center gap-1">
-                <BadgeCheck className="w-3 h-3" /> Claimed
-              </Badge>
-            )}
-            {b.featured && (
-              <Badge className="bg-secondary hover:bg-secondary text-white font-semibold shadow-lg">Featured</Badge>
-            )}
+            {isVerified && (<Badge className="bg-emerald-500 hover:bg-emerald-500 text-white font-semibold shadow-lg flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Verified</Badge>)}
+            {isClaimed && (<Badge className="bg-blue-500 hover:bg-blue-500 text-white font-semibold shadow-lg flex items-center gap-1"><BadgeCheck className="w-3 h-3" /> Claimed</Badge>)}
+            {b.featured && (<Badge className="bg-secondary hover:bg-secondary text-white font-semibold shadow-lg">Featured</Badge>)}
           </div>
           <div className="absolute bottom-4 left-4 right-4 flex items-end gap-4">
             <div className="w-20 h-20 rounded-xl bg-white p-1 shadow-lg shrink-0 overflow-hidden">
-              <img
-                src={b.logo_url || `${import.meta.env.BASE_URL}images/placeholder-logo.png`}
-                alt={`${b.name} logo`}
-                className="w-full h-full object-cover rounded-lg"
-              />
+              <img src={b.logo_url || `${import.meta.env.BASE_URL}images/placeholder-logo.png`} alt={`${b.name} logo`} className="w-full h-full object-cover rounded-lg" />
             </div>
             <div className="text-white pb-1 min-w-0">
               <h1 className="font-display text-2xl sm:text-3xl font-bold leading-tight truncate">{b.name}</h1>
               <p className="text-white/85 text-sm">{catName}{b.municipality ? ` · ${b.municipality}` : ""}</p>
-              {b.review_count > 0 && (
-                <div className="flex items-center gap-2 mt-1">
-                  <Stars rating={rating} />
-                  <span className="text-sm text-white/85">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span>
-                </div>
-              )}
+              {b.review_count > 0 && (<div className="flex items-center gap-2 mt-1"><Stars rating={rating} /><span className="text-sm text-white/85">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span></div>)}
             </div>
           </div>
         </div>
+      </Card>
 
-        <CardContent className="p-6 space-y-6">
+      <div className="grid lg:grid-cols-3 gap-6 mt-6 items-start">
+        {/* LEFT — main content */}
+        <div className="lg:col-span-2 space-y-6">
           {b.special_offer && (
             <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex items-start gap-2 text-amber-800">
               <Tag className="w-4 h-4 mt-0.5 shrink-0" /> <span className="text-sm font-medium">{b.special_offer}</span>
             </div>
           )}
 
-          {b.description && (
-            looksHtml
-              ? <div className="prose prose-sm sm:prose max-w-none" dangerouslySetInnerHTML={{ __html: descHtml }} />
-              : <p className="text-base leading-relaxed whitespace-pre-line">{b.description}</p>
-          )}
+          <Card><CardContent className="p-6">
+            <h2 className="font-display text-lg font-bold mb-3">About</h2>
+            {b.description ? (
+              looksHtml
+                ? <div className="prose prose-sm sm:prose max-w-none" dangerouslySetInnerHTML={{ __html: descHtml }} />
+                : <p className="text-base leading-relaxed whitespace-pre-line">{b.description}</p>
+            ) : <p className="text-sm text-muted-foreground">No description added yet.</p>}
+            {b.menu_url && (
+              <div className="border-t pt-4 mt-4">
+                <h3 className="flex items-center gap-2 font-semibold mb-2"><ExternalLink className="w-4 h-4" /> Menu</h3>
+                <a href={b.menu_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-medium"><ExternalLink className="w-4 h-4" /> {b.menu_title || "View Menu"}</a>
+              </div>
+            )}
+            {hasSocial && (
+              <div className="flex items-center gap-3 border-t pt-4 mt-4">
+                {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Facebook className="w-5 h-5" /></a>}
+                {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Instagram className="w-5 h-5" /></a>}
+                {social.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Twitter className="w-5 h-5" /></a>}
+                {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Youtube className="w-5 h-5" /></a>}
+              </div>
+            )}
+          </CardContent></Card>
 
-          <div className="grid gap-2 text-sm border-t pt-4">
-            {b.address && <a href={mapsUrl(b.address, b.municipality)} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="flex items-center gap-2 text-primary"><MapPin className="w-4 h-4 shrink-0" /> {b.address}</a>}
-            {b.phone && <a href={`tel:${b.phone}`} onClick={() => track(b.id, "phone_click")} className="flex items-center gap-2 text-primary"><Phone className="w-4 h-4" /> {b.phone}</a>}
-            {b.email && <a href={`mailto:${b.email}`} className="flex items-center gap-2 text-primary"><Mail className="w-4 h-4" /> {b.email}</a>}
-            {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center gap-2 text-primary"><Globe className="w-4 h-4" /> Visit Website</a>}
+          <div>
+            <h2 className="font-display text-xl font-bold mb-4">Reviews {b.review_count > 0 ? `(${b.review_count})` : ""}</h2>
+            <div className="mb-6"><ReviewForm businessId={b.id} onPosted={() => load(false)} /></div>
+            {reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((r) => {
+                  const author = r.author_name || [r.users?.first_name, r.users?.last_name].filter(Boolean).join(" ") || r.users?.username || "Anonymous";
+                  return (
+                    <Card key={r.id}><CardContent className="p-4">
+                      <div className="flex items-center justify-between"><span className="font-semibold">{author}</span><Stars rating={r.rating} /></div>
+                      {r.title && <p className="font-medium mt-1">{r.title}</p>}
+                      {r.body && <p className="text-sm text-muted-foreground mt-1">{r.body}</p>}
+                    </CardContent></Card>
+                  );
+                })}
+              </div>
+            ) : (<p className="text-sm text-muted-foreground">No reviews yet — be the first to share your experience.</p>)}
           </div>
 
-          {b.hours && <HoursBlock hours={b.hours} />}
-
-          {b.menu_url && (
-            <div className="border-t pt-4">
-              <h3 className="flex items-center gap-2 font-semibold mb-2"><ExternalLink className="w-4 h-4" /> Menu</h3>
-              <a href={b.menu_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary font-medium">
-                <ExternalLink className="w-4 h-4" /> {b.menu_title || "View Menu"}
-              </a>
+          {nearby.length > 0 && (
+            <div>
+              <h2 className="font-display text-xl font-bold mb-1">You might also like</h2>
+              <p className="text-sm text-muted-foreground mb-4">{b.municipality ? `More businesses in and around ${b.municipality}` : "More businesses on Spotlight"}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{nearby.map((n) => <NearbyCard key={n.id} b={n} />)}</div>
             </div>
           )}
+        </div>
 
-          {hasSocial && (
-            <div className="flex items-center gap-3 border-t pt-4">
-              {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Facebook className="w-5 h-5" /></a>}
-              {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Instagram className="w-5 h-5" /></a>}
-              {social.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Twitter className="w-5 h-5" /></a>}
-              {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Youtube className="w-5 h-5" /></a>}
+        {/* RIGHT — sidebar */}
+        <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-20 self-start">
+          <Card><CardContent className="p-5 space-y-3">
+            <h3 className="font-display font-bold">Contact &amp; visit</h3>
+            <div className="grid gap-2">
+              {b.phone && <a href={`tel:${b.phone}`} onClick={() => track(b.id, "phone_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90"><Phone className="w-4 h-4" /> Call now</a>}
+              {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Globe className="w-4 h-4" /> Visit website</a>}
+              {b.email && <a href={`mailto:${b.email}`} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Mail className="w-4 h-4" /> Email</a>}
             </div>
+            {b.address && <div className="flex items-start gap-2 text-sm text-muted-foreground pt-1"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-primary" /> <span>{b.address}</span></div>}
+            {(b.address || b.municipality) && (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <a href={`https://maps.apple.com/?q=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-semibold hover:bg-muted"><MapPin className="w-3.5 h-3.5 text-primary" /> Apple Maps</a>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")} className="flex items-center justify-center gap-1.5 py-2 rounded-xl border text-xs font-semibold hover:bg-muted"><MapPin className="w-3.5 h-3.5 text-primary" /> Google Maps</a>
+              </div>
+            )}
+          </CardContent></Card>
+
+          {b.hours && <Card><CardContent className="p-5"><HoursBlock hours={b.hours} /></CardContent></Card>}
+
+          {(b.address || b.municipality) && (
+            <MapEmbed query={[b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", ")} lat={(b as any).latitude} lon={(b as any).longitude} title={b.name} />
           )}
 
           {!isClaimed && !b.owner_id && (
-            <div className="mt-2 rounded-xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-              <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-start gap-3 mb-3">
                 <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                 <div>
                   <p className="font-semibold text-sm">Is this your business?</p>
                   <p className="text-sm text-muted-foreground">Claim it to manage your page, add photos, and connect with customers — free.</p>
                 </div>
               </div>
-              <Button onClick={() => setShowClaim(true)} className="shrink-0">Claim this business</Button>
+              <Button onClick={() => setShowClaim(true)} className="w-full">Claim this business</Button>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Map / location */}
-      {(b.address || b.municipality) && (
-        <div className="mt-8">
-          <h2 className="font-display text-xl font-bold mb-4 flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /> Location</h2>
-          <MapEmbed
-            query={[b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", ")}
-            lat={(b as any).latitude}
-            lon={(b as any).longitude}
-            title={b.name}
-          />
-          <div className="flex flex-wrap gap-2 mt-3">
-            <a
-              href={`https://maps.apple.com/?q=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`}
-              target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
-            ><MapPin className="w-4 h-4 text-primary" /> Apple Maps</a>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([b.name, b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", "))}`}
-              target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "maps_click")}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors"
-            ><MapPin className="w-4 h-4 text-primary" /> Google Maps</a>
-          </div>
         </div>
-      )}
-
-      {/* Reviews section */}
-      <div className="mt-8">
-        <h2 className="font-display text-xl font-bold mb-4">Reviews {b.review_count > 0 ? `(${b.review_count})` : ""}</h2>
-        <div className="mb-6">
-          <ReviewForm businessId={b.id} onPosted={() => load(false)} />
-        </div>
-        {reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map((r) => {
-              const author = r.author_name || [r.users?.first_name, r.users?.last_name].filter(Boolean).join(" ") || r.users?.username || "Anonymous";
-              return (
-                <Card key={r.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold">{author}</span>
-                      <Stars rating={r.rating} />
-                    </div>
-                    {r.title && <p className="font-medium mt-1">{r.title}</p>}
-                    {r.body && <p className="text-sm text-muted-foreground mt-1">{r.body}</p>}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No reviews yet — be the first to share your experience.</p>
-        )}
       </div>
 
-      {/* Suggested nearby businesses */}
-      {nearby.length > 0 && (
-        <div className="mt-12">
-          <h2 className="font-display text-xl font-bold mb-1">You might also like</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            {b.municipality ? `More businesses in and around ${b.municipality}` : "More businesses on Spotlight"}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {nearby.map((n) => <NearbyCard key={n.id} b={n} />)}
-          </div>
-        </div>
-      )}
-
       {showClaim && (
-        <ClaimBusinessModal
-          businessId={b.id}
-          businessName={b.name}
-          onClose={() => setShowClaim(false)}
-        />
+        <ClaimBusinessModal businessId={b.id} businessName={b.name} onClose={() => setShowClaim(false)} />
       )}
     </div>
   );
