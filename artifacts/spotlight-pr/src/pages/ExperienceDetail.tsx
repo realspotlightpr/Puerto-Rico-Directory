@@ -149,7 +149,7 @@ export default function ExperienceDetail() {
                   {guide?.photo_url ? <img src={guide.photo_url} alt={guideName} className="w-full h-full object-cover" /> : <span>{guideName.charAt(0)}</span>}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold font-display text-lg flex items-center gap-1.5">{guideName}{guide?.is_verified && <ShieldCheck className="w-4 h-4 text-emerald-500" />}</p>
+                  <Link href={`/profile/${s.guide_id}`}><p className="font-bold font-display text-lg flex items-center gap-1.5 hover:text-primary cursor-pointer">{guideName}{guide?.is_verified && <ShieldCheck className="w-4 h-4 text-emerald-500" />}</p></Link>
                   {guide?.municipality && <p className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {guide.municipality}</p>}
                 </div>
               </div>
