@@ -31,6 +31,7 @@ import InfluencerLanding from "@/pages/InfluencerLanding";
 import AdminInfluencers from "@/pages/AdminInfluencers";
 import Messages from "@/pages/Messages";
 import MyPlans from "@/pages/MyPlans";
+import Saved from "@/pages/Saved";
 import AdminBookings from "@/pages/AdminBookings";
 import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
@@ -239,6 +240,7 @@ function Router() {
           <Route path="/pass" component={SpotlightPass} />
           <Route path="/date-builder" component={DateBuilder} />
           <Route path="/plans" component={MyPlans} />
+          <Route path="/saved" component={Saved} />
           <Route path="/discover" component={DiscoverSwipe} />
           <Route path="/influencers" component={Influencers} />
           <Route path="/influencer" component={InfluencerDashboard} />
