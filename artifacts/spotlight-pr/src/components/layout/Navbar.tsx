@@ -3,7 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   Menu, X, User as UserIcon, PlusCircle, LayoutDashboard,
   Shield, LogOut, Store, Star, ChevronDown, Compass, Waves,
-  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles,
+  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles, Bookmark, MessageCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -211,6 +211,13 @@ export function Navbar() {
                       <p className="text-xs text-muted-foreground font-normal truncate mt-0.5">{user?.email}</p>
                       <p className="text-xs text-primary font-normal capitalize mt-0.5">{user?.role?.replace("_", " ")}</p>
                     </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+
+                    <Link href="/saved"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Bookmark className="w-4 h-4" /> Saved</DropdownMenuItem></Link>
+                    <Link href="/plans"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><CalendarHeart className="w-4 h-4" /> My Plans</DropdownMenuItem></Link>
+                    <Link href="/messages"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><MessageCircle className="w-4 h-4" /> Messages</DropdownMenuItem></Link>
+                    <Link href="/guide"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Compass className="w-4 h-4" /> Guide dashboard</DropdownMenuItem></Link>
+                    <Link href="/influencer"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Megaphone className="w-4 h-4" /> Creator dashboard</DropdownMenuItem></Link>
                     <DropdownMenuSeparator />
 
                     {/* Role-based primary links */}

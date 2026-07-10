@@ -38,6 +38,8 @@ export function Footer() {
             <ul className="space-y-3">
               <li><Link href="/pass" className="text-sm text-muted-foreground hover:text-primary transition-colors">Spotlight Pass</Link></li>
               <li><Link href="/for-guides" className="text-sm text-muted-foreground hover:text-primary transition-colors">Become a Guide</Link></li>
+              <li><Link href="/saved" className="text-sm text-muted-foreground hover:text-primary transition-colors">Saved</Link></li>
+              <li><Link href="/plans" className="text-sm text-muted-foreground hover:text-primary transition-colors">My Plans</Link></li>
               <li><Link href="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors">My Account</Link></li>
             </ul>
           </div>
