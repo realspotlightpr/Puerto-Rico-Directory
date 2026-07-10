@@ -1,47 +1,57 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useToast } from "@/hooks/use-toast";
-import { Bookmark, X, Sparkles, Check } from "lucide-react";
+import { Bookmark, BookmarkCheck, X, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function SavePremiumButton({ label = "Save / Add to itinerary", className = "" }: { label?: string; className?: string }) {
+/** Saving favorites requires a (free) account. Not logged in -> prompt to create one. */
+export function SavePremiumButton({ name, img, kind, label = "Save", className = "" }: { name?: string; img?: string | null; kind?: string; label?: string; className?: string }) {
   const { isAuthenticated, openAuthModal } = useAuth();
   const { toast } = useToast();
+  const [saved, setSaved] = useState(false);
   const [open, setOpen] = useState(false);
-  const [isPass, setIsPass] = useState(false);
+  const href = typeof window !== "undefined" ? window.location.pathname : "";
 
   useEffect(() => {
     (async () => {
+      if (!isAuthenticated || !href) { setSaved(false); return; }
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setIsPass(false); return; }
-      const { data } = await supabase.from("users").select("plan_id, plan_ends_at").eq("id", user.id).maybeSingle();
-      const p = data as any;
-      const active = p && (p.plan_id === "spotlight_pass" || p.plan_id === "travel_pass") && (!p.plan_ends_at || new Date(p.plan_ends_at) > new Date());
-      setIsPass(!!active);
+      if (!user) return;
+      const { data } = await supabase.from("saved_items").select("id").eq("user_id", user.id).eq("href", href).maybeSingle();
+      setSaved(!!data);
     })();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, href]);
 
-  const onClick = () => {
-    if (isPass) { toast({ title: "Saved to your itinerary ✨" }); return; }
-    setOpen(true);
+  const toggle = async () => {
+    if (!isAuthenticated) { setOpen(true); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setOpen(true); return; }
+    if (saved) {
+      await supabase.from("saved_items").delete().eq("user_id", user.id).eq("href", href);
+      setSaved(false); toast({ title: "Removed from saved" });
+    } else {
+      const { error } = await supabase.from("saved_items").insert({ user_id: user.id, href, name: name || document.title, img: img || null, kind: kind || null });
+      if (error && !String(error.message).includes("duplicate")) { toast({ title: "Couldn't save", description: error.message, variant: "destructive" }); return; }
+      setSaved(true); toast({ title: "Saved 🔖", description: "Find it under Saved." });
+    }
   };
 
   return (
     <>
-      <Button variant="outline" onClick={onClick} className={`gap-2 ${className}`}><Bookmark className="w-4 h-4" /> {label}</Button>
+      <Button variant={saved ? "default" : "outline"} onClick={toggle} className={`gap-2 ${className}`}>
+        {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />} {saved ? "Saved" : label}
+      </Button>
       {open && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center">
             <button onClick={() => setOpen(false)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-emerald-500 text-white flex items-center justify-center mx-auto mb-4"><Sparkles className="w-7 h-7" /></div>
-            <h3 className="font-display text-xl font-bold mb-1">Save it with Spotlight Pass</h3>
-            <p className="text-sm text-muted-foreground mb-4">Saving favorites and building itineraries is a <strong>Spotlight Pass</strong> perk — plus 5% off every experience and a $5 monthly credit.</p>
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"><UserPlus className="w-7 h-7" /></div>
+            <h3 className="font-display text-xl font-bold mb-1">Create a free account to save</h3>
+            <p className="text-sm text-muted-foreground mb-4">Sign up to save your favorite spots and build your Puerto Rico itinerary.</p>
             <div className="space-y-2">
-              <Link href="/pass"><Button className="w-full gap-2"><Check className="w-4 h-4" /> Get the Pass — $20/mo</Button></Link>
-              {!isAuthenticated && <button onClick={() => { setOpen(false); openAuthModal?.(); }} className="text-xs text-muted-foreground hover:text-primary">Already a member? Sign in</button>}
+              <Button className="w-full" onClick={() => { setOpen(false); openAuthModal?.(); }}>Create free account</Button>
               <button onClick={() => setOpen(false)} className="block w-full text-xs text-muted-foreground hover:text-foreground pt-1">Maybe later</button>
             </div>
           </div>
