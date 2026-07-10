@@ -50,7 +50,7 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
           
           <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3">
             <div className="w-14 h-14 rounded-xl bg-white p-1 shadow-lg shrink-0 overflow-hidden">
@@ -60,8 +60,8 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
-            <div className="text-white pb-1 overflow-hidden">
-              <h3 className="font-display font-bold text-lg leading-tight truncate">{business.name}</h3>
+            <div className="text-white pb-1 overflow-hidden" style={{ textShadow: "0 2px 6px rgba(0,0,0,0.7)" }}>
+              <h3 className="font-display font-bold text-lg leading-tight truncate text-white">{business.name}</h3>
               <p className="text-white/80 text-sm truncate">{business.categoryName}</p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
             )}
           </div>
           
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+          <p className="text-sm text-foreground/75 line-clamp-2 mt-1 bg-muted/40 rounded-lg px-3 py-2">
             {business.description || "No description provided."}
           </p>
           
