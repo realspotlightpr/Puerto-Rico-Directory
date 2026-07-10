@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { supabase } from "@/lib/supabase";
-import { Sparkles, Shuffle, Share2, MapPin, Loader2, Clock, ArrowRight, Star } from "lucide-react";
+import { Sparkles, Shuffle, Share2, MapPin, Loader2, Clock, ArrowRight, Star, Bookmark } from "lucide-react";
+import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +22,7 @@ const rand = <T,>(a: T[]): T | null => (a.length ? a[Math.floor(Math.random() * 
 
 export default function DateBuilder() {
   const { toast } = useToast();
+  const { openAuthModal } = useAuth();
   const [loading, setLoading] = useState(true);
   const [places, setPlaces] = useState<any[]>([]);
   const [experiences, setExperiences] = useState<any[]>([]);
@@ -80,6 +82,16 @@ export default function DateBuilder() {
     try { await navigator.clipboard.writeText(url); toast({ title: "Link copied!" }); } catch { /* ignore */ }
   };
 
+  const savePlan = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { openAuthModal?.(); return; }
+    if (!plan || !plan.length) return;
+    const title = `${VIBES.find((v) => v.id === vibe)?.label || "Plan"}${region !== "Anywhere" ? ` · ${region}` : ""}`;
+    const { error } = await supabase.from("saved_plans").insert({ user_id: user.id, kind: "date", title, region, vibe, data: plan });
+    if (error) { toast({ title: "Couldn't save", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Plan saved 🔖", description: "Find it under My Plans." });
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -127,6 +139,7 @@ export default function DateBuilder() {
               <h2 className="font-display text-xl font-bold">Your {VIBES.find((v) => v.id === vibe)?.label.toLowerCase()} plan</h2>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={generate}><Shuffle className="w-4 h-4" /> Shuffle</Button>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={savePlan}><Bookmark className="w-4 h-4" /> Save</Button>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={share}><Share2 className="w-4 h-4" /> Share</Button>
               </div>
             </div>

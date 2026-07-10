@@ -34,7 +34,7 @@ import {
   Shield, ShieldCheck, Users, Store, MessageSquare, Check, X, Star, Trash2, ShieldAlert, Clock,
   LayoutDashboard, Edit2, Edit3, ChevronRight, Search, Save, Loader2, TrendingUp,
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
-  Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, Handshake,
+  Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, KeyRound, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
   Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image,
 } from "lucide-react";
@@ -1217,6 +1217,17 @@ export default function Admin() {
     }
   };
 
+  const sendPwReset = async (userId: string, userData: any) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("send-password-reset", { body: { userId } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Password reset sent", description: `Emailed${(data as any)?.results?.sms === "sent" ? " & texted" : ""} to ${userData.email || "the user"}.` });
+    } catch (e: any) {
+      toast({ title: "Couldn't send reset", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const switchBackToAdmin = async () => {
     if (!impersonationSession) return;
     try {
@@ -1851,6 +1862,9 @@ export default function Admin() {
                             <div className="flex gap-2 justify-end">
                               <Button size="icon" variant="outline" title="Login As This User" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => loginAsUser(u.id, u)}>
                                 <UserCog className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="outline" title="Send Password Reset (email + text)" className="text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => sendPwReset(u.id, u)}>
+                                <KeyRound className="w-4 h-4" />
                               </Button>
                               <Button size="icon" variant="outline" title="Edit User" className="text-primary border-primary/30 hover:bg-primary/5" onClick={() => openUserEdit(u)}>
                                 <Edit2 className="w-4 h-4" />
