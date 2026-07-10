@@ -71,7 +71,7 @@ export default function DiscoverSwipe() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/5 to-emerald-50/30">
-      <div className="container mx-auto px-4 py-6 max-w-md">
+      <div className="container mx-auto px-4 py-4 pb-24 md:pb-6 max-w-md">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-display text-2xl font-bold flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> Discover</h1>
@@ -94,7 +94,7 @@ export default function DiscoverSwipe() {
           </div>
         ) : (
           <>
-            <div className="relative h-[68vh] max-h-[560px] select-none">
+            <div className="relative h-[calc(100dvh-19rem)] max-h-[540px] min-h-[330px] select-none">
               {deck[i + 1] && (
                 <div className="absolute inset-0 rounded-3xl overflow-hidden border border-border bg-muted shadow-sm scale-[0.96] translate-y-2">
                   <img src={deck[i + 1].img || FALLBACK} alt="" className="w-full h-full object-cover opacity-90" />
@@ -106,12 +106,12 @@ export default function DiscoverSwipe() {
                 style={{ transform: `translateX(${dragX}px) rotate(${dragX / 22}deg)`, transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}
               >
                 <img src={card.img || FALLBACK} alt={card.name} className="w-full h-full object-cover pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                 {dragX > 40 && <span className="absolute top-6 left-6 text-emerald-400 border-4 border-emerald-400 rounded-xl px-3 py-1 font-bold text-2xl rotate-[-15deg]">LIKE</span>}
                 {dragX < -40 && <span className="absolute top-6 right-6 text-red-400 border-4 border-red-400 rounded-xl px-3 py-1 font-bold text-2xl rotate-[15deg]">NOPE</span>}
-                <div className="absolute bottom-0 left-0 right-0 p-5 text-white pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 p-5 text-white pointer-events-none" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
                   <span className="text-[11px] font-bold uppercase tracking-wide bg-white/20 backdrop-blur px-2 py-0.5 rounded-full capitalize">{card.kind}</span>
-                  <h2 className="font-display text-2xl font-bold mt-2 leading-tight">{card.name}</h2>
+                  <h2 className="font-display text-2xl font-bold mt-2 leading-tight text-white drop-shadow-lg">{card.name}</h2>
                   <p className="text-white/85 text-sm flex items-center gap-1 mt-0.5"><MapPin className="w-3.5 h-3.5" /> {card.sub}</p>
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function DiscoverSwipe() {
             </div>
 
             {!liked && (
-              <div className="flex items-center justify-center gap-5 mt-5">
+              <div className="flex items-center justify-center gap-5 mt-4">
                 <button onClick={() => { if (i > 0) { setI(i - 1); setDragX(0); setLiked(null); } }} disabled={i === 0} title="Undo last swipe" className="w-12 h-12 rounded-full bg-white border border-border shadow-md flex items-center justify-center text-amber-500 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"><RotateCcw className="w-6 h-6" /></button>
                 <button onClick={onSkip} className="w-14 h-14 rounded-full bg-white border border-border shadow-md flex items-center justify-center text-red-500 hover:scale-105 transition-transform"><X className="w-7 h-7" /></button>
                 <button onClick={onLike} className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-primary shadow-lg flex items-center justify-center text-white hover:scale-105 transition-transform"><Heart className="w-8 h-8 fill-white" /></button>

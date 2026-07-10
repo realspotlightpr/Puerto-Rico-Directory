@@ -185,7 +185,7 @@ export default function ExperienceDetail() {
               <a href={`tel:${guide.phone}`} className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Phone className="w-4 h-4 text-primary" /> Call the guide</a>
             )}
             <Link href={`/messages?to=${s.guide_id}`}><button className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><MessageCircle className="w-4 h-4 text-primary" /> Message the guide</button></Link>
-            <div className="mt-2"><SavePremiumButton className="w-full" /></div>
+            <div className="mt-2"><SavePremiumButton name={s.title} img={images[0]} kind="experience" className="w-full" /></div>
             <div className="mt-4 pt-4 border-t space-y-2">
               {[
                 [<ShieldCheck className="w-4 h-4 text-emerald-500" key="v" />, "Verified local guide"],

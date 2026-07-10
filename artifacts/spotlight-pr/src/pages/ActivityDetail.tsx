@@ -259,7 +259,7 @@ export default function ActivityDetail() {
           <a href={gmaps(q)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90"><Navigation className="w-4 h-4" /> Google Maps</a>
           <a href={amaps(q)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-muted"><MapPin className="w-4 h-4 text-primary" /> Apple Maps</a>
           <button onClick={doShare} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-muted"><Share2 className="w-4 h-4 text-primary" /> {copied ? "Copied!" : "Share"}</button>
-          <SavePremiumButton label="Save" className="!px-4 !py-2 !h-auto rounded-xl text-sm" />
+          <SavePremiumButton name={a.name} img={a.image_url} kind="place" label="Save" className="!px-4 !py-2 !h-auto rounded-xl text-sm" />
           <div className="hidden sm:flex items-center gap-1.5 ml-auto">
             <a href={`https://wa.me/?text=${encodeURIComponent(a.name + " — " + shareUrl)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-bold hover:opacity-90" title="Share on WhatsApp">WA</a>
             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold hover:opacity-90" title="Share on Facebook">f</a>

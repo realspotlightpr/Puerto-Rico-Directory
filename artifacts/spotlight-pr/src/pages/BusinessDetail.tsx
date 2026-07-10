@@ -437,7 +437,7 @@ export default function BusinessDetail() {
                 </div>
               </div>
             )}
-            <SavePremiumButton className="w-full" />
+            <SavePremiumButton name={b.name} img={b.cover_url} kind="business" className="w-full" />
             {b.address && <div className="flex items-start gap-2 text-sm text-muted-foreground pt-1"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-primary" /> <span>{b.address}</span></div>}
             {(b.address || b.municipality) && (
               <div className="grid grid-cols-2 gap-2 pt-1">

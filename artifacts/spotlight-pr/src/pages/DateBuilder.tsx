@@ -31,6 +31,8 @@ export default function DateBuilder() {
   const [vibe, setVibe] = useState("romantic");
   const [region, setRegion] = useState("Anywhere");
   const [plan, setPlan] = useState<Stop[] | null>(null);
+  const [isPass, setIsPass] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +47,12 @@ export default function DateBuilder() {
         setExperiences(svcs || []);
         setRestaurants((biz || []).filter((b: any) => b.category_id === 1 || b.category_id === 2));
         setCafes((biz || []).filter((b: any) => b.category_id === 3));
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: pu } = await supabase.from("users").select("plan_id, plan_ends_at").eq("id", user.id).maybeSingle();
+          const pp = pu as any;
+          setIsPass(!!(pp && (pp.plan_id === "spotlight_pass" || pp.plan_id === "travel_pass") && (!pp.plan_ends_at || new Date(pp.plan_ends_at) > new Date())));
+        }
       } catch { /* ignore */ } finally { setLoading(false); }
     })();
   }, []);
@@ -85,6 +93,7 @@ export default function DateBuilder() {
   const savePlan = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { openAuthModal?.(); return; }
+    if (!isPass) { setShowUpgrade(true); return; }
     if (!plan || !plan.length) return;
     const title = `${VIBES.find((v) => v.id === vibe)?.label || "Plan"}${region !== "Anywhere" ? ` · ${region}` : ""}`;
     const { error } = await supabase.from("saved_plans").insert({ user_id: user.id, kind: "date", title, region, vibe, data: plan });
@@ -94,6 +103,21 @@ export default function DateBuilder() {
 
   return (
     <div className="min-h-screen">
+      {showUpgrade && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowUpgrade(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <button onClick={() => setShowUpgrade(false)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"><Star className="w-0 h-0" />✕</button>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-emerald-500 text-white flex items-center justify-center mx-auto mb-4"><Sparkles className="w-7 h-7" /></div>
+            <h3 className="font-display text-xl font-bold mb-1">Save plans with Spotlight Pass</h3>
+            <p className="text-sm text-muted-foreground mb-4">Build all you like — saving and revisiting your plans is a Spotlight Pass feature ($20/mo), plus 5% off experiences and a $5 monthly credit.</p>
+            <div className="space-y-2">
+              <Link href="/pass"><Button className="w-full">Get the Pass</Button></Link>
+              <button onClick={() => setShowUpgrade(false)} className="block w-full text-xs text-muted-foreground hover:text-foreground pt-1">Keep exploring the preview</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Hero */}
       <div className="relative bg-gradient-to-br from-rose-500 via-primary to-teal-600 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 70% 30%, white 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
