@@ -72,18 +72,19 @@ export default function ExperienceDetail() {
       {/* Hero */}
       <div className="relative h-64 md:h-96 bg-muted overflow-hidden">
         <img src={images[0]} alt={s.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 to-transparent" />
         <div className="absolute top-4 left-4"><Link href="/experiences"><Button variant="outline" size="sm" className="bg-white/90 gap-1"><ArrowLeft className="w-4 h-4" /> Experiences</Button></Link></div>
         <div className="absolute top-4 right-4"><Button variant="outline" size="sm" className="bg-white/90 gap-1" onClick={doShare}><Share2 className="w-4 h-4" /> Share</Button></div>
         <div className="absolute bottom-0 left-0 right-0">
-          <div className="container mx-auto px-4 max-w-4xl pb-5 text-white">
+          <div className="container mx-auto px-4 max-w-4xl pb-5 text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               {s.provider && <span className="text-[11px] font-bold bg-teal-600 px-2.5 py-1 rounded-full">✦ {s.provider}</span>}
               {s.activity_type && <span className="text-xs font-semibold capitalize bg-black/40 backdrop-blur px-2.5 py-1 rounded-full">{s.activity_type}</span>}
               {guide?.is_verified && <span className="text-[11px] font-bold bg-emerald-500 px-2.5 py-1 rounded-full flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Verified guide</span>}
             </div>
-            <h1 className="font-display text-2xl md:text-4xl font-bold drop-shadow">{s.title}</h1>
-            <p className="text-white/90 text-sm mt-1 flex items-center gap-1"><MapPin className="w-4 h-4" /> {s.municipality || "Puerto Rico"} · with {guideName}</p>
+            <h1 className="font-display text-2xl md:text-4xl font-bold text-white drop-shadow-lg">{s.title}</h1>
+            <p className="text-white text-sm mt-1 flex items-center gap-1 font-medium"><MapPin className="w-4 h-4" /> {s.municipality || "Puerto Rico"} · with {guideName}</p>
           </div>
         </div>
       </div>
