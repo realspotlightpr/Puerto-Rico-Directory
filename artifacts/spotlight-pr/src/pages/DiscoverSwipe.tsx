@@ -127,7 +127,8 @@ export default function DiscoverSwipe() {
             </div>
 
             {!liked && (
-              <div className="flex items-center justify-center gap-6 mt-5">
+              <div className="flex items-center justify-center gap-5 mt-5">
+                <button onClick={() => { if (i > 0) { setI(i - 1); setDragX(0); setLiked(null); } }} disabled={i === 0} title="Undo last swipe" className="w-12 h-12 rounded-full bg-white border border-border shadow-md flex items-center justify-center text-amber-500 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"><RotateCcw className="w-6 h-6" /></button>
                 <button onClick={onSkip} className="w-14 h-14 rounded-full bg-white border border-border shadow-md flex items-center justify-center text-red-500 hover:scale-105 transition-transform"><X className="w-7 h-7" /></button>
                 <button onClick={onLike} className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-primary shadow-lg flex items-center justify-center text-white hover:scale-105 transition-transform"><Heart className="w-8 h-8 fill-white" /></button>
               </div>
