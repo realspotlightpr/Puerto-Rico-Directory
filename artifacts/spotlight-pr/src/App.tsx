@@ -21,6 +21,7 @@ import Surf from "@/pages/Surf";
 import Experiences from "@/pages/Experiences";
 import ExperienceDetail from "@/pages/ExperienceDetail";
 import SpotlightPass from "@/pages/SpotlightPass";
+import DateBuilder from "@/pages/DateBuilder";
 import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
@@ -217,6 +218,7 @@ function Router() {
           <Route path="/experiences" component={Experiences} />
           <Route path="/experiences/:slug" component={ExperienceDetail} />
           <Route path="/pass" component={SpotlightPass} />
+          <Route path="/date-builder" component={DateBuilder} />
           <Route path="/guide" component={GuideDashboard} />
           <Route path="/for-guides" component={ForGuides} />
           <Route path="/launch" component={Launch} />
