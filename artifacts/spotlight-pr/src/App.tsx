@@ -24,6 +24,12 @@ import SpotlightPass from "@/pages/SpotlightPass";
 import DateBuilder from "@/pages/DateBuilder";
 import PassSuccess from "@/pages/PassSuccess";
 import BusinessSuccess from "@/pages/BusinessSuccess";
+import DiscoverSwipe from "@/pages/DiscoverSwipe";
+import Influencers from "@/pages/Influencers";
+import InfluencerDashboard from "@/pages/InfluencerDashboard";
+import InfluencerLanding from "@/pages/InfluencerLanding";
+import AdminInfluencers from "@/pages/AdminInfluencers";
+import Messages from "@/pages/Messages";
 import AdminBookings from "@/pages/AdminBookings";
 import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
@@ -198,6 +204,14 @@ function EmailReminderBanner() {
   );
 }
 
+function ReferralCapture() {
+  const [loc] = useLocation();
+  useEffect(() => {
+    try { const p = new URLSearchParams(window.location.search); const ref = p.get("ref"); if (ref) localStorage.setItem("sp_ref", ref); } catch { /* ignore */ }
+  }, [loc]);
+  return null;
+}
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -207,6 +221,7 @@ function Router() {
       <ForcePasswordGate />
       <ImpersonationBar />
       <EmailReminderBanner />
+      <ReferralCapture />
       <Navbar />
       <main className="flex-1 pb-16 md:pb-0">
         <Switch>
@@ -222,6 +237,12 @@ function Router() {
           <Route path="/experiences/:slug" component={ExperienceDetail} />
           <Route path="/pass" component={SpotlightPass} />
           <Route path="/date-builder" component={DateBuilder} />
+          <Route path="/discover" component={DiscoverSwipe} />
+          <Route path="/influencers" component={Influencers} />
+          <Route path="/influencer" component={InfluencerDashboard} />
+          <Route path="/i/:slug" component={InfluencerLanding} />
+          <Route path="/admin/influencers" component={AdminInfluencers} />
+          <Route path="/messages" component={Messages} />
           <Route path="/pass/success" component={PassSuccess} />
           <Route path="/business/success" component={BusinessSuccess} />
           <Route path="/guide" component={GuideDashboard} />
