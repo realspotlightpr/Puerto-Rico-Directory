@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
   Star, MessageSquare, MapPin, CalendarDays, Award,
-  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass,
+  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass, Camera,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,14 +69,17 @@ function AccountSettings() {
   const [pw2, setPw2] = useState("");
   const [savingInfo, setSavingInfo] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
+  const [avatar, setAvatar] = useState("");
+  const [uploadingAv, setUploadingAv] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setEmail(user?.email || "");
       if (user?.id) {
-        const { data } = await supabase.from("users").select("phone").eq("id", user.id).maybeSingle();
+        const { data } = await supabase.from("users").select("phone, profile_image_url").eq("id", user.id).maybeSingle();
         setPhone((data as any)?.phone || "");
+        setAvatar((data as any)?.profile_image_url || "");
       }
     })();
   }, []);
@@ -111,9 +114,38 @@ function AccountSettings() {
     }
   }
 
+  const onAvatar = async (e: any) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAv(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `avatars/${user.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("business-media").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("business-media").getPublicUrl(path).data.publicUrl;
+      await supabase.from("users").update({ profile_image_url: url, updated_at: new Date().toISOString() }).eq("id", user.id);
+      try { await supabase.auth.updateUser({ data: { avatar_url: url } }); } catch { /* ignore */ }
+      setAvatar(url);
+      toast({ title: "Photo updated \ud83d\udcf8" });
+    } catch (err: any) { toast({ title: "Upload failed", description: err?.message, variant: "destructive" }); }
+    finally { setUploadingAv(false); }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-border shadow-sm p-5 space-y-5">
       <h2 className="font-bold font-display text-sm text-muted-foreground uppercase tracking-wide">Account Settings</h2>
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-muted overflow-hidden border border-border shrink-0">
+          {avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Camera className="w-5 h-5 text-muted-foreground/40" /></div>}
+        </div>
+        <label className="cursor-pointer inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+          <input type="file" accept="image/*" className="hidden" onChange={onAvatar} disabled={uploadingAv} />
+          {uploadingAv ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />} {avatar ? "Change photo" : "Upload photo"}
+        </label>
+      </div>
       <div className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="acct-email">Email</Label>
