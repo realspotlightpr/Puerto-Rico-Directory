@@ -19,6 +19,8 @@ import Activities from "@/pages/Activities";
 import ActivityDetail from "@/pages/ActivityDetail";
 import Surf from "@/pages/Surf";
 import Experiences from "@/pages/Experiences";
+import ExperienceDetail from "@/pages/ExperienceDetail";
+import SpotlightPass from "@/pages/SpotlightPass";
 import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
@@ -26,6 +28,7 @@ import Admin from "@/pages/Admin";
 import AdminContent from "@/pages/AdminContent";
 import ForGuides from "@/pages/ForGuides";
 import Launch from "@/pages/Launch";
+import Welcome from "@/pages/Welcome";
 import ForBusiness from "@/pages/ForBusiness";
 import AdvertiseWithUs from "@/pages/AdvertiseWithUs";
 import AdditionalServices from "@/pages/AdditionalServices";
@@ -160,6 +163,37 @@ function ImpersonationBar() {
   );
 }
 
+// Soft, dismissible reminder shown to users whose email hasn't been confirmed yet.
+// Confirmation isn't required to use the app — this is just a nudge.
+function EmailReminderBanner() {
+  const { isAuthenticated, supabaseUser } = useAuth();
+  const [dismissed, setDismissed] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  if (!isAuthenticated || dismissed) return null;
+  const needsConfirm = (supabaseUser as any)?.user_metadata?.email_confirmed === false;
+  if (!needsConfirm) return null;
+  const email = (supabaseUser as any)?.email;
+  const name = (supabaseUser as any)?.user_metadata?.full_name;
+  const send = async () => {
+    if (!email) return;
+    setSending(true);
+    try {
+      await supabase.functions.invoke("send-verify-email", { body: { email, name } });
+      setSent(true);
+    } catch { /* ignore */ } finally { setSending(false); }
+  };
+  return (
+    <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-sm px-4 py-2 flex items-center justify-center gap-3 text-center">
+      <span>📧 Your email isn't confirmed yet.</span>
+      {sent
+        ? <span className="font-medium">Check your inbox for the link.</span>
+        : <button onClick={send} disabled={sending} className="font-semibold underline hover:text-amber-900 disabled:opacity-60">{sending ? "Sending…" : "Send confirmation link"}</button>}
+      <button onClick={() => setDismissed(true)} className="ml-1 text-amber-500 hover:text-amber-700" aria-label="Dismiss">✕</button>
+    </div>
+  );
+}
+
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -168,6 +202,7 @@ function Router() {
       <MagicLinkHandler />
       <ForcePasswordGate />
       <ImpersonationBar />
+      <EmailReminderBanner />
       <Navbar />
       <main className="flex-1 pb-16 md:pb-0">
         <Switch>
@@ -180,9 +215,12 @@ function Router() {
           <Route path="/activities/:slug" component={ActivityDetail} />
           <Route path="/surf" component={Surf} />
           <Route path="/experiences" component={Experiences} />
+          <Route path="/experiences/:slug" component={ExperienceDetail} />
+          <Route path="/pass" component={SpotlightPass} />
           <Route path="/guide" component={GuideDashboard} />
           <Route path="/for-guides" component={ForGuides} />
           <Route path="/launch" component={Launch} />
+          <Route path="/welcome" component={Welcome} />
           <Route path="/list-your-business" component={ListBusiness} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
