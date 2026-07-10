@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
-import { Loader2, CalendarCheck, Phone, Mail, Users, ArrowLeft } from "lucide-react";
+import { Loader2, CalendarCheck, Phone, Mail, Users, ArrowLeft, Wallet, Check, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const STATUSES = ["requested", "confirmed", "completed", "cancelled"];
@@ -18,6 +18,8 @@ export default function AdminBookings() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [guides, setGuides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || user?.role !== "admin")) setLocation("/");
@@ -28,6 +30,13 @@ export default function AdminBookings() {
     try {
       const { data } = await supabase.from("bookings").select("*, services(title, provider)").order("created_at", { ascending: false });
       setRows(data || []);
+      const { data: po } = await supabase.from("payouts").select("*").order("requested_at", { ascending: false });
+      setPayouts(po || []);
+      const gids = [...new Set((po || []).map((x: any) => x.guide_id))];
+      if (gids.length) {
+        const { data: gp } = await supabase.from("guide_profiles").select("user_id, display_name").in("user_id", gids);
+        setGuides(Object.fromEntries((gp || []).map((g: any) => [g.user_id, g.display_name])));
+      }
     } catch { setRows([]); } finally { setLoading(false); }
   };
   useEffect(() => { if (!authLoading && user?.role === "admin") load(); /* eslint-disable-next-line */ }, [authLoading, user]);
@@ -36,6 +45,12 @@ export default function AdminBookings() {
     setRows((r) => r.map((b) => (b.id === id ? { ...b, status } : b)));
     await supabase.from("bookings").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
   };
+
+  const setPayoutStatus = async (id: number, status: string) => {
+    setPayouts((r) => r.map((x) => (x.id === id ? { ...x, status } : x)));
+    await supabase.from("payouts").update({ status, processed_at: new Date().toISOString() }).eq("id", id);
+  };
+  const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 
   if (authLoading || user?.role !== "admin") return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
@@ -52,6 +67,31 @@ export default function AdminBookings() {
       </div>
 
       <div className="container mx-auto px-4 py-6 max-w-5xl">
+        {payouts.length > 0 && (
+          <div className="mb-8">
+            <h2 className="font-display text-lg font-bold mb-3 flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Guide payout requests</h2>
+            <div className="space-y-2">
+              {payouts.map((p) => (
+                <div key={p.id} className="bg-white rounded-2xl border border-border shadow-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold font-display">{money(p.amount_cents)} <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize ml-1 ${p.status === "paid" ? "bg-emerald-100 text-emerald-700" : p.status === "rejected" ? "bg-red-100 text-red-600" : p.status === "approved" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{p.status}</span></p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      <Link href={`/profile/${p.guide_id}`} className="text-primary hover:underline">{guides[p.guide_id] || "Guide"}</Link>
+                      {p.method ? ` · ${p.method}` : ""} · {new Date(p.requested_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {p.status !== "paid" && p.status !== "rejected" && (
+                    <div className="flex gap-2 shrink-0">
+                      {p.status === "requested" && <Button size="sm" variant="outline" onClick={() => setPayoutStatus(p.id, "approved")}>Approve</Button>}
+                      <Button size="sm" className="gap-1" onClick={() => setPayoutStatus(p.id, "paid")}><Check className="w-3.5 h-3.5" /> Mark paid</Button>
+                      <Button size="sm" variant="outline" className="gap-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setPayoutStatus(p.id, "rejected")}><XIcon className="w-3.5 h-3.5" /> Reject</Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : rows.length === 0 ? (

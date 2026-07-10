@@ -77,9 +77,17 @@ export function BookingModal({ service, onClose }: { service: Service; onClose: 
                   <div className="space-y-1"><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(787) …" /></div>
                 </div>
                 <div className="space-y-1"><Label>Message <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Anything the guide should know?" className="min-h-[70px]" /></div>
-                {service.price != null && (
-                  <p className="text-sm text-muted-foreground">Est. total: <span className="font-semibold text-foreground">${service.price_unit === "per_person" ? service.price * (Number(party) || 1) : service.price}</span> — you'll pay the guide after they confirm.</p>
-                )}
+                {service.price != null && (() => {
+                  const sub = service.price_unit === "per_person" ? service.price * (Number(party) || 1) : service.price;
+                  const fee = Math.round(sub * 0.03 * 100) / 100;
+                  return (
+                    <div className="text-sm text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 space-y-0.5">
+                      <div className="flex justify-between"><span>Subtotal</span><span className="text-foreground">${sub.toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span>Service fee (3%)</span><span className="text-foreground">${fee.toFixed(2)}</span></div>
+                      <div className="flex justify-between font-semibold text-foreground border-t pt-1 mt-1"><span>Total</span><span>${(sub + fee).toFixed(2)}</span></div>
+                    </div>
+                  );
+                })()}
                 <Button onClick={submit} disabled={submitting} className="w-full gap-2">{submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : "Send booking request"}</Button>
               </div>
             </>

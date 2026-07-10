@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MapEmbed } from "@/pages/ActivityDetail";
 import { BookingModal } from "@/pages/Experiences";
+import { SavePremiumButton } from "@/components/SavePremiumButton";
 
 const FALLBACK = "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg";
 
@@ -91,7 +92,7 @@ export default function ExperienceDetail() {
 
       <div className="container mx-auto px-4 py-8 max-w-5xl grid lg:grid-cols-3 gap-8 items-start">
         {/* LEFT */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6 bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-sm">
           {/* Quick facts */}
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-semibold px-3 py-1.5 rounded-xl bg-primary/10 text-primary flex items-center gap-1.5">{price}<span className="font-normal text-xs">{unit}</span></span>
@@ -178,11 +179,13 @@ export default function ExperienceDetail() {
               <span className="text-3xl font-bold font-display">{price}</span>
               <span className="text-sm text-muted-foreground">{unit}</span>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">You only pay the guide after they confirm your date.</p>
+            <p className="text-xs text-muted-foreground mb-4">Secure checkout — a 3% service fee is added at checkout (covers payment processing).</p>
             <Button onClick={openBook} className="w-full gap-2 shadow-lg shadow-primary/20" size="lg">Request to book</Button>
             {guide?.phone && (
               <a href={`tel:${guide.phone}`} className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Phone className="w-4 h-4 text-primary" /> Call the guide</a>
             )}
+            <Link href={`/messages?to=${s.guide_id}`}><button className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><MessageCircle className="w-4 h-4 text-primary" /> Message the guide</button></Link>
+            <div className="mt-2"><SavePremiumButton className="w-full" /></div>
             <div className="mt-4 pt-4 border-t space-y-2">
               {[
                 [<ShieldCheck className="w-4 h-4 text-emerald-500" key="v" />, "Verified local guide"],

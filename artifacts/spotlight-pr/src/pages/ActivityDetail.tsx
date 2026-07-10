@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Sparkles, Loader2, ArrowLeft, Waves, Info, Calendar, Signal, Share2, Navigation, Camera, Compass, X, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SavePremiumButton } from "@/components/SavePremiumButton";
 
 const VISUAL: Record<string, [string, string]> = {
   beach: ["from-cyan-400 to-blue-500", "🏖️"], snorkeling: ["from-teal-400 to-cyan-600", "🤿"], surfing: ["from-blue-500 to-indigo-600", "🏄"],
@@ -235,7 +236,8 @@ export default function ActivityDetail() {
       {/* Hero */}
       <div className={`relative h-72 md:h-96 bg-gradient-to-br ${grad} flex items-center justify-center overflow-hidden`}>
         {a.image_url ? <img src={a.image_url} alt={a.name} className="w-full h-full object-cover" /> : <span className="text-7xl drop-shadow-lg">{emoji}</span>}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 to-transparent" />
         <div className="absolute top-4 left-4"><Link href="/activities"><Button variant="outline" size="sm" className="bg-white/90 gap-1"><ArrowLeft className="w-4 h-4" /> Places</Button></Link></div>
         <div className="absolute top-4 right-4"><Button variant="outline" size="sm" className="bg-white/90 gap-1" onClick={doShare}><Share2 className="w-4 h-4" /> Share</Button></div>
         <div className="absolute bottom-0 left-0 right-0">
@@ -245,7 +247,7 @@ export default function ActivityDetail() {
               {a.provider && <span className="text-[11px] font-bold bg-teal-600 px-2.5 py-1 rounded-full">✦ {a.provider}</span>}
               {a.featured && <span className="text-[11px] font-bold bg-white/90 text-amber-600 px-2.5 py-1 rounded-full flex items-center gap-1"><Sparkles className="w-3 h-3" /> Featured</span>}
             </div>
-            <h1 className="font-display text-3xl md:text-5xl font-bold drop-shadow">{a.name}</h1>
+            <h1 className="font-display text-3xl md:text-5xl font-bold text-white drop-shadow-lg">{a.name}</h1>
             <p className="text-white/90 text-sm md:text-base flex items-center gap-1 mt-1"><MapPin className="w-4 h-4" /> {a.municipality}{a.region ? ` · ${a.region}` : ""}</p>
           </div>
         </div>
@@ -257,6 +259,7 @@ export default function ActivityDetail() {
           <a href={gmaps(q)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90"><Navigation className="w-4 h-4" /> Google Maps</a>
           <a href={amaps(q)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-muted"><MapPin className="w-4 h-4 text-primary" /> Apple Maps</a>
           <button onClick={doShare} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border text-sm font-semibold hover:bg-muted"><Share2 className="w-4 h-4 text-primary" /> {copied ? "Copied!" : "Share"}</button>
+          <SavePremiumButton label="Save" className="!px-4 !py-2 !h-auto rounded-xl text-sm" />
           <div className="hidden sm:flex items-center gap-1.5 ml-auto">
             <a href={`https://wa.me/?text=${encodeURIComponent(a.name + " — " + shareUrl)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-bold hover:opacity-90" title="Share on WhatsApp">WA</a>
             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold hover:opacity-90" title="Share on Facebook">f</a>
@@ -273,7 +276,7 @@ export default function ActivityDetail() {
           <span className={`text-xs font-medium px-3 py-1 rounded-full ${a.is_free ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{a.is_free ? "Free to visit" : "Paid / Tour"}</span>
         </div>
 
-        {a.description && <p className="text-base md:text-lg leading-relaxed">{a.description}</p>}
+        {a.description && <div className="bg-white rounded-2xl border border-border p-5 shadow-sm"><p className="text-base md:text-lg leading-relaxed">{a.description}</p></div>}
         {a.wave_summary && <p className="text-cyan-700 font-medium flex items-center gap-2"><Waves className="w-4 h-4" /> {a.wave_summary}</p>}
         {a.highlights && (
           <div className="rounded-xl bg-teal-50 border border-teal-100 p-4 flex gap-3">

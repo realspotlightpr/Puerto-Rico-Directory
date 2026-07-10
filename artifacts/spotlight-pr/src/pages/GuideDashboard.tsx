@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
-import { Compass, Plus, Loader2, MapPin, Clock, Users, DollarSign, Trash2, Pause, Play, CheckCircle2 } from "lucide-react";
+import { Compass, Plus, Loader2, MapPin, Clock, Users, DollarSign, Trash2, Pause, Play, CheckCircle2, Wallet, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,12 @@ export default function GuideDashboard() {
   const [profile, setProfile] = useState<GuideProfile | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [earnings, setEarnings] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any[]>([]);
+  const [showPayout, setShowPayout] = useState(false);
+  const [payoutAmt, setPayoutAmt] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState("");
+  const [requesting, setRequesting] = useState(false);
 
   // profile form
   const [displayName, setDisplayName] = useState("");
@@ -60,6 +66,10 @@ export default function GuideDashboard() {
         setServices((svcs as Service[]) ?? []);
         const { data: bks } = await supabase.from("bookings").select("*").eq("guide_id", user.id).order("created_at", { ascending: false });
         setBookings(bks ?? []);
+        const { data: earn } = await supabase.from("guide_earnings").select("*").eq("guide_id", user.id).order("created_at", { ascending: false });
+        setEarnings(earn ?? []);
+        const { data: po } = await supabase.from("payouts").select("*").eq("guide_id", user.id).order("requested_at", { ascending: false });
+        setPayouts(po ?? []);
       }
     } catch (e) { console.error(e); } finally { setLoading(false); }
   }, []);
@@ -123,8 +133,28 @@ export default function GuideDashboard() {
   const setBookingStatus = async (id: number, status: string) => {
     await supabase.from("bookings").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status } : b));
-    toast({ title: status === "confirmed" ? "Booking confirmed" : status === "declined" ? "Booking declined" : "Updated" });
+    toast({ title: status === "confirmed" ? "Booking confirmed" : status === "declined" ? "Booking declined" : status === "completed" ? "Marked completed — earnings added" : "Updated" });
+    if (status === "completed") await load();
   };
+  const requestPayout = async () => {
+    const dollars = Number(payoutAmt);
+    const totalEarned = earnings.reduce((sum, e) => sum + e.net_cents, 0);
+    const committed = payouts.filter((x) => x.status !== "rejected").reduce((sum, x) => sum + x.amount_cents, 0);
+    const avail = totalEarned - committed;
+    if (!dollars || dollars <= 0) { toast({ title: "Enter an amount", variant: "destructive" }); return; }
+    const amountCents = Math.round(dollars * 100);
+    if (amountCents > avail) { toast({ title: "That's more than your available balance", variant: "destructive" }); return; }
+    setRequesting(true);
+    try {
+      const { error } = await supabase.from("payouts").insert({ guide_id: uid, amount_cents: amountCents, method: payoutMethod.trim() || null, status: "requested" });
+      if (error) throw error;
+      toast({ title: "Payout requested \ud83d\udcb8", description: "Spotlight will process it shortly." });
+      setShowPayout(false); setPayoutAmt(""); setPayoutMethod("");
+      await load();
+    } catch (e: any) { toast({ title: "Couldn't request payout", description: e?.message, variant: "destructive" }); }
+    finally { setRequesting(false); }
+  };
+
   const svcTitleById = (id: number) => services.find((s) => s.id === id)?.title || "Experience";
 
   if (!isAuthenticated) {
@@ -178,6 +208,61 @@ export default function GuideDashboard() {
         </div>
         <Button onClick={() => setShowServiceForm((v) => !v)} className="gap-2"><Plus className="w-4 h-4" /> Add experience</Button>
       </div>
+
+      {(() => {
+        const dollars = (n: number) => `$${(n / 100).toFixed(2)}`;
+        const totalEarned = earnings.reduce((sum, e) => sum + e.net_cents, 0);
+        const paidOut = payouts.filter((x) => x.status === "paid").reduce((sum, x) => sum + x.amount_cents, 0);
+        const committed = payouts.filter((x) => x.status !== "rejected").reduce((sum, x) => sum + x.amount_cents, 0);
+        const available = totalEarned - committed;
+        return (
+          <>
+            <div className="grid sm:grid-cols-3 gap-3 mb-6">
+              <div className="bg-gradient-to-br from-primary to-emerald-500 text-white rounded-2xl p-4">
+                <p className="text-xs text-white/85 flex items-center gap-1"><Wallet className="w-3.5 h-3.5" /> Available balance</p>
+                <p className="text-3xl font-bold font-display mt-1">{dollars(available)}</p>
+                <button onClick={() => setShowPayout((v) => !v)} disabled={available <= 0} className="mt-2 text-xs font-semibold bg-white/20 hover:bg-white/30 disabled:opacity-50 rounded-lg px-3 py-1.5 inline-flex items-center gap-1"><ArrowDownToLine className="w-3.5 h-3.5" /> Request payout</button>
+              </div>
+              <div className="bg-white rounded-2xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Total earned</p>
+                <p className="text-2xl font-bold font-display mt-1">{dollars(totalEarned)}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">You keep 90% of every completed tour.</p>
+              </div>
+              <div className="bg-white rounded-2xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Paid out</p>
+                <p className="text-2xl font-bold font-display mt-1">{dollars(paidOut)}</p>
+              </div>
+            </div>
+            {showPayout && (
+              <div className="bg-white rounded-2xl border border-border shadow-sm p-5 mb-6 space-y-3">
+                <h3 className="font-display font-bold">Request a payout</h3>
+                <p className="text-sm text-muted-foreground">Available: <span className="font-semibold text-foreground">{dollars(available)}</span></p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5"><Label>Amount ($)</Label><Input type="number" value={payoutAmt} onChange={(e) => setPayoutAmt(e.target.value)} placeholder="50.00" /></div>
+                  <div className="space-y-1.5"><Label>Send via (ATH Móvil, bank, etc.)</Label><Input value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value)} placeholder="ATH Móvil 787-..." /></div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={requestPayout} disabled={requesting} className="gap-2">{requesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownToLine className="w-4 h-4" />} Request payout</Button>
+                  <Button variant="outline" onClick={() => setShowPayout(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+            {payouts.length > 0 && (
+              <div className="mb-8">
+                <h2 className="font-display text-lg font-bold mb-3">Payout history</h2>
+                <div className="space-y-2">
+                  {payouts.map((po) => (
+                    <div key={po.id} className="bg-white rounded-xl border border-border p-3 flex items-center justify-between text-sm">
+                      <div><span className="font-semibold">{dollars(po.amount_cents)}</span><span className="text-muted-foreground"> · {new Date(po.requested_at).toLocaleDateString()}</span>{po.method ? <span className="text-muted-foreground"> · {po.method}</span> : null}</div>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full capitalize ${po.status === "paid" ? "bg-emerald-100 text-emerald-700" : po.status === "rejected" ? "bg-red-100 text-red-600" : po.status === "approved" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{po.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {showServiceForm && (
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6 space-y-4 mb-6">
@@ -236,6 +321,9 @@ export default function GuideDashboard() {
                       <Button size="sm" onClick={() => setBookingStatus(b.id, "confirmed")}>Confirm</Button>
                       <Button size="sm" variant="outline" onClick={() => setBookingStatus(b.id, "declined")}>Decline</Button>
                     </div>
+                  )}
+                  {b.status === "confirmed" && (
+                    <Button size="sm" variant="outline" className="shrink-0 gap-1" onClick={() => setBookingStatus(b.id, "completed")}><CheckCircle2 className="w-3.5 h-3.5" /> Mark completed</Button>
                   )}
                 </div>
               </div>

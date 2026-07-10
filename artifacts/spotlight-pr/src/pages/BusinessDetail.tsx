@@ -10,6 +10,7 @@ import { MapPin, Phone, Globe, Mail, ShieldCheck, BadgeCheck, Star, Clock, Tag, 
 import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
+import { SavePremiumButton } from "@/components/SavePremiumButton";
 import { MapEmbed } from "@/pages/ActivityDetail";
 
 // ── Analytics: log listing interactions via the log_listing_event RPC ──────────
@@ -436,6 +437,7 @@ export default function BusinessDetail() {
                 </div>
               </div>
             )}
+            <SavePremiumButton className="w-full" />
             {b.address && <div className="flex items-start gap-2 text-sm text-muted-foreground pt-1"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-primary" /> <span>{b.address}</span></div>}
             {(b.address || b.municipality) && (
               <div className="grid grid-cols-2 gap-2 pt-1">
