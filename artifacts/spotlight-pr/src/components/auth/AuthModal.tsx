@@ -103,6 +103,8 @@ export function AuthModal() {
         if (error) throw error;
         // Send our branded "Confirm your email" email (via Spotlight's sender), non-blocking.
         void supabase.functions.invoke("send-verify-email", { body: { email, name: fullName } });
+        // Attribute the signup to a referring creator, if any.
+        try { const ref = localStorage.getItem("sp_ref"); if (ref && data.user) void supabase.functions.invoke("track-referral", { body: { code: ref, user_id: data.user.id, kind: "signup" } }); } catch { /* ignore */ }
         // With email confirmation disabled, signUp returns a session — log them straight in
         // and take them to onboarding. (If confirmation is still required, fall back to a message.)
         if (data.session) {
