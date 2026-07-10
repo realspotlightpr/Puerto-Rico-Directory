@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { X, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
@@ -10,6 +11,7 @@ type Mode = "sign-in" | "sign-up";
 
 export function AuthModal() {
   const { showAuthModal, closeAuthModal } = useAuth();
+  const [, setLocation] = useLocation();
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,15 +91,26 @@ export function AuthModal() {
         const firstName = nameParts[0] ?? "";
         const lastName = nameParts.slice(1).join(" ") || undefined;
         const redirectUrl = `${window.location.origin}${import.meta.env.BASE_URL}verify-email`;
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: redirectUrl,
-            data: { first_name: firstName, last_name: lastName, full_name: fullName, phone: phone.trim() || undefined, signup_via: "web" },
+            // email_confirmed:false drives the soft "verify your email" reminder in-app.
+            data: { first_name: firstName, last_name: lastName, full_name: fullName, phone: phone.trim() || undefined, signup_via: "web", email_confirmed: false },
           },
         });
         if (error) throw error;
+        // Send our branded "Confirm your email" email (via Spotlight's sender), non-blocking.
+        void supabase.functions.invoke("send-verify-email", { body: { email, name: fullName } });
+        // With email confirmation disabled, signUp returns a session — log them straight in
+        // and take them to onboarding. (If confirmation is still required, fall back to a message.)
+        if (data.session) {
+          setLoading(false);
+          closeAuthModal();
+          setLocation("/welcome");
+          return;
+        }
         setSuccess("Account created! Check your email to confirm your address, then sign in.");
         setLoading(false);
         return;
