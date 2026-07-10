@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { MapPin, Clock, Users, Loader2, Compass, ShieldCheck, X, CalendarCheck } from "lucide-react";
@@ -18,7 +18,7 @@ type Service = {
 
 const TYPE_EMOJI: Record<string, string> = { snorkeling: "🤿", surfing: "🏄", hiking: "🥾", cave: "🕳️", waterfall: "💧", bioluminescent: "✨", diving: "🐠", zipline: "🪂", scenic: "🌅", beach: "🏖️" };
 
-function BookingModal({ service, onClose }: { service: Service; onClose: () => void }) {
+export function BookingModal({ service, onClose }: { service: Service; onClose: () => void }) {
   const { toast } = useToast();
   const [date, setDate] = useState("");
   const [party, setParty] = useState("2");
@@ -95,6 +95,7 @@ export default function Experiences() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Service[]>([]);
   const [booking, setBooking] = useState<Service | null>(null);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     (async () => {
@@ -142,7 +143,7 @@ export default function Experiences() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((s) => (
-              <div key={s.id} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-shadow flex flex-col">
+              <div key={s.id} onClick={() => setLocation(`/experiences/${(s as any).slug || s.id}`)} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all flex flex-col cursor-pointer">
                 <div className="h-32 bg-muted overflow-hidden">{(s as any).images && (s as any).images[0] ? <img src={(s as any).images[0]} alt={s.title} className="w-full h-full object-cover" /> : <img src="https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg" alt={s.title} className="w-full h-full object-cover" />}</div>
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="font-display font-bold leading-tight">{s.title}</h3>
@@ -160,7 +161,7 @@ export default function Experiences() {
                   </div>
                   <div className="flex items-center justify-between mt-4 pt-3 border-t">
                     <span className="font-bold text-foreground">{s.price != null ? `$${s.price}` : "Inquire"}<span className="text-xs font-normal text-muted-foreground">{s.price != null ? `/${s.price_unit === "per_group" ? "group" : "person"}` : ""}</span></span>
-                    <Button size="sm" onClick={() => openBooking(s)}>Request booking</Button>
+                    <Button size="sm" onClick={(e) => { e.stopPropagation(); openBooking(s); }}>Request booking</Button>
                   </div>
                 </div>
               </div>

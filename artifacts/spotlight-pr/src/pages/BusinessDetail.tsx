@@ -336,7 +336,8 @@ export default function BusinessDetail() {
       <Card className="overflow-hidden">
         <div className="relative h-56 sm:h-72 w-full overflow-hidden bg-muted">
           <img src={b.cover_url || `${import.meta.env.BASE_URL}images/hero-bg.png`} alt={b.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent" />
           <div className="absolute top-4 left-4 z-10 flex gap-1.5 flex-wrap">
             {isVerified && (<Badge className="bg-emerald-500 hover:bg-emerald-500 text-white font-semibold shadow-lg flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Verified</Badge>)}
             {isClaimed && (<Badge className="bg-blue-500 hover:bg-blue-500 text-white font-semibold shadow-lg flex items-center gap-1"><BadgeCheck className="w-3 h-3" /> Claimed</Badge>)}
@@ -346,10 +347,10 @@ export default function BusinessDetail() {
             <div className="w-20 h-20 rounded-xl bg-white p-1 shadow-lg shrink-0 overflow-hidden">
               <img src={b.logo_url || `${import.meta.env.BASE_URL}images/placeholder-logo.png`} alt={`${b.name} logo`} className="w-full h-full object-cover rounded-lg" />
             </div>
-            <div className="text-white pb-1 min-w-0">
-              <h1 className="font-display text-2xl sm:text-3xl font-bold leading-tight truncate">{b.name}</h1>
-              <p className="text-white/85 text-sm">{catName}{b.municipality ? ` · ${b.municipality}` : ""}</p>
-              {b.review_count > 0 && (<div className="flex items-center gap-2 mt-1"><Stars rating={rating} /><span className="text-sm text-white/85">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span></div>)}
+            <div className="text-white pb-1 min-w-0" style={{ textShadow: "0 2px 6px rgba(0,0,0,0.75)" }}>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold leading-tight truncate text-white">{b.name}</h1>
+              <p className="text-white text-sm font-medium">{catName}{b.municipality ? ` · ${b.municipality}` : ""}</p>
+              {b.review_count > 0 && (<div className="flex items-center gap-2 mt-1"><Stars rating={rating} /><span className="text-sm text-white">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span></div>)}
             </div>
           </div>
         </div>
@@ -424,6 +425,17 @@ export default function BusinessDetail() {
               {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Globe className="w-4 h-4" /> Visit website</a>}
               {b.email && <a href={`mailto:${b.email}`} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Mail className="w-4 h-4" /> Email</a>}
             </div>
+            {hasSocial && (
+              <div className="pt-1">
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Follow on social</p>
+                <div className="flex items-center gap-2">
+                  {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" title="Facebook" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>}
+                  {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" title="Instagram" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>}
+                  {social.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" title="X (Twitter)" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-muted hover:border-foreground/30 transition-colors"><Twitter className="w-4 h-4" /></a>}
+                  {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" title="YouTube" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors"><Youtube className="w-4 h-4" /></a>}
+                </div>
+              </div>
+            )}
             {b.address && <div className="flex items-start gap-2 text-sm text-muted-foreground pt-1"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-primary" /> <span>{b.address}</span></div>}
             {(b.address || b.municipality) && (
               <div className="grid grid-cols-2 gap-2 pt-1">

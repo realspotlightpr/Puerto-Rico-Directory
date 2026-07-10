@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Sparkles, Loader2, ArrowLeft, Waves, Info, Calendar, Signal, Share2, Navigation, Camera, Compass, X } from "lucide-react";
+import { MapPin, Sparkles, Loader2, ArrowLeft, Waves, Info, Calendar, Signal, Share2, Navigation, Camera, Compass, X, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const VISUAL: Record<string, [string, string]> = {
@@ -13,19 +13,72 @@ const VISUAL: Record<string, [string, string]> = {
 };
 const vis = (t: string): [string, string] => VISUAL[t] || ["from-teal-400 to-cyan-600", "🌴"];
 
-const THINGS_TO_DO: Record<string, { icon: string; label: string }[]> = {
-  beach: [{ icon: "🏊", label: "Swim & relax" }, { icon: "🤿", label: "Snorkel the shallows" }, { icon: "🌅", label: "Watch the sunset" }, { icon: "🧺", label: "Beach picnic" }, { icon: "🏐", label: "Beach volleyball" }],
-  surfing: [{ icon: "🏄", label: "Catch a wave" }, { icon: "📚", label: "Take a surf lesson" }, { icon: "📸", label: "Watch the surfers" }, { icon: "🌇", label: "Sunset session" }],
-  snorkeling: [{ icon: "🤿", label: "Snorkel the reef" }, { icon: "🐠", label: "Spot tropical fish" }, { icon: "🏊", label: "Swim & float" }, { icon: "📸", label: "Underwater photos" }],
-  cave: [{ icon: "🔦", label: "Guided cave tour" }, { icon: "📸", label: "Photograph formations" }, { icon: "🚶", label: "Explore the caverns" }],
-  waterfall: [{ icon: "🏊", label: "Swim in the pool" }, { icon: "🥾", label: "Hike to the falls" }, { icon: "📸", label: "Photo spot" }, { icon: "🧺", label: "Picnic nearby" }],
-  bioluminescent: [{ icon: "🛶", label: "Night kayak tour" }, { icon: "🚤", label: "Guided boat tour" }, { icon: "✨", label: "See the glow" }, { icon: "⭐", label: "Stargaze" }],
-  hiking: [{ icon: "🥾", label: "Hike the trail" }, { icon: "🐦", label: "Birdwatching" }, { icon: "📸", label: "Scenic photos" }, { icon: "🧺", label: "Trailside picnic" }],
-  scenic: [{ icon: "📸", label: "Take photos" }, { icon: "🌅", label: "Watch the sunset" }, { icon: "😌", label: "Relax & take it in" }],
-  zipline: [{ icon: "🪂", label: "Zipline course" }, { icon: "🌳", label: "Canopy tour" }, { icon: "🧗", label: "Adventure park" }],
-  diving: [{ icon: "🐠", label: "Scuba dive" }, { icon: "🪸", label: "Explore reefs" }, { icon: "📸", label: "Underwater photography" }],
+type Thing = { icon: string; label: string; desc: string };
+const THINGS_TO_DO: Record<string, Thing[]> = {
+  beach: [
+    { icon: "🏊", label: "Swim & relax", desc: "Wade into calm, warm Caribbean water and float away the afternoon. Bring water and shade — the sun is strong midday." },
+    { icon: "🤿", label: "Snorkel the shallows", desc: "Bring a mask to spot little fish and rays near the rocks. Mornings usually have the clearest water." },
+    { icon: "🌅", label: "Watch the sunset", desc: "Stick around as the sky turns gold over the water — one of the best free shows on the island." },
+    { icon: "🧺", label: "Beach picnic", desc: "Grab food from a nearby chinchorro or food truck and set up under the palms." },
+    { icon: "🏐", label: "Beach volleyball", desc: "There's usually room for a pickup game on the sand — bring a ball and make some friends." },
+  ],
+  surfing: [
+    { icon: "🏄", label: "Catch a wave", desc: "Consistent breaks for a range of levels. Check the swell and tides before you paddle out." },
+    { icon: "📚", label: "Take a surf lesson", desc: "Local instructors can have first-timers standing up within a single session." },
+    { icon: "📸", label: "Watch the surfers", desc: "Grab a spot on the beach and watch the lineup work the waves — great for photos." },
+    { icon: "🌇", label: "Sunset session", desc: "Evening glass-offs, when the wind drops and the water goes smooth, are the reward for a long day." },
+  ],
+  snorkeling: [
+    { icon: "🤿", label: "Snorkel the reef", desc: "Clear water and coral make this a great spot to see marine life up close. Go with a buddy." },
+    { icon: "🐠", label: "Spot tropical fish", desc: "Look for parrotfish, sergeant majors, and the occasional sea turtle gliding by." },
+    { icon: "🏊", label: "Swim & float", desc: "Easy entry and calm water make for a relaxed swim even if you're not diving down." },
+    { icon: "📸", label: "Underwater photos", desc: "Bring a waterproof camera — visibility here is often excellent." },
+  ],
+  cave: [
+    { icon: "🔦", label: "Guided cave tour", desc: "Go with a local guide to explore safely and learn the geology and history of the site." },
+    { icon: "📸", label: "Photograph formations", desc: "Dramatic light beams and rock formations make for unforgettable shots." },
+    { icon: "🚶", label: "Explore the caverns", desc: "Wander the chambers and passages — wear closed shoes with good grip." },
+  ],
+  waterfall: [
+    { icon: "🏊", label: "Swim in the pool", desc: "Cool off in the natural pool at the base of the falls — the water is refreshing and clear." },
+    { icon: "🥾", label: "Hike to the falls", desc: "A short trail through lush forest leads you in. Wear shoes that can get wet." },
+    { icon: "📸", label: "Photo spot", desc: "One of the most photogenic spots around — early morning light is best." },
+    { icon: "🧺", label: "Picnic nearby", desc: "Shaded spots make it easy to linger and turn the visit into an afternoon." },
+  ],
+  bioluminescent: [
+    { icon: "🛶", label: "Night kayak tour", desc: "Paddle after dark and watch the water light up with every stroke — a bucket-list experience." },
+    { icon: "🚤", label: "Guided boat tour", desc: "An easy, dry way to experience the glow with a local captain who knows the bay." },
+    { icon: "✨", label: "See the glow", desc: "The glow is strongest on darker nights, away from a full moon. Skip the bug spray — it harms the organisms." },
+    { icon: "⭐", label: "Stargaze", desc: "Far from city lights, the night sky puts on its own show above the water." },
+  ],
+  hiking: [
+    { icon: "🥾", label: "Hike the trail", desc: "Follow the path through forest and lookout points. Bring water and start early to beat the heat." },
+    { icon: "🐦", label: "Birdwatching", desc: "Keep an eye out for native birds along the way — mornings are the most active." },
+    { icon: "📸", label: "Scenic photos", desc: "Panoramic views reward you at the top — worth the climb." },
+    { icon: "🧺", label: "Trailside picnic", desc: "Pack snacks and take a break at a viewpoint to soak it in." },
+  ],
+  scenic: [
+    { icon: "📸", label: "Take photos", desc: "Postcard-worthy views around every corner — great for that perfect shot." },
+    { icon: "🌅", label: "Watch the sunset", desc: "One of the best vantage points around for golden hour." },
+    { icon: "😌", label: "Relax & take it in", desc: "Find a spot, breathe, and enjoy the scenery at your own pace." },
+  ],
+  zipline: [
+    { icon: "🪂", label: "Zipline course", desc: "Soar over the canopy on a series of cables — a rush with a view." },
+    { icon: "🌳", label: "Canopy tour", desc: "See the forest from a whole new angle, high above the trees." },
+    { icon: "🧗", label: "Adventure park", desc: "Combine ziplines with other high-energy activities for a full day out." },
+  ],
+  diving: [
+    { icon: "🐠", label: "Scuba dive", desc: "Explore deeper reefs with a certified operator — bring your card or book a discovery dive." },
+    { icon: "🪸", label: "Explore reefs", desc: "Healthy coral and abundant fish life await below the surface." },
+    { icon: "📸", label: "Underwater photography", desc: "Great visibility makes this a favorite for capturing the reef." },
+  ],
 };
-const thingsToDo = (t: string) => THINGS_TO_DO[t] || [{ icon: "🧭", label: "Explore the area" }, { icon: "📸", label: "Take photos" }, { icon: "😌", label: "Relax & enjoy" }];
+const DEFAULT_THINGS: Thing[] = [
+  { icon: "🧭", label: "Explore the area", desc: "Take your time and discover what makes this spot special." },
+  { icon: "📸", label: "Take photos", desc: "Plenty of photo-worthy moments to capture here." },
+  { icon: "😌", label: "Relax & enjoy", desc: "Slow down and soak in the surroundings." },
+];
+const thingsToDo = (t: string): Thing[] => THINGS_TO_DO[t] || DEFAULT_THINGS;
 
 export function MapEmbed({ query, lat, lon, title }: { query: string; lat?: number | null; lon?: number | null; title?: string }) {
   const src = (lat != null && lon != null)
@@ -68,15 +121,22 @@ function NearbyCard({ p }: { p: any }) {
 
 function ExperienceCard({ ex }: { ex: any }) {
   const img = Array.isArray(ex.images) && ex.images[0] ? ex.images[0] : null;
+  const price = ex.price ? `$${ex.price}${ex.price_unit ? ` / ${ex.price_unit}` : ""}` : null;
+  const mins = ex.duration_minutes ? `${Math.round(ex.duration_minutes / 60 * 10) / 10}h` : null;
   return (
     <Link href="/experiences" className="block group">
-      <div className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
-        <div className="h-24 bg-muted overflow-hidden">
+      <div className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all h-full flex flex-col">
+        <div className="h-28 bg-muted overflow-hidden relative">
           {img ? <img src={img} alt={ex.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-600" />}
+          {price && <span className="absolute bottom-2 left-2 text-[11px] font-bold text-white bg-black/60 backdrop-blur rounded-full px-2 py-0.5">{price}</span>}
         </div>
-        <div className="p-3">
-          <p className="font-semibold text-sm leading-tight line-clamp-1">{ex.title}</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">{ex.price ? `$${ex.price}${ex.price_unit ? ` / ${ex.price_unit}` : ""}` : "See details"}{ex.provider ? ` · ${ex.provider}` : ""}</p>
+        <div className="p-3 flex flex-col flex-1">
+          <p className="font-semibold text-sm leading-tight line-clamp-2">{ex.title}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+            <span className="line-clamp-1">{ex.provider || "Local guide"}</span>
+            {mins && <span className="flex items-center gap-0.5 shrink-0"><Clock className="w-3 h-3" />{mins}</span>}
+          </p>
+          <span className="mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-bold text-white bg-primary rounded-full px-3 py-1.5 group-hover:bg-primary/90 self-start">Book this tour →</span>
         </div>
       </div>
     </Link>
@@ -95,6 +155,7 @@ export default function ActivityDetail() {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [thing, setThing] = useState(0);
 
   const loadPhotos = useCallback(async (actId: number) => {
     const { data } = await supabase.from("place_photos").select("*").eq("activity_id", actId).eq("status", "approved").order("created_at", { ascending: false });
@@ -104,6 +165,7 @@ export default function ActivityDetail() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setThing(0);
       try {
         const { data } = await supabase.from("activities").select("*").eq("slug", slug).eq("status", "approved").maybeSingle();
         setA(data ?? null);
@@ -118,12 +180,12 @@ export default function ActivityDetail() {
           if (nb.length < 8) { const { data: f } = await supabase.from("activities").select(cols).eq("status", "approved").order("featured", { ascending: false }).limit(12); add(f); }
           setNearby(nb);
           // Guided experiences you can book at (or near) this place
-          const expCols = "id, title, slug, activity_type, price, price_unit, images, municipality, provider";
+          const expCols = "id, title, slug, activity_type, price, price_unit, duration_minutes, images, municipality, provider";
           const expRows: any[] = [];
-          const { data: e1 } = await supabase.from("services").select(expCols).eq("status", "approved").eq("activity_id", data.id).limit(6);
+          const { data: e1 } = await supabase.from("services").select(expCols).eq("status", "active").eq("activity_id", data.id).limit(6);
           (e1 || []).forEach((x) => expRows.push(x));
           if (expRows.length < 6 && data.municipality) {
-            const { data: e2 } = await supabase.from("services").select(expCols).eq("status", "approved").eq("municipality", data.municipality).limit(6);
+            const { data: e2 } = await supabase.from("services").select(expCols).eq("status", "active").eq("municipality", data.municipality).limit(6);
             (e2 || []).forEach((x) => { if (!expRows.find((y) => y.id === x.id) && expRows.length < 6) expRows.push(x); });
           }
           setExperiences(expRows);
@@ -165,6 +227,8 @@ export default function ActivityDetail() {
   const q = [a.name, a.municipality, "Puerto Rico"].filter(Boolean).join(", ");
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
   const gallery = [a.image_url, ...photos.map((p) => p.image_url)].filter(Boolean);
+  const todo = thingsToDo(a.activity_type);
+  const active = todo[thing] || todo[0];
 
   return (
     <div className="min-h-screen">
@@ -244,6 +308,43 @@ export default function ActivityDetail() {
           <p className="text-xs text-muted-foreground mt-2">📸 Been here? {isAuthenticated ? "Tap “Add your photo” to share it." : "Sign in to add your photos and help other travelers."}</p>
         </div>
 
+        {/* Things to do here */}
+        <div>
+          <h2 className="font-display text-xl font-bold mb-1 flex items-center gap-2"><Compass className="w-5 h-5 text-primary" /> Things to do here</h2>
+          <p className="text-sm text-muted-foreground mb-4">Tap an idea to learn more about enjoying {a.name}.</p>
+          <div className="flex flex-wrap gap-2">
+            {todo.map((it, i) => (
+              <button
+                key={i}
+                onClick={() => setThing(i)}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-medium transition-colors ${i === thing ? "bg-primary text-white border-primary shadow-sm" : "bg-muted/70 border-border/50 hover:bg-muted"}`}
+              >
+                <span className="text-base leading-none">{it.icon}</span>{it.label}
+              </button>
+            ))}
+          </div>
+          {active && (
+            <div className="mt-3 rounded-2xl bg-teal-50 border border-teal-100 p-4 flex gap-3">
+              <span className="text-2xl leading-none shrink-0">{active.icon}</span>
+              <div>
+                <p className="font-semibold text-sm text-teal-900">{active.label}</p>
+                <p className="text-sm text-teal-800 mt-0.5 leading-relaxed">{active.desc}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Book a guided tour with a local guide */}
+          {experiences.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50/70 to-teal-50/50 p-4">
+              <p className="text-sm font-bold flex items-center gap-1.5 text-emerald-900"><Users className="w-4 h-4 text-emerald-600" /> Book a guided tour here</p>
+              <p className="text-xs text-muted-foreground mb-3">Local guides offering experiences at or near {a.municipality || "this spot"}.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {experiences.map((ex) => <ExperienceCard key={ex.id} ex={ex} />)}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Location */}
         <div>
           <h2 className="font-display text-xl font-bold mb-3 flex items-center gap-2"><MapPin className="w-5 h-5 text-primary" /> Location & directions</h2>
@@ -257,27 +358,6 @@ export default function ActivityDetail() {
         {a.activity_type === "surfing" && (
           <Link href="/surf"><Button variant="outline" className="w-full">🏄 Check live surf cams for this area</Button></Link>
         )}
-
-        {/* Things to do here */}
-        <div>
-          <h2 className="font-display text-xl font-bold mb-1 flex items-center gap-2"><Compass className="w-5 h-5 text-primary" /> Things to do here</h2>
-          <p className="text-sm text-muted-foreground mb-4">Popular ways to enjoy {a.name}.</p>
-          <div className="flex flex-wrap gap-2">
-            {thingsToDo(a.activity_type).map((it, i) => (
-              <span key={i} className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-muted/70 border border-border/50 text-sm font-medium">
-                <span className="text-base leading-none">{it.icon}</span>{it.label}
-              </span>
-            ))}
-          </div>
-          {experiences.length > 0 && (
-            <div className="mt-6">
-              <p className="text-sm font-semibold mb-3 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-teal-600" /> Book a guided experience here</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {experiences.map((ex) => <ExperienceCard key={ex.id} ex={ex} />)}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Nearby */}
         {nearby.length > 0 && (

@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
   Star, MessageSquare, MapPin, CalendarDays, Award,
-  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight,
+  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ function StarRow({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" }
 function RoleBadge({ role }: { role: string }) {
   if (role === "admin") return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Admin</Badge>;
   if (role === "business_owner") return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Business Owner</Badge>;
+  if (role === "guide") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Guide</Badge>;
   return <Badge variant="secondary">Community Member</Badge>;
 }
 
@@ -152,6 +153,8 @@ export default function UserProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [owned, setOwned] = useState<any[]>([]);
+  const [offered, setOffered] = useState<any[]>([]);
 
   const isOwnProfile = ownParams !== null || (params?.id && authUser && params.id === authUser.id);
   const targetId = params?.id ?? null;
@@ -188,6 +191,11 @@ export default function UserProfile() {
             municipality: r.businesses.municipality || undefined,
           } : null,
         }));
+        const { data: ob } = await supabase.from("businesses").select("id, name, slug, logo_url, municipality").eq("owner_id", targetUserId).eq("status", "approved").order("name");
+        setOwned(ob || []);
+        const { data: gs } = await supabase.from("services").select("id, title, slug, price, price_unit, images, activity_type").eq("guide_id", targetUserId).eq("status", "active").order("title");
+        setOffered(gs || []);
+
         const totalReviews = reviews.length;
         const avg = totalReviews ? reviews.reduce((s: number, r: any) => s + (r.rating || 0), 0) / totalReviews : 0;
 
@@ -367,6 +375,56 @@ export default function UserProfile() {
           </div>
 
           <div className="lg:col-span-2 space-y-4">
+            {owned.length > 0 && (
+              <div>
+                <h2 className="font-bold font-display text-lg flex items-center gap-2 mb-3">
+                  <Store className="w-5 h-5 text-primary" /> {isOwnProfile ? "My businesses" : "Businesses"}
+                  <span className="text-sm font-normal text-muted-foreground">({owned.length})</span>
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {owned.map((b) => (
+                    <Link key={b.id} href={`/businesses/${b.slug || b.id}`}>
+                      <div className="flex items-center gap-3 bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-3 cursor-pointer">
+                        <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
+                          {b.logo_url ? <img src={b.logo_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Store className="w-5 h-5 text-muted-foreground/40" /></div>}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate">{b.name}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1"><MapPin className="w-3 h-3" />{b.municipality || "Puerto Rico"}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            {offered.length > 0 && (
+              <div>
+                <h2 className="font-bold font-display text-lg flex items-center gap-2 mb-3">
+                  <Compass className="w-5 h-5 text-primary" /> {isOwnProfile ? "My experiences" : "Experiences offered"}
+                  <span className="text-sm font-normal text-muted-foreground">({offered.length})</span>
+                </h2>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {offered.map((sv) => {
+                    const img = Array.isArray(sv.images) && sv.images[0] ? sv.images[0] : null;
+                    const price = sv.price ? `$${sv.price}${sv.price_unit ? " / " + String(sv.price_unit).replace("_", " ") : ""}` : null;
+                    return (
+                      <Link key={sv.id} href="/experiences">
+                        <div className="flex items-center gap-3 bg-white rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow p-3 cursor-pointer">
+                          <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 border border-border/50">
+                            {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-600" />}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm truncate">{sv.title}</p>
+                            <p className="text-xs text-muted-foreground truncate capitalize">{price || sv.activity_type}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <h2 className="font-bold font-display text-lg flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-primary" />
               {isOwnProfile ? "My Reviews" : `${user.firstName ?? "Their"}'s Reviews`}
