@@ -3,7 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   Menu, X, User as UserIcon, PlusCircle, LayoutDashboard,
   Shield, LogOut, Store, Star, ChevronDown, Compass, Waves,
-  Palmtree, Megaphone, Crown, Anchor,
+  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -61,8 +61,12 @@ export function Navbar() {
     { href: "/", label: "Home" },
     { href: "/directory", label: "Businesses" },
     { href: "/activities", label: "Places" },
-    { href: "/surf", label: "Surf" },
     { href: "/experiences", label: "Experiences" },
+    { href: "/surf", label: "Surf" },
+    { href: "/discover", label: "Swipe to Discover" },
+    { href: "/date-builder", label: "Trip Builder" },
+    { href: "/pass", label: "Spotlight Pass" },
+    { href: "/influencers", label: "Creator Program" },
     { href: "/business", label: "For Business" },
   ];
 
@@ -78,6 +82,9 @@ export function Navbar() {
         { href: "/activities", label: "Places", desc: "Beaches, caves, waterfalls", icon: Palmtree, accent: "text-teal-600 bg-teal-50" },
         { href: "/surf", label: "Surf Cams", desc: "Live spots & conditions", icon: Waves, accent: "text-cyan-600 bg-cyan-50" },
         { href: "/experiences", label: "Experiences", desc: "Book local guides", icon: Compass, accent: "text-emerald-600 bg-emerald-50" },
+        { href: "/pass", label: "Spotlight Pass", desc: "Perks, discounts & credits", icon: Ticket, accent: "text-amber-600 bg-amber-50" },
+        { href: "/date-builder", label: "Date & Trip Builder", desc: "Plan the perfect day", icon: CalendarHeart, accent: "text-rose-600 bg-rose-50" },
+        { href: "/discover", label: "Swipe to Discover", desc: "Find spots you'll love", icon: Sparkles, accent: "text-fuchsia-600 bg-fuchsia-50" },
       ],
     },
     {
@@ -94,6 +101,7 @@ export function Navbar() {
       items: [
         { href: "/for-guides", label: "Become a guide", desc: "Sell tours & experiences", icon: Anchor, accent: "text-emerald-700 bg-emerald-50" },
         { href: "/experiences", label: "Book a guide", desc: "Local-led adventures", icon: Compass, accent: "text-teal-700 bg-teal-50" },
+        { href: "/influencers", label: "Creator Program", desc: "Earn by sharing Spotlight", icon: Megaphone, accent: "text-fuchsia-700 bg-fuchsia-50" },
       ],
     },
   ];

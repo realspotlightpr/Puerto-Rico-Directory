@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Home, Compass, Palmtree, Heart, User } from "lucide-react";
+import { Home, Compass, Palmtree, Sparkles, User } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 
 type Tab = {
@@ -11,11 +11,11 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { href: "/", label: "Discover", icon: Home, match: (p) => p === "/" },
-  { href: "/directory", label: "Businesses", icon: Compass, match: (p) => p.startsWith("/directory") || p.startsWith("/businesses") },
+  { href: "/", label: "Home", icon: Home, match: (p) => p === "/" },
   { href: "/activities", label: "Places", icon: Palmtree, match: (p) => p.startsWith("/activities") },
-  { href: "/profile", label: "Saved", icon: Heart, match: (p) => p.startsWith("/profile"), requiresAuth: true },
-  { href: "/dashboard", label: "Account", icon: User, match: (p) => p.startsWith("/dashboard"), requiresAuth: true },
+  { href: "/experiences", label: "Tours", icon: Compass, match: (p) => p.startsWith("/experiences") },
+  { href: "/discover", label: "Swipe", icon: Sparkles, match: (p) => p.startsWith("/discover") },
+  { href: "/profile", label: "Account", icon: User, match: (p) => p.startsWith("/profile") || p.startsWith("/dashboard"), requiresAuth: true },
 ];
 
 /**
