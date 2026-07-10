@@ -23,6 +23,8 @@ import ExperienceDetail from "@/pages/ExperienceDetail";
 import SpotlightPass from "@/pages/SpotlightPass";
 import DateBuilder from "@/pages/DateBuilder";
 import PassSuccess from "@/pages/PassSuccess";
+import BusinessSuccess from "@/pages/BusinessSuccess";
+import AdminBookings from "@/pages/AdminBookings";
 import GuideDashboard from "@/pages/GuideDashboard";
 import ListBusiness from "@/pages/ListBusiness";
 import Dashboard from "@/pages/Dashboard";
@@ -221,6 +223,7 @@ function Router() {
           <Route path="/pass" component={SpotlightPass} />
           <Route path="/date-builder" component={DateBuilder} />
           <Route path="/pass/success" component={PassSuccess} />
+          <Route path="/business/success" component={BusinessSuccess} />
           <Route path="/guide" component={GuideDashboard} />
           <Route path="/for-guides" component={ForGuides} />
           <Route path="/launch" component={Launch} />
@@ -229,6 +232,7 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={Admin} />
           <Route path="/admin/content" component={AdminContent} />
+          <Route path="/admin/bookings" component={AdminBookings} />
           <Route path="/team" component={TeamDashboard} />
           <Route path="/business" component={ForBusiness} />
           <Route path="/negocio" component={() => <Redirect to="/business" />} />
