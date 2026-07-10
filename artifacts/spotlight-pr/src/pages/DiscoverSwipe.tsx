@@ -48,7 +48,7 @@ export default function DiscoverSwipe() {
 
   const card = deck[i];
   const advance = () => { setDragX(0); setLiked(null); setI((x) => x + 1); };
-  const onSkip = () => advance();
+  const onSkip = () => { setDragX(-(typeof window !== "undefined" ? window.innerWidth : 500)); window.setTimeout(() => advance(), 420); };
   const onLike = () => { if (card) setLiked(card); };
   const saveForLater = () => {
     if (!liked) return;
@@ -103,7 +103,7 @@ export default function DiscoverSwipe() {
               <div
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
                 className="absolute inset-0 rounded-3xl overflow-hidden border border-border bg-muted shadow-xl cursor-grab active:cursor-grabbing touch-none"
-                style={{ transform: `translateX(${dragX}px) rotate(${dragX / 22}deg)`, transition: dragging.current ? "none" : "transform 0.25s" }}
+                style={{ transform: `translateX(${dragX}px) rotate(${dragX / 22}deg)`, transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}
               >
                 <img src={card.img || FALLBACK} alt={card.name} className="w-full h-full object-cover pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
