@@ -92,7 +92,7 @@ export function Navbar() {
       items: [
         { href: "/list-your-business", label: "Add your business", desc: "List free in minutes", icon: PlusCircle, accent: "text-primary bg-primary/10" },
         { href: "/business", label: "Why Spotlight", desc: "Reach locals & visitors", icon: Store, accent: "text-indigo-600 bg-indigo-50" },
-        { href: "/business", label: "Go Premium", desc: "Menus, analytics & more", icon: Crown, accent: "text-amber-600 bg-amber-50" },
+        { href: "/spotlight-plus", label: "Spotlight Plus", desc: "Featured placement & more", icon: Crown, accent: "text-amber-600 bg-amber-50" },
         { href: "/advertise", label: "Advertise", desc: "Feature your brand", icon: Megaphone, accent: "text-rose-600 bg-rose-50" },
       ],
     },
