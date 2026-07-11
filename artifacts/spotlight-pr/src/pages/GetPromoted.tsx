@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const CHECKOUT = "https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0";
 const go = () => window.open(CHECKOUT, "_blank");
 
-function CTA({ label = "Get Promoted — $29 / 3 months", className = "" }: { label?: string; className?: string }) {
+function CTA({ label = "Get Spotlight Plus — $29 / 3 months", className = "" }: { label?: string; className?: string }) {
   return (
     <Button
       onClick={go}
@@ -80,7 +80,7 @@ export default function GetPromoted() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-black/90" />
         <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
-            <Zap className="w-3.5 h-3.5 text-orange-300" /> For Puerto Rico business owners
+            <Zap className="w-3.5 h-3.5 text-orange-300" /> Spotlight Plus — for Puerto Rico businesses
           </span>
           <h1 className="text-4xl md:text-6xl font-display font-bold leading-tight mb-5">
             Get your business in front of <span className="text-orange-400">thousands</span> of locals & tourists
@@ -165,14 +165,14 @@ export default function GetPromoted() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Free vs. Promoted</h2>
-            <p className="text-muted-foreground text-lg">Listing is always free. Promoted is how you actually get found.</p>
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Free vs. Spotlight Plus</h2>
+            <p className="text-muted-foreground text-lg">Listing is always free. Spotlight Plus is how you actually get found.</p>
           </div>
           <div className="rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="grid grid-cols-[1fr_auto_auto] bg-slate-900 text-white text-sm font-semibold">
               <div className="px-4 py-3">What you get</div>
               <div className="px-4 py-3 text-center w-20">Free</div>
-              <div className="px-4 py-3 text-center w-24 bg-orange-500">Promoted</div>
+              <div className="px-4 py-3 text-center w-24 bg-orange-500">Spotlight Plus</div>
             </div>
             {COMPARE.map((row, i) => (
               <div key={i} className={"grid grid-cols-[1fr_auto_auto] items-center text-sm " + (i % 2 ? "bg-gray-50" : "bg-white")}>

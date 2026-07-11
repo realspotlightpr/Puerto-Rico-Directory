@@ -389,6 +389,51 @@ export default function ForBusiness() {
         </div>
       </section>
 
+      {/* ── Free vs Spotlight Plus ── */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-display font-bold mb-3">Start free. Grow with Spotlight Plus.</h2>
+            <p className="text-muted-foreground text-lg">Every business gets a free listing. Spotlight Plus is how you get found first.</p>
+          </div>
+          <div className="rounded-2xl border border-border overflow-hidden shadow-sm">
+            <div className="grid grid-cols-[1fr_auto_auto] bg-slate-900 text-white text-sm font-semibold">
+              <div className="px-4 py-3">What you get</div>
+              <div className="px-4 py-3 text-center w-20">Free</div>
+              <div className="px-4 py-3 text-center w-28 bg-emerald-500">Spotlight Plus</div>
+            </div>
+            {[
+              { label: "Listed in the directory", free: true, plus: true },
+              { label: "Owner dashboard & analytics", free: true, plus: true },
+              { label: "Collect customer reviews", free: true, plus: true },
+              { label: "Featured on the homepage & category top", free: false, plus: true },
+              { label: "Monthly Instagram reel feature", free: false, plus: true },
+              { label: "Menu, extra photos & customization", free: false, plus: true },
+              { label: "Members-only community & events", free: false, plus: true },
+            ].map((row, i) => (
+              <div key={i} className={"grid grid-cols-[1fr_auto_auto] items-center text-sm " + (i % 2 ? "bg-gray-50" : "bg-white")}>
+                <div className="px-4 py-3 text-foreground">{row.label}</div>
+                <div className="px-4 py-3 text-center w-20">{row.free ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}</div>
+                <div className="px-4 py-3 text-center w-28">{row.plus ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <span className="text-muted-foreground/40">—</span>}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+            <Link href="/list-your-business">
+              <Button variant="outline" size="lg" className="rounded-xl px-8 py-6 text-base font-semibold w-full sm:w-auto">List Free</Button>
+            </Link>
+            <Button size="lg" className="rounded-xl px-8 py-6 text-base font-bold bg-emerald-500 hover:bg-emerald-600 text-white w-full sm:w-auto shadow-lg shadow-emerald-900/20"
+              onClick={() => window.open("https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0", "_blank")}>
+              Get Spotlight Plus — $29 / 3 mo
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            <Link href="/spotlight-plus"><span className="underline hover:text-primary cursor-pointer">See everything in Spotlight Plus →</span></Link>
+          </p>
+        </div>
+      </section>
+
       {/* ── Pricing Plans ──────────────────────────────────── */}
       <section className="relative overflow-hidden py-20 text-white">
         <div className="absolute inset-0"
@@ -426,7 +471,7 @@ export default function ForBusiness() {
                 <Star className="w-2.5 h-2.5" /> Most popular
               </span>
               <div className="text-center mb-5">
-                <p className="text-emerald-200 text-sm font-semibold uppercase tracking-wide mb-2">Get Promoted</p>
+                <p className="text-emerald-200 text-sm font-semibold uppercase tracking-wide mb-2">Spotlight Plus</p>
                 <div className="flex items-end justify-center gap-2">
                   <span className="text-white/40 text-2xl font-display line-through mb-1.5">$87</span>
                   <span className="text-5xl font-display font-bold text-white">$29</span>
@@ -453,7 +498,7 @@ export default function ForBusiness() {
                   className="w-full rounded-xl text-base font-bold py-6 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-900/30"
                   onClick={() => window.open("https://login.spotlightpuertorico.com/payment-link/6a47d1efa655fa0b802a28f0", "_blank")}
                 >
-                  Get Promoted — $29 / 3 months
+                  Get Spotlight Plus — $29 / 3 months
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
                 <p className="text-white/50 text-xs text-center mt-3">
