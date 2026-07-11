@@ -54,6 +54,7 @@ import Terms from "@/pages/Terms";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { PageTransitionLoader } from "@/components/layout/PageTransitionLoader";
 import { AuthModal } from "@/components/auth/AuthModal";
 
 const queryClient = new QueryClient({
@@ -219,6 +220,7 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
+      <PageTransitionLoader />
       <AuthTokenWirer />
       <MagicLinkHandler />
       <ForcePasswordGate />
