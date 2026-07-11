@@ -42,6 +42,7 @@ import ForGuides from "@/pages/ForGuides";
 import Launch from "@/pages/Launch";
 import Welcome from "@/pages/Welcome";
 import ForBusiness from "@/pages/ForBusiness";
+import GetPromoted from "@/pages/GetPromoted";
 import AdvertiseWithUs from "@/pages/AdvertiseWithUs";
 import AdditionalServices from "@/pages/AdditionalServices";
 import ManageBusiness from "@/pages/ManageBusiness";
@@ -260,6 +261,8 @@ function Router() {
           <Route path="/admin/bookings" component={AdminBookings} />
           <Route path="/team" component={TeamDashboard} />
           <Route path="/business" component={ForBusiness} />
+          <Route path="/promote" component={GetPromoted} />
+          <Route path="/featured" component={GetPromoted} />
           <Route path="/negocio" component={() => <Redirect to="/business" />} />
           <Route path="/advertise" component={AdvertiseWithUs} />
           <Route path="/services" component={AdditionalServices} />
