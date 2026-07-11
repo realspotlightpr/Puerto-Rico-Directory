@@ -41,11 +41,11 @@ const COMPARE = [
 
 const FAQS = [
   { q: "Is it really just $29?", a: "Yes — $29 covers a full 3 months of promotion. That works out to under $10 a month. Your regular listing stays free forever." },
-  { q: "What happens after 3 months?", a: "Nothing automatic. We'll check in with you before it ends so you can decide whether to keep going — no surprise charges, no long-term contract." },
-  { q: "How fast do I get featured?", a: "Your promotion goes live within 24 hours of signing up. If we can't feature you, you don't pay." },
+  { q: "What happens after 3 months?", a: "Your promotion renews automatically at the same $29 rate so your featured placement never lapses — no gap, no re-signing. You can turn off renewal anytime from your account." },
+  { q: "How fast do I get featured?", a: "Your promotion goes live within 24 hours of signing up." },
   { q: "Do I need a website or a big following?", a: "No. We do the promoting for you — the featured placement and the Instagram reel bring people to your Spotlight page and straight to your phone." },
   { q: "What kind of businesses is this for?", a: "Any legitimate business in Puerto Rico — restaurants, shops, salons, services, tourism, and more. If locals and visitors would want to find you, this works." },
-  { q: "Can I cancel?", a: "There's no contract to cancel — it's a one-time $29 for 3 months. You're never locked in." },
+  { q: "Can I cancel?", a: "You can turn off auto-renewal anytime so you won't be billed for the next term. Your promotion stays active through the period you've paid for. Payments already made aren't refundable." },
 ];
 
 export default function GetPromoted() {
@@ -98,9 +98,9 @@ export default function GetPromoted() {
             <CTA className="px-10 py-6 text-lg" />
           </div>
           <p className="text-white/50 text-xs mt-4 flex items-center justify-center gap-3 flex-wrap">
-            <span className="inline-flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> No contract</span>
+            <span className="inline-flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> 100% Puerto Rico focused</span>
             <span className="inline-flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Featured within 24 hours</span>
-            <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Cancel anytime</span>
+            <span className="inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Cancel renewal anytime</span>
           </p>
         </div>
       </section>
@@ -214,9 +214,9 @@ export default function GetPromoted() {
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-8 text-center">
             <ShieldCheck className="w-10 h-10 text-emerald-600 mx-auto mb-3" />
-            <h2 className="text-2xl font-display font-bold mb-3">Zero risk to try it</h2>
+            <h2 className="text-2xl font-display font-bold mb-3">One price. Island-wide exposure.</h2>
             <p className="text-foreground/80 leading-relaxed">
-              No contract and no auto-renewal — it's a one-time $29 for 3 months. If we can't get you featured, you don't pay. And your base listing stays free no matter what.
+              $29 covers 3 full months of promotion — featured placement across the site plus a monthly Instagram reel that can reach thousands. It renews automatically so you never lose your spot, and your free listing stays live no matter what.
             </p>
           </div>
         </div>
