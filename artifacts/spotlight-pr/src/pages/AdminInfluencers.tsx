@@ -46,8 +46,21 @@ export default function AdminInfluencers() {
               <div key={r.id} className="bg-white rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-bold font-display flex items-center gap-2">{r.display_name} <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize ${r.status === "approved" ? "bg-emerald-100 text-emerald-700" : r.status === "rejected" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"}`}>{r.status}</span></p>
-                  <p className="text-sm text-muted-foreground mt-0.5">Code <strong>{r.code}</strong> · /i/{r.slug}{r.social_links?.instagram ? ` · ${r.social_links.instagram}` : ""}</p>
-                  {r.bio && <p className="text-sm text-muted-foreground mt-1">{r.bio}</p>}
+                  <p className="text-sm text-muted-foreground mt-0.5">Code <strong>{r.code}</strong> · /i/{r.slug}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm">
+                    {r.email && <a href={`mailto:${r.email}`} className="text-primary hover:underline">{r.email}</a>}
+                    {r.phone && <a href={`tel:${r.phone}`} className="text-primary hover:underline">{r.phone}</a>}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                    {r.primary_platform && <span><strong className="text-foreground">Platform:</strong> {r.primary_platform}</span>}
+                    {r.audience_size && <span><strong className="text-foreground">Audience:</strong> {r.audience_size}</span>}
+                    {r.content_niche && <span><strong className="text-foreground">Niche:</strong> {r.content_niche}</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs">
+                    {r.social_links && Object.entries(r.social_links).map(([k, v]: any) => v ? <span key={k} className="text-muted-foreground"><strong className="text-foreground capitalize">{k}:</strong> {String(v)}</span> : null)}
+                    {r.website && <a href={r.website.startsWith("http") ? r.website : `https://${r.website}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">{r.website}</a>}
+                  </div>
+                  {r.bio && <p className="text-sm text-muted-foreground mt-2 bg-muted/40 rounded-lg px-3 py-2">{r.bio}</p>}
                 </div>
                 {r.status !== "approved" && (
                   <div className="flex gap-2 shrink-0">

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
-import { MapPin, Compass, Heart, Star, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { MapPin, Compass, Heart, MessageCircle, ArrowRight, ArrowLeft, Check } from "lucide-react";
 
 const IMG = "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places";
 
@@ -18,25 +18,25 @@ const SLIDES: Slide[] = [
     image: `${IMG}/24.jpg`,
     icon: <Compass className="w-6 h-6" />,
     title: "Welcome to Spotlight Puerto Rico 🇵🇷",
-    body: "Your guide to discovering the best of the island — from hidden beaches to the local spots that make Puerto Rico special.",
+    body: "We're really glad you're here. Think of us as your friend on the island — the one who knows the hidden beaches, the family-run kitchens, and the spots worth the drive.",
   },
   {
     image: `${IMG}/7.jpg`,
     icon: <MapPin className="w-6 h-6" />,
     title: "Explore places & local businesses",
-    body: "Beaches, waterfalls, caves, restaurants, shops and services across all 78 municipalities — all in one place.",
+    body: "Beaches, waterfalls, caves, restaurants, shops and services from all 78 towns — real places we've pulled together so you're not stuck digging around online.",
   },
   {
     image: `${IMG}/18.jpg`,
     icon: <Heart className="w-6 h-6" />,
-    title: "Save your favorites",
-    body: "Keep a list of the places you love and want to visit, so they're always a tap away when you're ready to go.",
+    title: "Save the spots you love",
+    body: "Tap the heart on anything that catches your eye and it'll be waiting for you — so when you're ready to go, your list already is.",
   },
   {
     image: `${IMG}/1.jpg`,
-    icon: <Star className="w-6 h-6" />,
-    title: "Support local with a review",
-    body: "Share your experiences to help other travelers and lift up the local businesses doing great work. It's what makes the community thrive.",
+    icon: <MessageCircle className="w-6 h-6" />,
+    title: "We're real people — say hi 👋",
+    body: "Question, recommendation, or ran into a snag? Text us right here in the app. We read every message and we'll get back to you — no runaround.",
   },
 ];
 
@@ -104,6 +104,15 @@ export default function Welcome() {
               </Button>
             )}
           </div>
+
+          {last && (
+            <button
+              onClick={() => setLocation("/messages")}
+              className="mt-4 w-full flex items-center justify-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" /> Need help with anything? Text us here
+            </button>
+          )}
         </div>
       </div>
     </div>

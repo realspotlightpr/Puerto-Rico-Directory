@@ -23,7 +23,14 @@ export default function Influencers() {
   const [existing, setExisting] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [platform, setPlatform] = useState("");
   const [handle, setHandle] = useState("");
+  const [otherSocials, setOtherSocials] = useState("");
+  const [audience, setAudience] = useState("");
+  const [niche, setNiche] = useState("");
+  const [website, setWebsite] = useState("");
   const [bio, setBio] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,6 +38,7 @@ export default function Influencers() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setEmail(user.email || "");
         const { data } = await supabase.from("influencers").select("*").eq("user_id", user.id).maybeSingle();
         setExisting(data ?? null);
       }
@@ -41,6 +49,7 @@ export default function Influencers() {
   const apply = async () => {
     if (!isAuthenticated) { openAuthModal?.(); return; }
     if (!name.trim()) { toast({ title: "Add your name / brand", variant: "destructive" }); return; }
+    if (!handle.trim()) { toast({ title: "Add your main social handle", variant: "destructive" }); return; }
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -48,9 +57,15 @@ export default function Influencers() {
       const base = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20) || "creator";
       const code = (name.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "CREATOR") + Math.floor(Math.random() * 90 + 10);
       const slug = base + "-" + Math.floor(Math.random() * 900 + 100);
+      const socials: Record<string, string> = {};
+      if (handle.trim()) socials[(platform.trim() || "instagram").toLowerCase()] = handle.trim();
+      if (otherSocials.trim()) socials.other = otherSocials.trim();
       const { error } = await supabase.from("influencers").insert({
         user_id: user.id, code, slug, display_name: name.trim(),
-        bio: bio.trim() || null, social_links: handle.trim() ? { instagram: handle.trim() } : {}, status: "applied",
+        email: email.trim() || null, phone: phone.trim() || null,
+        primary_platform: platform.trim() || null, audience_size: audience.trim() || null,
+        content_niche: niche.trim() || null, website: website.trim() || null,
+        bio: bio.trim() || null, social_links: socials, status: "applied",
       });
       if (error) throw error;
       toast({ title: "Application submitted! 🎉", description: "We'll review it and get you set up." });
@@ -96,10 +111,23 @@ export default function Influencers() {
         ) : (
           <div className="bg-white rounded-3xl border border-border shadow-sm p-6 space-y-4">
             <h2 className="font-display text-xl font-bold text-center">Apply to join</h2>
-            <p className="text-xs text-center text-muted-foreground">By application &amp; admin approval only.</p>
+            <p className="text-xs text-center text-muted-foreground">By application &amp; admin approval only. The more you share, the faster we can review.</p>
             <div className="space-y-1.5"><Label>Name / brand *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name or handle" /></div>
-            <div className="space-y-1.5"><Label>Main social handle</Label><Input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourhandle or profile link" /></div>
-            <div className="space-y-1.5"><Label>Tell us about your audience</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Where you post, audience size, why you love PR…" className="min-h-[80px]" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Email *</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" /></div>
+              <div className="space-y-1.5"><Label>Phone</Label><Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(787) 555-0123" /></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Main platform</Label><Input value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Instagram, TikTok, YouTube…" /></div>
+              <div className="space-y-1.5"><Label>Audience size</Label><Input value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="e.g. 25k followers" /></div>
+            </div>
+            <div className="space-y-1.5"><Label>Main social handle *</Label><Input value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="@yourhandle or profile link" /></div>
+            <div className="space-y-1.5"><Label>Other social links</Label><Input value={otherSocials} onChange={(e) => setOtherSocials(e.target.value)} placeholder="TikTok, YouTube, etc. (comma separated)" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Content niche</Label><Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="Travel, food, lifestyle…" /></div>
+              <div className="space-y-1.5"><Label>Website / media kit</Label><Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Optional link" /></div>
+            </div>
+            <div className="space-y-1.5"><Label>Tell us about your audience</Label><Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Where you post, who follows you, why you love PR…" className="min-h-[80px]" /></div>
             <Button onClick={apply} disabled={submitting} className="w-full gap-2">{submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />} Submit application</Button>
           </div>
         )}
