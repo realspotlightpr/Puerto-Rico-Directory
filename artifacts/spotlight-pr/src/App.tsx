@@ -263,6 +263,7 @@ function Router() {
           <Route path="/business" component={ForBusiness} />
           <Route path="/promote" component={GetPromoted} />
           <Route path="/featured" component={GetPromoted} />
+          <Route path="/spotlight-plus" component={GetPromoted} />
           <Route path="/negocio" component={() => <Redirect to="/business" />} />
           <Route path="/advertise" component={AdvertiseWithUs} />
           <Route path="/services" component={AdditionalServices} />
