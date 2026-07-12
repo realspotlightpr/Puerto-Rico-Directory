@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { MapEmbed } from "@/pages/ActivityDetail";
 
 // ── Analytics: log listing interactions via the log_listing_event RPC ──────────
@@ -407,6 +408,8 @@ export default function BusinessDetail() {
               </div>
             ) : (<p className="text-sm text-muted-foreground">No reviews yet — be the first to share your experience.</p>)}
           </div>
+
+          {nearby.length > 0 && <AdSlot placement="business-before-recommendations" />}
 
           {nearby.length > 0 && (
             <div>

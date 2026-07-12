@@ -184,6 +184,7 @@ export default function DiscoverSwipe() {
           <div>
             <h1 className="font-display text-2xl font-bold flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> Discover</h1>
             <p className="text-sm text-muted-foreground">Swipe right on what you love.</p>
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">Your swipes are private and never affect a business’s reputation or rating.</p>
           </div>
           {saved.length > 0 && <Link href="/saved"><span className="text-xs font-semibold bg-white border border-border rounded-full px-3 py-1.5 flex items-center gap-1 hover:border-primary hover:text-primary transition-colors"><Bookmark className="w-3.5 h-3.5 text-primary" /> {saved.length} saved</span></Link>}
         </div>
@@ -250,7 +251,7 @@ export default function DiscoverSwipe() {
               const glimpse = glimpses[glimpseIndex];
               const GlimpseIcon = glimpse.icon;
               return (
-                <div className="fixed inset-0 z-[80] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={nextGlimpse}>
+                <div className="fixed inset-0 z-[80] bg-slate-950/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={closePreview}>
                   <div className="relative w-full max-w-md min-h-[68dvh] sm:min-h-0 sm:h-[620px] max-h-[88dvh] overflow-hidden rounded-t-[2rem] sm:rounded-[2rem] bg-slate-900 text-white shadow-2xl border border-white/15" onClick={(e) => { e.stopPropagation(); nextGlimpse(); }}>
                     {glimpse.image && <img src={glimpse.image} alt="" className="absolute inset-0 w-full h-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/20" />

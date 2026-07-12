@@ -18,6 +18,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import Activities from "@/pages/Activities";
 import ActivityDetail from "@/pages/ActivityDetail";
 import Surf from "@/pages/Surf";
+import SurfDetail from "@/pages/SurfDetail";
 import Experiences from "@/pages/Experiences";
 import ExperienceDetail from "@/pages/ExperienceDetail";
 import SpotlightPass from "@/pages/SpotlightPass";
@@ -52,6 +53,7 @@ import TeamDashboard from "@/pages/TeamDashboard";
 import { SystemExplained } from "@/pages/SystemExplained";
 import Terms from "@/pages/Terms";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Blog, { BlogPost } from "@/pages/Blog";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransitionLoader } from "@/components/layout/PageTransitionLoader";
@@ -238,6 +240,7 @@ function Router() {
           <Route path="/activities" component={Activities} />
           <Route path="/activities/:slug" component={ActivityDetail} />
           <Route path="/surf" component={Surf} />
+          <Route path="/surf/:slug" component={SurfDetail} />
           <Route path="/experiences" component={Experiences} />
           <Route path="/experiences/:slug" component={ExperienceDetail} />
           <Route path="/pass" component={SpotlightPass} />
@@ -276,6 +279,8 @@ function Router() {
           <Route path="/verify-email" component={VerifyEmail} />
           <Route path="/terms" component={Terms} />
           <Route path="/privacy-policy" component={PrivacyPolicy} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/blog/:slug" component={BlogPost} />
           <Route component={NotFound} />
         </Switch>
       </main>

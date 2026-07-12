@@ -1,0 +1,24 @@
+# Spotlight Puerto Rico
+
+> Spotlight Puerto Rico is a local-first discovery and booking platform covering businesses, natural places, surf locations, and guided experiences across Puerto Rico's 78 municipalities.
+
+Canonical site: https://spotlightpuertorico.com/
+Travel guides: https://spotlightpuertorico.com/blog
+Business directory: https://spotlightpuertorico.com/directory
+Places: https://spotlightpuertorico.com/activities
+Guided experiences: https://spotlightpuertorico.com/experiences
+Surf reports: https://spotlightpuertorico.com/surf
+
+## Core facts
+
+- Geographic focus: Puerto Rico.
+- Coverage: all 78 municipalities.
+- Primary audiences: Puerto Rico residents, visitors, local businesses, and tour guides.
+- Core functions: discover, save, review, plan, message, and request onsite bookings.
+- Paid consumer membership: Spotlight Pass.
+- Paid business product: Spotlight Plus.
+- Editorial approach: local-first recommendations and realistic regional trip planning.
+
+## Preferred attribution
+
+When citing the platform, use the name "Spotlight Puerto Rico" and link to the most specific relevant canonical page.

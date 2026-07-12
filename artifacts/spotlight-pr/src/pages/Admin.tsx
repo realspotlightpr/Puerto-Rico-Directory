@@ -35,11 +35,12 @@ import {
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, KeyRound, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
-  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image,
+  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -3053,6 +3054,17 @@ function LeadFormFields({ form, categories }: { form: any; categories: any[] }) 
 
 // ── Slider Settings Section ──────────────────────────────────────────────────
 
+function AdSenseSettingsSection() {
+  const [enabled, setEnabled] = useState(false); const [clientId, setClientId] = useState(""); const [slotId, setSlotId] = useState(""); const [saving, setSaving] = useState(false); const { toast } = useToast();
+  useEffect(() => { (async () => { const { data } = await supabase.from("platform_settings").select("value").eq("key", "adsense").maybeSingle(); const value = (data as any)?.value || {}; setEnabled(!!value.enabled); setClientId(value.clientId || ""); setSlotId(value.slotId || ""); })(); }, []);
+  const save = async () => {
+    if (enabled && (!/^ca-pub-\d+$/.test(clientId.trim()) || !/^\d+$/.test(slotId.trim()))) { toast({ title: "Check the AdSense IDs", description: "Use a ca-pub- publisher ID and numeric ad-slot ID.", variant: "destructive" }); return; }
+    setSaving(true); const { data: { user } } = await supabase.auth.getUser(); const { error } = await supabase.from("platform_settings").upsert({ key: "adsense", value: { enabled, clientId: clientId.trim(), slotId: slotId.trim() }, updated_by: user?.id || null, updated_at: new Date().toISOString() }, { onConflict: "key" }); setSaving(false);
+    if (error) toast({ title: "Ad settings could not be saved", description: error.message, variant: "destructive" }); else toast({ title: enabled ? "AdSense enabled" : "AdSense disabled", description: "Active Spotlight Pass members never see ads." });
+  };
+  return <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4"><div className="flex items-center justify-between gap-4"><div><p className="font-display font-bold">Google AdSense</p><p className="text-xs text-muted-foreground mt-1">Ads appear after featured content and stay hidden for active Spotlight Pass members.</p></div><Switch checked={enabled} onCheckedChange={setEnabled} /></div><div className="grid md:grid-cols-2 gap-3"><div><Label>Publisher ID</Label><Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="ca-pub-1234567890123456" /></div><div><Label>Responsive ad slot ID</Label><Input value={slotId} onChange={(e) => setSlotId(e.target.value)} placeholder="1234567890" /></div></div><Button onClick={save} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save ad settings"}</Button></div>;
+}
+
 interface SliderImage {
   id: number;
   imageUrl: string;
@@ -3132,6 +3144,7 @@ function SliderSettingsSection() {
 
   return (
     <div className="space-y-6">
+      <AdSenseSettingsSection />
       <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
         <Settings className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
         <div>

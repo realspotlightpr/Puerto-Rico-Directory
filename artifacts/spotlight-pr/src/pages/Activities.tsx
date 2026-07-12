@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { MapPin, Sparkles, Loader2 } from "lucide-react";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 type Activity = {
   id: number;
@@ -107,7 +108,11 @@ export default function Activities() {
   }, []);
 
   const filtered = type === "all" ? items : items.filter((a) => a.activity_type === type);
-  const featured = items.filter((a) => a.featured).slice(0, 6);
+  const featured = useMemo(() => {
+    const shuffled = items.filter((a) => a.featured);
+    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+    return shuffled.slice(0, 6);
+  }, [items]);
 
   return (
     <div className="min-h-screen">
@@ -149,6 +154,8 @@ export default function Activities() {
                 </div>
               </div>
             )}
+
+            {type === "all" && <AdSlot placement="places-after-featured" />}
 
             <h2 className="font-display text-xl font-bold mb-3">
               {type === "all" ? "All places" : TYPES.find((t) => t.key === type)?.label}{" "}

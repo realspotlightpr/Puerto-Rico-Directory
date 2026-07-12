@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { MapPin, Waves, Loader2, Camera } from "lucide-react";
+import { AdSlot } from "@/components/ads/AdSlot";
 
-type SurfSpot = {
+export type SurfSpot = {
   id: number;
   name: string;
   slug: string;
@@ -54,7 +55,7 @@ function Stat({ icon, label, value, sub }: { icon: string; label: string; value:
   );
 }
 
-function Conditions({ lat, lon }: { lat: number | null; lon: number | null }) {
+export function Conditions({ lat, lon }: { lat: number | null; lon: number | null }) {
   const [c, setC] = useState<Cond | null>(null);
   const [err, setErr] = useState(false);
 
@@ -108,7 +109,7 @@ function Conditions({ lat, lon }: { lat: number | null; lon: number | null }) {
   );
 }
 
-function LiveFeed({ s }: { s: SurfSpot }) {
+export function LiveFeed({ s }: { s: SurfSpot }) {
   if (!s.live_feed_url) {
     return (
       <div className="relative aspect-video bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 flex flex-col items-center justify-center text-white/80">
@@ -143,6 +144,7 @@ function LiveFeed({ s }: { s: SurfSpot }) {
 }
 
 export default function Surf() {
+  const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(true);
   const [spots, setSpots] = useState<SurfSpot[]>([]);
 
@@ -190,7 +192,7 @@ export default function Surf() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {spots.map((s) => (
-                <div key={s.id} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-shadow">
+                <div key={s.id} onClick={() => setLocation(`/surf/${s.slug || s.id}`)} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg transition-shadow cursor-pointer">
                   <LiveFeed s={s} />
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
@@ -213,11 +215,13 @@ export default function Surf() {
                       {s.difficulty && <span className="text-[11px] capitalize px-2 py-0.5 rounded-full bg-muted font-medium">{s.difficulty}</span>}
                       {s.best_season && <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted font-medium">{s.best_season}</span>}
                     </div>
+                    <Link href={`/surf/${s.slug}`}><span className="mt-4 inline-flex text-sm font-bold text-primary hover:underline">View surf details →</span></Link>
                   </div>
                 </div>
               ))}
             </div>
 
+            <AdSlot placement="surf-after-spots" />
             <p className="text-center text-xs text-muted-foreground mt-6">Live wave &amp; weather data by Open-Meteo · updated continuously</p>
 
             {/* Camera partner CTA */}

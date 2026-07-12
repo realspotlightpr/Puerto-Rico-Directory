@@ -30,6 +30,7 @@ export function Footer() {
               <li><Link href="/surf" className="text-sm text-muted-foreground hover:text-primary transition-colors">Surf Report</Link></li>
               <li><Link href="/date-builder" className="text-sm text-muted-foreground hover:text-primary transition-colors">Date &amp; Trip Builder</Link></li>
               <li><Link href="/discover" className="text-sm text-muted-foreground hover:text-primary transition-colors">Discover (Swipe)</Link></li>
+              <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors">Puerto Rico Travel Guides</Link></li>
             </ul>
           </div>
 
