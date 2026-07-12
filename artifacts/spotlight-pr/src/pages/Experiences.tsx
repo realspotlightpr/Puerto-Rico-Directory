@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
-import { MapPin, Clock, Users, Loader2, Compass, ShieldCheck, X, CalendarCheck } from "lucide-react";
+import { MapPin, Clock, Users, Loader2, Compass, ShieldCheck, X, CalendarCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
 import { WEEEPAAA_GUIDE, WEEEPAAA_SERVICE } from "@/lib/curatedExperiences";
@@ -105,6 +105,7 @@ export default function Experiences() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Service[]>([]);
   const [booking, setBooking] = useState<Service | null>(null);
+  const [category, setCategory] = useState("all");
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -131,6 +132,9 @@ export default function Experiences() {
     setBooking(s);
   };
 
+  const categories = Array.from(new Set(items.map((item) => item.activity_type || "Other"))).sort();
+  const visibleItems = category === "all" ? items : items.filter((item) => (item.activity_type || "Other") === category);
+
   return (
     <div className="min-h-screen">
       <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 text-white overflow-hidden">
@@ -143,6 +147,16 @@ export default function Experiences() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {!loading && items.length > 0 && (
+          <section className="mb-7">
+            <div className="flex items-end justify-between gap-4 mb-3"><div><h2 className="font-display text-xl font-bold">Choose your adventure</h2><p className="text-sm text-muted-foreground">Jump straight to the kind of experience you want.</p></div><span className="text-xs text-muted-foreground shrink-0">{visibleItems.length} available</span></div>
+            <div className="flex gap-3 overflow-x-auto pb-3 snap-x scrollbar-none">
+              <button onClick={() => setCategory("all")} className={`snap-start shrink-0 min-w-[132px] rounded-2xl border p-4 text-left transition-all ${category === "all" ? "bg-primary text-white border-primary shadow-md" : "bg-card hover:border-primary"}`}><Compass className="w-6 h-6 mb-4" /><span className="block font-bold">All experiences</span><span className={`text-xs ${category === "all" ? "text-white/75" : "text-muted-foreground"}`}>{items.length} ways to explore</span></button>
+              {categories.map((name) => <button key={name} onClick={() => setCategory(name)} className={`snap-start shrink-0 min-w-[132px] rounded-2xl border p-4 text-left transition-all capitalize ${category === name ? "bg-primary text-white border-primary shadow-md" : "bg-card hover:border-primary"}`}><span className="text-2xl block mb-3">{TYPE_EMOJI[name] || "🧭"}</span><span className="block font-bold">{name}</span><span className={`text-xs flex items-center gap-1 ${category === name ? "text-white/75" : "text-muted-foreground"}`}>{items.filter((item) => (item.activity_type || "Other") === name).length} options <ArrowRight className="w-3 h-3" /></span></button>)}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">{[{ id: "all", label: "Everything" }, ...categories.map((name) => ({ id: name, label: name }))].map((option) => <button key={option.id} onClick={() => setCategory(option.id)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border capitalize ${category === option.id ? "bg-slate-900 text-white border-slate-900" : "bg-white border-border"}`}>{option.label}</button>)}</div>
+          </section>
+        )}
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : items.length === 0 ? (
@@ -154,7 +168,7 @@ export default function Experiences() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((s) => (
+            {visibleItems.map((s) => (
               <div key={s.id} onClick={() => setLocation(`/experiences/${(s as any).slug || s.id}`)} className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all flex flex-col cursor-pointer">
                 <div className="h-32 bg-muted overflow-hidden">{(s as any).images && (s as any).images[0] ? <img src={(s as any).images[0]} alt={s.title} className="w-full h-full object-cover" /> : <img src="https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg" alt={s.title} className="w-full h-full object-cover" />}</div>
                 <div className="p-4 flex-1 flex flex-col">

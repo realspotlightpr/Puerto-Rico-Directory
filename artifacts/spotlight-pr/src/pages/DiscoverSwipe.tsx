@@ -41,6 +41,8 @@ export default function DiscoverSwipe() {
   const { isAuthenticated, openAuthModal } = useAuth();
   const [loading, setLoading] = useState(true);
   const [deck, setDeck] = useState<Card[]>([]);
+  const [catalog, setCatalog] = useState<Card[]>([]);
+  const [filter, setFilter] = useState("all");
   const [i, setI] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [liked, setLiked] = useState<Card | null>(null);
@@ -63,18 +65,35 @@ export default function DiscoverSwipe() {
       try {
         const [{ data: biz }, { data: svcs }, { data: acts }] = await Promise.all([
           supabase.from("businesses").select("id, name, slug, municipality, cover_url, description, average_rating, review_count, categories(name)").eq("status", "approved").not("cover_url", "is", null).limit(25),
-          supabase.from("services").select("id, title, slug, municipality, images, provider").eq("status", "active").limit(15),
+          supabase.from("services").select("id, title, slug, municipality, images, provider, activity_type").eq("status", "active").limit(15),
           supabase.from("activities").select("id, name, slug, activity_type, municipality, image_url").eq("status", "approved").not("image_url", "is", null).limit(25),
         ]);
         const cards: Card[] = [];
         (biz || []).forEach((b: any) => cards.push({ key: `b${b.id}`, source: "business", id: b.id, kind: (b.categories?.name || "Local business"), name: b.name, sub: b.municipality || "Puerto Rico", img: b.cover_url, href: `/businesses/${b.slug || b.id}`, description: b.description, rating: Number(b.average_rating || 0), reviewCount: Number(b.review_count || 0) }));
-        (svcs || []).forEach((s: any) => cards.push({ key: `s${s.id}`, source: "experience", id: s.id, kind: "Experience", name: s.title, sub: s.provider || s.municipality || "Puerto Rico", img: Array.isArray(s.images) ? s.images[0] : null, href: `/experiences/${s.slug || s.id}` }));
+        (svcs || []).forEach((s: any) => cards.push({ key: `s${s.id}`, source: "experience", id: s.id, kind: s.activity_type || "Experience", name: s.title, sub: s.provider || s.municipality || "Puerto Rico", img: Array.isArray(s.images) ? s.images[0] : null, href: `/experiences/${s.slug || s.id}` }));
         (acts || []).forEach((a: any) => cards.push({ key: `a${a.id}`, source: "place", id: a.id, kind: a.activity_type || "Place", name: a.name, sub: a.municipality || "Puerto Rico", img: a.image_url, href: `/activities/${a.slug}` }));
         for (let j = cards.length - 1; j > 0; j--) { const k = Math.floor(Math.random() * (j + 1)); [cards[j], cards[k]] = [cards[k], cards[j]]; }
+        setCatalog(cards);
         setDeck(cards);
       } catch { setDeck([]); } finally { setLoading(false); }
     })();
   }, []);
+
+  const filters = [
+    { id: "all", label: "Everything" },
+    { id: "business", label: "Businesses" },
+    { id: "place", label: "Places" },
+    { id: "experience", label: "Tours" },
+    ...Array.from(new Set(catalog.map((item) => item.kind).filter(Boolean))).sort().slice(0, 8).map((kind) => ({ id: `kind:${kind}`, label: kind })),
+  ];
+  const chooseFilter = (next: string) => {
+    const matches = next === "all" ? catalog : next.startsWith("kind:") ? catalog.filter((item) => item.kind === next.slice(5)) : catalog.filter((item) => item.source === next);
+    setFilter(next);
+    setI(0);
+    setDragX(0);
+    setLiked(null);
+    setDeck([...matches].sort(() => Math.random() - 0.5));
+  };
 
   const card = deck[i];
   const advance = () => { if (likeTimer.current) window.clearTimeout(likeTimer.current); likeTimer.current = null; setDragX(0); setLiked(null); setI((x) => x + 1); };
@@ -189,6 +208,10 @@ export default function DiscoverSwipe() {
           {saved.length > 0 && <Link href="/saved"><span className="text-xs font-semibold bg-white border border-border rounded-full px-3 py-1.5 flex items-center gap-1 hover:border-primary hover:text-primary transition-colors"><Bookmark className="w-3.5 h-3.5 text-primary" /> {saved.length} saved</span></Link>}
         </div>
 
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-none" aria-label="Discover categories">
+          {filters.map((option) => <button key={option.id} onClick={() => chooseFilter(option.id)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors capitalize ${filter === option.id ? "bg-primary border-primary text-white" : "bg-white border-border hover:border-primary"}`}>{option.label}</button>)}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : !card ? (
@@ -197,7 +220,7 @@ export default function DiscoverSwipe() {
             <p className="font-display font-bold text-lg mb-1">That's everything for now!</p>
             <p className="text-sm text-muted-foreground mb-5">{saved.length > 0 ? `You saved ${saved.length}.` : "Come back for more spots soon."}</p>
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => { setI(0); setDeck((d) => [...d].sort(() => Math.random() - 0.5)); }} className="gap-2"><RotateCcw className="w-4 h-4" /> Start over</Button>
+              <Button variant="outline" onClick={() => chooseFilter(filter)} className="gap-2"><RotateCcw className="w-4 h-4" /> Start over</Button>
               <Link href="/directory"><Button>Browse all</Button></Link>
             </div>
           </div>

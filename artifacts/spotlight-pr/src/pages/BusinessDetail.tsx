@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Phone, Globe, Mail, ShieldCheck, BadgeCheck, Star, Clock, Tag, ExternalLink, Facebook, Instagram, Twitter, Youtube, Loader2 } from "lucide-react";
+import { MapPin, Phone, Globe, Mail, ShieldCheck, BadgeCheck, Star, Clock, Tag, ExternalLink, Facebook, Instagram, Twitter, Youtube, Loader2, Bookmark } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
@@ -236,6 +236,7 @@ export default function BusinessDetail() {
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<any | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [saveCount, setSaveCount] = useState(0);
   const [nearby, setNearby] = useState<NearbyBusiness[]>([]);
   const [showClaim, setShowClaim] = useState(false);
   const viewedRef = useRef<number | null>(null);
@@ -281,12 +282,16 @@ export default function BusinessDetail() {
       if (error) throw error;
       setBusiness(data ?? null);
       if (data?.id) {
-        const { data: rv } = await supabase
-          .from("reviews")
-          .select("id, rating, title, body, author_name, created_at, users(first_name,last_name,username)")
-          .eq("business_id", data.id)
-          .order("created_at", { ascending: false });
+        const canonicalHref = `/businesses/${data.slug || data.id}`;
+        const [{ data: rv }, { data: savedTotal }] = await Promise.all([
+          supabase.from("reviews")
+            .select("id, rating, title, body, author_name, created_at, users(first_name,last_name,username)")
+            .eq("business_id", data.id)
+            .order("created_at", { ascending: false }),
+          supabase.rpc("get_saved_item_count", { item_href: canonicalHref }),
+        ]);
         setReviews((rv as Review[]) ?? []);
+        setSaveCount(Number(savedTotal || 0));
         loadNearby(data);
       }
     } catch (e) {
@@ -352,7 +357,10 @@ export default function BusinessDetail() {
             <div className="text-white pb-1 min-w-0" style={{ textShadow: "0 2px 6px rgba(0,0,0,0.75)" }}>
               <h1 className="font-display text-2xl sm:text-3xl font-bold leading-tight truncate text-white">{b.name}</h1>
               <p className="text-white text-sm font-medium">{catName}{b.municipality ? ` · ${b.municipality}` : ""}</p>
-              {b.review_count > 0 && (<div className="flex items-center gap-2 mt-1"><Stars rating={rating} /><span className="text-sm text-white">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span></div>)}
+              <div className="flex items-center gap-x-3 gap-y-1 mt-1 flex-wrap">
+                {b.review_count > 0 && <div className="flex items-center gap-2"><Stars rating={rating} /><span className="text-sm text-white">{rating.toFixed(1)} ({b.review_count} {b.review_count === 1 ? "review" : "reviews"})</span></div>}
+                <span className="text-sm text-white flex items-center gap-1"><Bookmark className="w-4 h-4 fill-white/25" /> {saveCount} {saveCount === 1 ? "save" : "saves"}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -391,7 +399,7 @@ export default function BusinessDetail() {
           </CardContent></Card>
 
           <div>
-            <h2 className="font-display text-xl font-bold mb-4">Reviews {b.review_count > 0 ? `(${b.review_count})` : ""}</h2>
+            <div className="flex items-center justify-between gap-3 mb-4"><h2 className="font-display text-xl font-bold">Reviews {b.review_count > 0 ? `(${b.review_count})` : ""}</h2><span className="text-sm text-muted-foreground flex items-center gap-1"><Bookmark className="w-4 h-4 text-primary" /> Saved by {saveCount}</span></div>
             <div className="mb-6"><ReviewForm businessId={b.id} onPosted={() => load(false)} /></div>
             {reviews.length > 0 ? (
               <div className="space-y-4">

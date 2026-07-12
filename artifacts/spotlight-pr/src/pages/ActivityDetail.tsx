@@ -3,9 +3,11 @@ import { useParams, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin, Sparkles, Loader2, ArrowLeft, Waves, Info, Calendar, Signal, Share2, Navigation, Camera, Compass, X, Clock, Users } from "lucide-react";
+import { MapPin, Sparkles, Loader2, ArrowLeft, Waves, Info, Calendar, Signal, Share2, Navigation, Camera, Compass, X, Clock, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 const VISUAL: Record<string, [string, string]> = {
   beach: ["from-cyan-400 to-blue-500", "🏖️"], snorkeling: ["from-teal-400 to-cyan-600", "🤿"], surfing: ["from-blue-500 to-indigo-600", "🏄"],
@@ -157,10 +159,20 @@ export default function ActivityDetail() {
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [thing, setThing] = useState(0);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewBody, setReviewBody] = useState("");
+  const [postingReview, setPostingReview] = useState(false);
 
   const loadPhotos = useCallback(async (actId: number) => {
     const { data } = await supabase.from("place_photos").select("*").eq("activity_id", actId).eq("status", "approved").order("created_at", { ascending: false });
     setPhotos(data || []);
+  }, []);
+
+  const loadReviews = useCallback(async (actId: number) => {
+    const { data } = await supabase.from("place_reviews").select("id, rating, title, body, author_name, created_at").eq("activity_id", actId).order("created_at", { ascending: false });
+    setReviews(data || []);
   }, []);
 
   useEffect(() => {
@@ -172,6 +184,7 @@ export default function ActivityDetail() {
         setA(data ?? null);
         if (data) {
           loadPhotos(data.id);
+          loadReviews(data.id);
           const cols = "id, name, slug, activity_type, municipality, image_url";
           const nb: any[] = [];
           const seen = new Set<number>([data.id]);
@@ -193,7 +206,23 @@ export default function ActivityDetail() {
         }
       } catch { setA(null); } finally { setLoading(false); }
     })();
-  }, [slug, loadPhotos]);
+  }, [slug, loadPhotos, loadReviews]);
+
+  const postReview = async () => {
+    if (!a) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { openAuthModal?.(); return; }
+    if (!reviewBody.trim()) { toast({ title: "Tell us a little about your visit", variant: "destructive" }); return; }
+    setPostingReview(true);
+    try {
+      const { error } = await supabase.from("place_reviews").insert({ activity_id: a.id, user_id: user.id, rating: reviewRating, title: reviewTitle.trim() || null, body: reviewBody.trim(), author_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Spotlight visitor" });
+      if (error) throw error;
+      setReviewTitle(""); setReviewBody(""); setReviewRating(5);
+      await loadReviews(a.id);
+      toast({ title: "Review posted — thanks for helping the community!" });
+    } catch (err: any) { toast({ title: "Couldn't post review", description: err?.message, variant: "destructive" }); }
+    finally { setPostingReview(false); }
+  };
 
   const onUpload = async (e: any) => {
     const file = e.target.files?.[0];
@@ -230,6 +259,7 @@ export default function ActivityDetail() {
   const gallery = [a.image_url, ...photos.map((p) => p.image_url)].filter(Boolean);
   const todo = thingsToDo(a.activity_type);
   const active = todo[thing] || todo[0];
+  const averageRating = reviews.length ? reviews.reduce((total, review) => total + Number(review.rating || 0), 0) / reviews.length : 0;
 
   return (
     <div className="min-h-screen">
@@ -361,6 +391,21 @@ export default function ActivityDetail() {
         {a.activity_type === "surfing" && (
           <Link href="/surf"><Button variant="outline" className="w-full">🏄 Check live surf cams for this area</Button></Link>
         )}
+
+        {/* Community reviews */}
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <div><h2 className="font-display text-xl font-bold">Community reviews</h2><p className="text-sm text-muted-foreground">Share what future visitors should know.</p></div>
+            <div className="text-right shrink-0"><p className="text-2xl font-bold">{reviews.length ? averageRating.toFixed(1) : "New"}</p><p className="text-xs text-muted-foreground">{reviews.length} {reviews.length === 1 ? "review" : "reviews"}</p></div>
+          </div>
+          <div className="rounded-xl bg-muted/50 p-4 mb-5 space-y-3">
+            <div className="flex items-center gap-1" aria-label="Choose a rating">{[1,2,3,4,5].map((value) => <button key={value} onClick={() => setReviewRating(value)} aria-label={`${value} stars`}><Star className={`w-6 h-6 ${value <= reviewRating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} /></button>)}</div>
+            <Input value={reviewTitle} onChange={(e) => setReviewTitle(e.target.value)} placeholder="A short headline (optional)" />
+            <Textarea value={reviewBody} onChange={(e) => setReviewBody(e.target.value)} placeholder="What did you enjoy? Any tips for other visitors?" className="min-h-[90px]" />
+            <Button onClick={postReview} disabled={postingReview}>{postingReview ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Posting…</> : isAuthenticated ? "Post review" : "Sign in to review"}</Button>
+          </div>
+          {reviews.length ? <div className="space-y-4">{reviews.map((review) => <article key={review.id} className="border-t pt-4 first:border-t-0 first:pt-0"><div className="flex justify-between gap-3"><p className="font-semibold">{review.author_name || "Spotlight visitor"}</p><div className="flex">{[1,2,3,4,5].map((value) => <Star key={value} className={`w-4 h-4 ${value <= review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/25"}`} />)}</div></div>{review.title && <p className="font-medium mt-1">{review.title}</p>}<p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{review.body}</p></article>)}</div> : <p className="text-sm text-muted-foreground">No reviews yet — be the first to share your opinion.</p>}
+        </section>
 
         {/* Nearby */}
         {nearby.length > 0 && (
