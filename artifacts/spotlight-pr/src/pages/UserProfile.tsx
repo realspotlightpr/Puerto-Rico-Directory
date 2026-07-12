@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import {
   Star, MessageSquare, MapPin, CalendarDays, Award,
-  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass, Camera,
+  ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass, Camera, Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -180,7 +180,7 @@ function AccountSettings() {
 export default function UserProfile() {
   const [, ownParams] = useRoute("/profile");
   const [, params] = useRoute("/profile/:id");
-  const { user: authUser, isAuthenticated, isLoading: authLoading, getToken } = useAuth();
+  const { user: authUser, isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -200,7 +200,14 @@ export default function UserProfile() {
         const targetUserId = targetId || au?.id || null;
         if (!targetUserId) { setLoading(false); return; }
 
-        const { data: u } = await supabase.from("users").select("*").eq("id", targetUserId).maybeSingle();
+        // Only request fields intended for public profiles. Selecting private account
+        // columns can cause the entire anonymous request to be rejected by Supabase.
+        const { data: u, error: userError } = await supabase
+          .from("users")
+          .select("id, first_name, last_name, username, profile_image_url, role, created_at")
+          .eq("id", targetUserId)
+          .maybeSingle();
+        if (userError) throw userError;
         if (!u) throw new Error("Profile not found");
 
         const { data: rv } = await supabase
@@ -263,7 +270,6 @@ export default function UserProfile() {
   }
 
   if (!isAuthenticated && !targetId) {
-    const { openAuthModal } = useAuth();
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-emerald-50/30">
         <div className="bg-white rounded-3xl shadow-2xl border border-border p-8 md:p-12 max-w-sm w-full space-y-6 text-center">
@@ -540,6 +546,23 @@ export default function UserProfile() {
 
         </div>
       </div>
+
+      {!isAuthenticated && targetId && (
+        <div className="fixed bottom-20 md:bottom-5 left-3 right-3 z-40 mx-auto max-w-xl animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="rounded-2xl border border-white/30 bg-slate-950/95 text-white shadow-2xl shadow-slate-950/25 backdrop-blur-xl p-3.5 sm:p-4 flex items-center gap-3">
+            <div className="hidden sm:flex w-11 h-11 shrink-0 rounded-xl bg-primary/20 items-center justify-center">
+              <Sparkles className="w-5 h-5 text-secondary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-display font-bold text-sm sm:text-base text-white">Join the Spotlight community</p>
+              <p className="text-xs sm:text-sm text-white/65">Save favorites, follow local voices, and share reviews. It’s quick and free.</p>
+            </div>
+            <Button onClick={() => openAuthModal()} size="sm" className="shrink-0 rounded-xl px-4">
+              Sign up free
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

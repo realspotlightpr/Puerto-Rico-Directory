@@ -3,7 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   Menu, X, User as UserIcon, PlusCircle, LayoutDashboard,
   Shield, LogOut, Store, Star, ChevronDown, Compass, Waves,
-  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles, Bookmark, MessageCircle,
+  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles, Bookmark, MessageCircle, ChevronLeft,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function readLang(): "en" | "es" {
   try {
@@ -52,23 +51,11 @@ export function Navbar() {
   const [location] = useLocation();
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<"main" | "business">("main");
 
   const isAdmin = user?.role === "admin";
   const isOwner = user?.role === "business_owner";
   const isUser = user?.role === "user";
-
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/directory", label: "Businesses" },
-    { href: "/activities", label: "Places" },
-    { href: "/experiences", label: "Experiences" },
-    { href: "/surf", label: "Surf" },
-    { href: "/discover", label: "Swipe to Discover" },
-    { href: "/date-builder", label: "Trip Builder" },
-    { href: "/pass", label: "Spotlight Pass" },
-    { href: "/influencers", label: "Creator Program" },
-    { href: "/business", label: "For Business" },
-  ];
 
   // Mega-menu groups (desktop)
   const megaGroups: {
@@ -288,7 +275,8 @@ export function Navbar() {
         {/* Mobile Toggle */}
         <button
           className="md:hidden p-2 text-foreground"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => { setMobileMenuOpen(!mobileMenuOpen); setMobileView("main"); }}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         >
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
@@ -296,19 +284,65 @@ export function Navbar() {
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full glass-panel border-b border-border shadow-xl p-4 flex flex-col gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-base font-medium p-3 rounded-xl hover:bg-muted ${location === link.href ? "text-primary bg-primary/5" : "text-foreground"}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="md:hidden absolute top-16 left-0 w-full max-h-[calc(100dvh-4rem)] overflow-y-auto glass-panel border-b border-border shadow-xl p-4">
+          <div key={mobileView} className={`flex flex-col gap-1 animate-in fade-in duration-200 ${mobileView === "business" ? "slide-in-from-right-4" : "slide-in-from-left-4"}`}>
+            {mobileView === "main" ? (
+              <>
+                <div className="px-3 pb-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Explore Puerto Rico</p>
+                </div>
+                {[
+                  { href: "/discover", label: "Swipe to Discover", icon: Sparkles },
+                  { href: "/directory", label: "Local Businesses", icon: Store },
+                  { href: "/activities", label: "Places", icon: Palmtree },
+                  { href: "/experiences", label: "Experiences", icon: Compass },
+                  { href: "/date-builder", label: "Trip Builder", icon: CalendarHeart },
+                  { href: "/pass", label: "Spotlight Pass", icon: Ticket },
+                ].map((link) => (
+                  <Link key={link.href} href={link.href} className={`text-base font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3 ${location === link.href ? "text-primary bg-primary/5" : "text-foreground"}`} onClick={() => setMobileMenuOpen(false)}>
+                    <link.icon className="w-5 h-5 text-primary" /> {link.label}
+                  </Link>
+                ))}
 
-          <div className="flex items-center justify-between px-3 py-2 mt-1 border-t border-border/50 pt-3">
+                <button type="button" onClick={() => setMobileView("business")} className="mt-2 text-left p-3.5 rounded-2xl bg-gradient-to-r from-primary/10 to-amber-50 border border-primary/15 flex items-center gap-3 group">
+                  <span className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center"><Store className="w-5 h-5" /></span>
+                  <span className="flex-1">
+                    <span className="block font-bold text-foreground">For Businesses</span>
+                    <span className="block text-xs text-muted-foreground">List free or grow with Spotlight Plus</span>
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-primary transition-transform group-hover:translate-x-1" />
+                </button>
+
+                <Link href="/influencers" className="text-sm font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                  <Megaphone className="w-5 h-5 text-fuchsia-600" /> Creator Program
+                </Link>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => setMobileView("main")} className="flex items-center gap-2 px-2 py-2 text-sm font-semibold text-muted-foreground hover:text-primary">
+                  <ChevronLeft className="w-4 h-4" /> Back to explore
+                </button>
+                <div className="px-2 py-2">
+                  <p className="font-display text-xl font-bold text-foreground">For Businesses</p>
+                  <p className="text-sm text-muted-foreground">Start free, then grow when you’re ready.</p>
+                </div>
+                {megaGroups[1].items.map((item) => (
+                  <Link key={item.href + item.label} href={item.href} className="flex items-start gap-3 p-3 rounded-xl hover:bg-muted" onClick={() => setMobileMenuOpen(false)}>
+                    <span className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${item.accent}`}><item.icon className="w-5 h-5" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-foreground">{item.label}</span>
+                      <span className="block text-xs text-muted-foreground">{item.desc}</span>
+                    </span>
+                    <ChevronRight className="w-4 h-4 mt-3 text-muted-foreground" />
+                  </Link>
+                ))}
+                <Link href="/dashboard" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted" onClick={() => setMobileMenuOpen(false)}>
+                  <LayoutDashboard className="w-5 h-5 text-muted-foreground" /> <span className="font-semibold">Business dashboard</span>
+                </Link>
+              </>
+            )}
+
+          <div className="flex items-center justify-between px-3 py-2 mt-2 border-t border-border/50 pt-3">
             <span className="text-sm font-medium text-muted-foreground">Language</span>
             <LangToggle />
           </div>
@@ -360,14 +394,12 @@ export function Navbar() {
           {!isAuthenticated && (
             <>
               <div className="my-1 border-t border-border/50" />
-              <Link href="/list-your-business" className="text-base font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3 text-primary" onClick={() => setMobileMenuOpen(false)}>
-                <Store className="w-5 h-5" /> Add Business
-              </Link>
               <Button onClick={() => { openAuthModal(); setMobileMenuOpen(false); }} className="w-full rounded-xl">
                 Log in / Sign up
               </Button>
             </>
           )}
+          </div>
         </div>
       )}
     </header>
