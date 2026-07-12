@@ -77,8 +77,8 @@ export default function GetPromoted() {
       {/* Hero */}
       <section className="relative overflow-hidden text-white py-20 lg:py-28">
         <div className="absolute inset-0" style={{ backgroundImage: "url(/images/hero-business-bg.png)", backgroundSize: "cover", backgroundPosition: "center" }} />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-black/90" />
-        <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-950/90 to-black/95" />
+        <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center bg-black/50 backdrop-blur-md border border-white/15 rounded-3xl py-10 md:px-10 shadow-2xl" style={{ textShadow: "0 2px 10px rgba(0,0,0,0.85)" }}>
           <span className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
             <Zap className="w-3.5 h-3.5 text-orange-300" /> Spotlight Plus — for Puerto Rico businesses
           </span>

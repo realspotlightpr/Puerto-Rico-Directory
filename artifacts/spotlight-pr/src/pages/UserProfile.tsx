@@ -58,7 +58,7 @@ function StarRow({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg" }
 function RoleBadge({ role }: { role: string }) {
   if (role === "admin") return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Admin</Badge>;
   if (role === "business_owner") return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Business Owner</Badge>;
-  if (role === "guide") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Guide</Badge>;
+  if (role === "guide" || role === "tour_guide") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Tour Guide</Badge>;
   return <Badge variant="secondary">Community Member</Badge>;
 }
 
@@ -415,6 +415,7 @@ export default function UserProfile() {
                   ].map((item) => <Link key={item.href} href={item.href}><div className="rounded-xl bg-white/10 hover:bg-white/15 p-3 text-sm font-semibold flex items-center gap-2"><item.icon className="w-4 h-4 text-secondary" />{item.label}</div></Link>)}
                 </div>
                 {authUser?.role === "admin" && <Link href="/admin"><div className="mt-2 rounded-xl bg-purple-500/20 border border-purple-300/20 p-3 text-sm font-bold flex items-center gap-2"><Shield className="w-4 h-4 text-purple-300" /> Open admin area <ChevronRight className="w-4 h-4 ml-auto" /></div></Link>}
+                {(authUser?.role === "tour_guide" || authUser?.role === "guide") && <Link href="/guide"><div className="mt-2 rounded-xl bg-emerald-500/20 border border-emerald-300/20 p-3 text-sm font-bold flex items-center gap-2"><Compass className="w-4 h-4 text-emerald-300" /> Manage tours &amp; bookings <ChevronRight className="w-4 h-4 ml-auto" /></div></Link>}
               </div>
             )}
 

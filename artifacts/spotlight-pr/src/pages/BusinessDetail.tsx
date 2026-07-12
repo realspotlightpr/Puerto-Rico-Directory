@@ -115,7 +115,7 @@ function NearbyCard({ b }: { b: NearbyBusiness }) {
             alt={b.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent" />
           <div className="absolute bottom-3 left-3 right-3 flex items-end gap-2">
             <div className="w-10 h-10 rounded-lg bg-white p-0.5 shadow-lg shrink-0 overflow-hidden">
               <img
@@ -125,8 +125,8 @@ function NearbyCard({ b }: { b: NearbyBusiness }) {
               />
             </div>
             <div className="text-white pb-0.5 overflow-hidden">
-              <h3 className="font-display font-bold text-sm leading-tight truncate">{b.name}</h3>
-              <p className="text-white/80 text-xs truncate">{b.categories?.name || "Local Business"}</p>
+              <h3 className="font-display font-bold text-sm leading-tight truncate !text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]">{b.name}</h3>
+              <p className="text-white/90 text-xs truncate drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">{b.categories?.name || "Local Business"}</p>
             </div>
           </div>
         </div>

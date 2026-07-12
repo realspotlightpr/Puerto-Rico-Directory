@@ -56,6 +56,7 @@ export function Navbar() {
   const isAdmin = user?.role === "admin";
   const isOwner = user?.role === "business_owner";
   const isUser = user?.role === "user";
+  const isGuide = user?.role === "tour_guide" || user?.role === "guide";
 
   // Mega-menu groups (desktop)
   const megaGroups: {
@@ -203,7 +204,7 @@ export function Navbar() {
                     <Link href="/saved"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Bookmark className="w-4 h-4" /> Saved</DropdownMenuItem></Link>
                     <Link href="/plans"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><CalendarHeart className="w-4 h-4" /> My Plans</DropdownMenuItem></Link>
                     <Link href="/messages"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><MessageCircle className="w-4 h-4" /> Messages</DropdownMenuItem></Link>
-                    <Link href="/guide"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Compass className="w-4 h-4" /> Guide dashboard</DropdownMenuItem></Link>
+                    {(isGuide || isAdmin) && <Link href="/guide"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2 bg-emerald-50 text-emerald-800"><Compass className="w-4 h-4" /> Manage tours & bookings</DropdownMenuItem></Link>}
                     <Link href="/influencer"><DropdownMenuItem className="cursor-pointer rounded-lg gap-2"><Megaphone className="w-4 h-4" /> Creator dashboard</DropdownMenuItem></Link>
                     <DropdownMenuSeparator />
 
@@ -299,7 +300,7 @@ export function Navbar() {
                   { href: "/date-builder", label: "Trip Builder", icon: CalendarHeart },
                   { href: "/pass", label: "Spotlight Pass", icon: Ticket },
                 ].map((link) => (
-                  <Link key={link.href} href={link.href} className={`text-base font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3 ${location === link.href ? "text-primary bg-primary/5" : "text-foreground"}`} onClick={() => setMobileMenuOpen(false)}>
+                  <Link key={link.href} href={link.href} className={`text-base font-medium p-3 rounded-xl bg-white/85 backdrop-blur-sm border border-white/70 shadow-sm hover:bg-white flex items-center gap-3 ${location === link.href ? "text-primary ring-1 ring-primary/20" : "text-foreground"}`} onClick={() => setMobileMenuOpen(false)}>
                     <link.icon className="w-5 h-5 text-primary" /> {link.label}
                   </Link>
                 ))}
@@ -313,7 +314,7 @@ export function Navbar() {
                   <ChevronRight className="w-5 h-5 text-primary transition-transform group-hover:translate-x-1" />
                 </button>
 
-                <Link href="/influencers" className="text-sm font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/influencers" className="text-sm font-medium p-3 rounded-xl bg-white/85 backdrop-blur-sm border border-white/70 shadow-sm hover:bg-white flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
                   <Megaphone className="w-5 h-5 text-fuchsia-600" /> Creator Program
                 </Link>
               </>
@@ -327,7 +328,7 @@ export function Navbar() {
                   <p className="text-sm text-muted-foreground">Start free, then grow when you’re ready.</p>
                 </div>
                 {megaGroups[1].items.map((item) => (
-                  <Link key={item.href + item.label} href={item.href} className="flex items-start gap-3 p-3 rounded-xl hover:bg-muted" onClick={() => setMobileMenuOpen(false)}>
+                  <Link key={item.href + item.label} href={item.href} className="flex items-start gap-3 p-3 rounded-xl bg-white/85 backdrop-blur-sm border border-white/70 shadow-sm hover:bg-white" onClick={() => setMobileMenuOpen(false)}>
                     <span className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${item.accent}`}><item.icon className="w-5 h-5" /></span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold text-foreground">{item.label}</span>
@@ -360,6 +361,12 @@ export function Navbar() {
               {(isOwner || isAdmin) && (
                 <Link href="/dashboard" className="text-base font-medium p-3 rounded-xl hover:bg-muted flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
                   <LayoutDashboard className="w-5 h-5 text-muted-foreground" /> My Listings
+                </Link>
+              )}
+
+              {(isGuide || isAdmin) && (
+                <Link href="/guide" className="text-base font-medium p-3 rounded-xl bg-emerald-50 text-emerald-800 hover:bg-emerald-100 flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                  <Compass className="w-5 h-5" /> Manage tours &amp; bookings
                 </Link>
               )}
 

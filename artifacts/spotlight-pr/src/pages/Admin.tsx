@@ -13,7 +13,6 @@ import {
   useAdminListReviews,
   useAdminDeleteReview,
   useAdminListUsers,
-  useAdminCreateUser,
   useAdminUpdateBusiness,
   useAdminUpdateUser,
   useListCategories,
@@ -61,7 +60,7 @@ import { MUNICIPALITIES } from "@/lib/constants";
 
 type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
 type BusinessTab = "approved" | "claimed" | "unclaimed" | "pending" | "rejected" | "all";
-type UserRole = "all" | "user" | "business_owner" | "admin";
+type UserRole = "all" | "user" | "business_owner" | "tour_guide" | "influencer" | "admin";
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -85,15 +84,16 @@ const userEditSchema = z.object({
   lastName: z.string().optional(),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   phone: z.string().optional(),
-  role: z.enum(["user", "business_owner", "admin"]),
+  role: z.enum(["user", "business_owner", "tour_guide", "influencer", "admin"]),
   emailVerified: z.boolean().optional(),
 });
 
 const addUserSchema = z.object({
   email: z.string().email("A valid email is required"),
+  phone: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  role: z.enum(["user", "business_owner", "admin"]),
+  role: z.enum(["user", "business_owner", "tour_guide", "influencer", "admin"]),
 });
 
 const leadSchema = z.object({
@@ -870,6 +870,8 @@ export default function Admin() {
   const [commsStatus, setCommsStatus] = useState<"" | "sent" | "failed" | "skipped">("");
 
   const [openClaimsCount, setOpenClaimsCount] = useState(0);
+  const [isInvitingUser, setIsInvitingUser] = useState(false);
+  const [sendingGuideWelcomes, setSendingGuideWelcomes] = useState(false);
 
   const isAdmin = isAuthenticated && user?.role === "admin";
 
@@ -1087,17 +1089,6 @@ export default function Admin() {
     }
   };
 
-  const { mutate: adminCreateUser, isPending: isCreatingUser } = useAdminCreateUser({
-    mutation: {
-      onSuccess: () => {
-        toast({ title: "User created", description: "A welcome email has been sent to the new user." });
-        queryClient.invalidateQueries({ queryKey: [`/api/admin/users`] });
-        setAddingUser(false);
-        addUserForm.reset();
-      },
-      onError: (e: any) => toast({ title: "Failed to create user", description: e?.message ?? "An error occurred", variant: "destructive" }),
-    },
-  });
   const { mutate: createLead, isPending: isCreatingLead } = useAdminCreateLead({
     mutation: {
       onSuccess: () => { toast({ title: "Lead added to directory", description: "Listed as scouted by your team and unclaimed." }); invalidateLeads(); setAddingLead(false); addLeadForm.reset(); },
@@ -1160,8 +1151,36 @@ export default function Admin() {
 
   const addUserForm = useForm<AddUserValues>({
     resolver: zodResolver(addUserSchema),
-    defaultValues: { email: "", firstName: "", lastName: "", role: "user" },
+    defaultValues: { email: "", phone: "", firstName: "", lastName: "", role: "user" },
   });
+
+  const inviteUser = async (values: AddUserValues) => {
+    setIsInvitingUser(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invite", { body: values });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const outreach = (data as any)?.outreach || {};
+      toast({ title: "Invitation sent", description: `Role-specific email: ${outreach.email || "processed"}. SMS: ${outreach.sms || "processed"}.` });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/users`] });
+      setAddingUser(false); addUserForm.reset();
+    } catch (e: any) { toast({ title: "Invite failed", description: e?.message || "Please try again.", variant: "destructive" }); }
+    finally { setIsInvitingUser(false); }
+  };
+
+  const sendGuideWelcomes = async () => {
+    if (!window.confirm("Send a one-click welcome email and text to every tour guide with contact information?")) return;
+    setSendingGuideWelcomes(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invite", { body: { action: "welcome-guides" } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const results = (data as any)?.results || [];
+      const sent = results.filter((result: any) => result.status === "processed").length;
+      toast({ title: "Guide welcomes processed", description: `${sent} of ${results.length} guide accounts received available email/SMS outreach.` });
+    } catch (e: any) { toast({ title: "Guide welcome failed", description: e?.message || "Please try again.", variant: "destructive" }); }
+    finally { setSendingGuideWelcomes(false); }
+  };
 
   const addLeadForm = useForm<LeadValues>({
     resolver: zodResolver(leadSchema),
@@ -1419,9 +1438,14 @@ export default function Admin() {
               </>
             )}
             {section === "users" && (
-              <Button onClick={() => setAddingUser(true)} className="rounded-xl gap-2">
-                <UserPlus className="w-4 h-4" /> Add User
-              </Button>
+              <>
+                <Button variant="outline" onClick={sendGuideWelcomes} disabled={sendingGuideWelcomes} className="rounded-xl gap-2 border-emerald-200 text-emerald-700">
+                  {sendingGuideWelcomes ? <Loader2 className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />} Welcome tour guides
+                </Button>
+                <Button onClick={() => setAddingUser(true)} className="rounded-xl gap-2">
+                  <UserPlus className="w-4 h-4" /> Invite User
+                </Button>
+              </>
             )}
             {(section === "users" || section === "reviews") && (
               <div className="relative w-full sm:w-64">
@@ -1801,11 +1825,13 @@ export default function Admin() {
             <div className="space-y-4">
               {/* Role Tabs */}
               <div className="flex gap-2 border-b border-border pb-0 overflow-x-auto">
-                {["all", "user", "business_owner", "admin"].map(role => {
+                {["all", "user", "business_owner", "tour_guide", "influencer", "admin"].map(role => {
                   const roleLabels = {
                     "all": "All Users",
                     "user": "Regular Users",
                     "business_owner": "Business Owners",
+                    "tour_guide": "Tour Guides",
+                    "influencer": "Creators",
                     "admin": "Admins",
                   };
                   const roleCounts = {
@@ -2707,14 +2733,14 @@ export default function Admin() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-primary" /> Add New User
+              <UserPlus className="w-5 h-5 text-primary" /> Invite a User
             </DialogTitle>
             <DialogDescription>
-              Create a new user account. A role-specific welcome email with login instructions will be sent automatically.
+              Create an account and send a role-specific one-click login by email and text when a phone number is provided.
             </DialogDescription>
           </DialogHeader>
           <Form {...addUserForm}>
-            <form onSubmit={addUserForm.handleSubmit(values => adminCreateUser({ data: values }))} className="space-y-4">
+            <form onSubmit={addUserForm.handleSubmit(inviteUser)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={addUserForm.control} name="firstName" render={({ field }) => (
                   <FormItem><FormLabel>First Name</FormLabel><FormControl><Input className="rounded-xl" placeholder="María" {...field} /></FormControl><FormMessage /></FormItem>
@@ -2730,6 +2756,9 @@ export default function Admin() {
                   <FormMessage />
                 </FormItem>
               )} />
+              <FormField control={addUserForm.control} name="phone" render={({ field }) => (
+                <FormItem><FormLabel>Mobile number <span className="text-muted-foreground font-normal">(recommended)</span></FormLabel><FormControl><Input type="tel" className="rounded-xl" placeholder="(787) 555-0123" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
               <FormField control={addUserForm.control} name="role" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
@@ -2738,6 +2767,8 @@ export default function Admin() {
                     <SelectContent>
                       <SelectItem value="user">Regular User — browse &amp; review businesses</SelectItem>
                       <SelectItem value="business_owner">Business Owner — manage listings</SelectItem>
+                      <SelectItem value="tour_guide">Tour Guide — manage tours &amp; bookings</SelectItem>
+                      <SelectItem value="influencer">Creator — campaigns &amp; affiliate tools</SelectItem>
                       <SelectItem value="admin">Admin — full platform access</SelectItem>
                     </SelectContent>
                   </Select>
@@ -2746,12 +2777,12 @@ export default function Admin() {
               )} />
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
                 <Mail className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-                A welcome email will be sent to this address with login instructions tailored to their role.
+                The invite includes a secure one-click login and prompts the user to create a password on first access. SMS copy is customized to the selected role.
               </div>
               <DialogFooter className="pt-4 border-t border-border">
                 <Button type="button" variant="outline" onClick={() => { setAddingUser(false); addUserForm.reset(); }} className="rounded-xl">Cancel</Button>
-                <Button type="submit" disabled={isCreatingUser} className="rounded-xl gap-2">
-                  {isCreatingUser ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</> : <><UserPlus className="w-4 h-4" /> Create User</>}
+                <Button type="submit" disabled={isInvitingUser} className="rounded-xl gap-2">
+                  {isInvitingUser ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending invite…</> : <><UserPlus className="w-4 h-4" /> Send invitation</>}
                 </Button>
               </DialogFooter>
             </form>
@@ -2795,7 +2826,7 @@ export default function Admin() {
                 <FormItem><FormLabel>Role</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="user">Regular User</SelectItem><SelectItem value="business_owner">Business Owner</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
+                    <SelectContent><SelectItem value="user">Regular User</SelectItem><SelectItem value="business_owner">Business Owner</SelectItem><SelectItem value="tour_guide">Tour Guide</SelectItem><SelectItem value="influencer">Creator</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent>
                   </Select><FormMessage /></FormItem>
               )} />
               <FormField control={userForm.control} name="emailVerified" render={({ field }) => (
