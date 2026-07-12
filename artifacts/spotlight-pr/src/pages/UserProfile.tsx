@@ -4,6 +4,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   Star, MessageSquare, MapPin, CalendarDays, Award,
   ThumbsUp, Store, Loader2, User as UserIcon, ChevronRight, Compass, Camera, Sparkles,
+  Bookmark, CalendarHeart, Trash2, Shield, Instagram, Facebook, Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function AccountSettings() {
   const { toast } = useToast();
+  const { logout } = useAuth();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
@@ -71,11 +73,19 @@ function AccountSettings() {
   const [savingPw, setSavingPw] = useState(false);
   const [avatar, setAvatar] = useState("");
   const [uploadingAv, setUploadingAv] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [instagram, setInstagram] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [savingSocial, setSavingSocial] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setEmail(user?.email || "");
+      setInstagram(user?.user_metadata?.social_links?.instagram || "");
+      setFacebook(user?.user_metadata?.social_links?.facebook || "");
       if (user?.id) {
         const { data } = await supabase.from("users").select("phone, profile_image_url").eq("id", user.id).maybeSingle();
         setPhone((data as any)?.phone || "");
@@ -114,6 +124,14 @@ function AccountSettings() {
     }
   }
 
+  async function saveSocial() {
+    setSavingSocial(true);
+    const { error } = await supabase.auth.updateUser({ data: { social_links: { instagram: instagram.trim(), facebook: facebook.trim() } } });
+    setSavingSocial(false);
+    if (error) toast({ title: "Social links could not be saved", description: error.message, variant: "destructive" });
+    else toast({ title: "Social links saved" });
+  }
+
   const onAvatar = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,6 +150,21 @@ function AccountSettings() {
       toast({ title: "Photo updated \ud83d\udcf8" });
     } catch (err: any) { toast({ title: "Upload failed", description: err?.message, variant: "destructive" }); }
     finally { setUploadingAv(false); }
+  };
+
+  const deleteAccount = async () => {
+    if (deleteText !== "DELETE") return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("profile", { body: { action: "delete-account", confirmation: "DELETE" } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      await logout();
+      window.location.href = "/";
+    } catch (e: any) {
+      toast({ title: "Account could not be deleted", description: e?.message || "Contact support for help.", variant: "destructive" });
+      setDeleting(false);
+    }
   };
 
   return (
@@ -173,6 +206,33 @@ function AccountSettings() {
           {savingPw ? "Saving…" : "Change password"}
         </Button>
       </div>
+      <div className="border-t pt-4 space-y-3">
+        <p className="font-semibold text-sm flex items-center gap-2"><Globe className="w-4 h-4 text-primary" /> Social profiles</p>
+        <div className="relative"><Instagram className="absolute left-3 top-3 w-4 h-4 text-pink-500" /><Input value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="Instagram profile URL" className="pl-9" /></div>
+        <div className="relative"><Facebook className="absolute left-3 top-3 w-4 h-4 text-blue-600" /><Input value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="Facebook profile URL" className="pl-9" /></div>
+        <Button variant="outline" size="sm" className="w-full" onClick={saveSocial} disabled={savingSocial}>{savingSocial ? "Saving…" : "Save social links"}</Button>
+      </div>
+      <div className="border-t border-red-100 pt-4">
+        <button type="button" onClick={() => setDeleteOpen(true)} className="w-full flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-100">
+          <span className="flex items-center gap-2"><Trash2 className="w-4 h-4" /> Delete account</span><ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+      {deleteOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setDeleteOpen(false)} />
+          <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4"><Trash2 className="w-6 h-6" /></div>
+            <h3 className="font-display text-xl font-bold">Permanently delete your account?</h3>
+            <p className="text-sm text-muted-foreground mt-2">Your profile, saved items, plans, and account access will be removed. This cannot be undone.</p>
+            <Label htmlFor="delete-confirm" className="block mt-5 mb-1.5">Type <strong>DELETE</strong> to confirm</Label>
+            <Input id="delete-confirm" value={deleteText} onChange={(e) => setDeleteText(e.target.value)} autoComplete="off" />
+            <div className="grid grid-cols-2 gap-3 mt-5">
+              <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteText(""); }}>Keep account</Button>
+              <Button variant="destructive" disabled={deleteText !== "DELETE" || deleting} onClick={deleteAccount}>{deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete forever"}</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -342,6 +402,21 @@ export default function UserProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           <div className="space-y-4">
+
+            {isOwnProfile && (
+              <div className="bg-slate-950 text-white rounded-2xl border border-slate-800 shadow-sm p-4">
+                <p className="text-[11px] uppercase tracking-wider font-bold text-white/50 mb-3">Your account</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { href: "/saved", label: "Saved", icon: Bookmark },
+                    { href: "/plans", label: "My plans", icon: CalendarHeart },
+                    { href: "/messages", label: "Messages", icon: MessageSquare },
+                    { href: "/discover", label: "Personal feed", icon: Compass },
+                  ].map((item) => <Link key={item.href} href={item.href}><div className="rounded-xl bg-white/10 hover:bg-white/15 p-3 text-sm font-semibold flex items-center gap-2"><item.icon className="w-4 h-4 text-secondary" />{item.label}</div></Link>)}
+                </div>
+                {authUser?.role === "admin" && <Link href="/admin"><div className="mt-2 rounded-xl bg-purple-500/20 border border-purple-300/20 p-3 text-sm font-bold flex items-center gap-2"><Shield className="w-4 h-4 text-purple-300" /> Open admin area <ChevronRight className="w-4 h-4 ml-auto" /></div></Link>}
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl border border-border shadow-sm p-5">
               <h2 className="font-bold font-display text-sm text-muted-foreground uppercase tracking-wide mb-4">Community Stats</h2>

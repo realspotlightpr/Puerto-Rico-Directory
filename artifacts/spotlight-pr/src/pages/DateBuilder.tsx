@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { supabase } from "@/lib/supabase";
-import { Sparkles, Shuffle, Share2, MapPin, Loader2, Clock, ArrowRight, Star, Bookmark } from "lucide-react";
+import { Sparkles, Shuffle, Share2, MapPin, Loader2, Clock, ArrowRight, Star, Bookmark, Route, ListChecks } from "lucide-react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-type Stop = { time: string; name: string; href: string; sub: string; img?: string | null };
+type Stop = { time: string; name: string; href: string; sub: string; img?: string | null; municipality?: string | null };
 
 const REGIONS = ["Anywhere", "West", "North", "East", "Central", "South", "Metro"];
 const VIBES: { id: string; emoji: string; label: string }[] = [
@@ -33,6 +33,8 @@ export default function DateBuilder() {
   const [plan, setPlan] = useState<Stop[] | null>(null);
   const [isPass, setIsPass] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [distanceMode, setDistanceMode] = useState<"compact" | "regional" | "island">("compact");
+  const [stopCount, setStopCount] = useState(4);
 
   useEffect(() => {
     (async () => {
@@ -60,14 +62,21 @@ export default function DateBuilder() {
   useEffect(() => { if (!loading) generate(); /* eslint-disable-next-line */ }, [loading]);
 
   const generate = () => {
-    const pool = region === "Anywhere" ? places : (places.filter((p) => p.region === region).length ? places.filter((p) => p.region === region) : places);
-    const P = (a: any): Stop | null => a ? { time: "", name: a.name, href: `/activities/${a.slug || a.id}`, sub: a.activity_type, img: a.image_url } : null;
-    const B = (b: any): Stop | null => b ? { time: "", name: b.name, href: `/businesses/${b.slug || b.id}`, sub: "local favorite", img: b.cover_url || b.logo_url } : null;
-    const X = (s: any): Stop | null => s ? { time: "", name: s.title, href: `/experiences/${s.slug || s.id}`, sub: "guided experience", img: Array.isArray(s.images) ? s.images[0] : null } : null;
+    const regionalPlaces = region === "Anywhere" ? places : (places.filter((p) => p.region === region).length ? places.filter((p) => p.region === region) : places);
+    const anchor = rand(regionalPlaces) as any;
+    const regionMunicipalities = new Set(regionalPlaces.map((p) => p.municipality).filter(Boolean));
+    const allowed = (municipality?: string | null) => distanceMode === "island" || !municipality || (distanceMode === "compact" ? municipality === anchor?.municipality : region === "Anywhere" ? municipality === anchor?.municipality : regionMunicipalities.has(municipality));
+    const pool = regionalPlaces.filter((p) => allowed(p.municipality));
+    const localRestaurants = restaurants.filter((b) => allowed(b.municipality));
+    const localCafes = cafes.filter((b) => allowed(b.municipality));
+    const localExperiences = experiences.filter((s) => allowed(s.municipality));
+    const P = (a: any): Stop | null => a ? { time: "", name: a.name, href: `/activities/${a.slug || a.id}`, sub: a.activity_type, img: a.image_url, municipality: a.municipality } : null;
+    const B = (b: any): Stop | null => b ? { time: "", name: b.name, href: `/businesses/${b.slug || b.id}`, sub: "local favorite", img: b.cover_url || b.logo_url, municipality: b.municipality } : null;
+    const X = (s: any): Stop | null => s ? { time: "", name: s.title, href: `/experiences/${s.slug || s.id}`, sub: "guided experience", img: Array.isArray(s.images) ? s.images[0] : null, municipality: s.municipality } : null;
     const ofType = (types: string[]) => P(rand(pool.filter((p) => types.includes(p.activity_type))) || rand(pool));
-    const food = () => B(rand(restaurants));
-    const cafe = () => B(rand(cafes) || rand(restaurants));
-    const exp = () => X(rand(experiences));
+    const food = () => B(rand(localRestaurants) || rand(restaurants.filter((b) => b.municipality === anchor?.municipality)));
+    const cafe = () => B(rand(localCafes) || rand(localRestaurants));
+    const exp = () => X(rand(localExperiences));
 
     const templates: Record<string, [string, () => Stop | null][]> = {
       romantic: [["Afternoon", () => ofType(["scenic", "waterfall", "beach"])], ["Golden hour", () => ofType(["beach", "scenic"])], ["Dinner", food], ["Nightcap", cafe]],
@@ -81,7 +90,7 @@ export default function DateBuilder() {
     const stops = (templates[vibe] || templates.romantic)
       .map(([time, fn]) => { const s = fn(); return s ? { ...s, time } : null; })
       .filter((s): s is Stop => !!s && (!seen.has(s.href) && (seen.add(s.href), true)));
-    setPlan(stops);
+    setPlan(stops.slice(0, stopCount));
   };
 
   const share = async () => {
@@ -141,6 +150,19 @@ export default function DateBuilder() {
               ))}
             </div>
           </div>
+          <div className="grid sm:grid-cols-2 gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm">
+            <div>
+              <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Route className="w-4 h-4 text-primary" /> Travel distance</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([{ id: "compact", label: "Same town" }, { id: "regional", label: "Nearby" }, { id: "island", label: "Island" }] as const).map((d) => <button key={d.id} onClick={() => setDistanceMode(d.id)} className={`rounded-lg px-2 py-2 text-xs font-semibold border ${distanceMode === d.id ? "bg-primary text-white border-primary" : "bg-muted/50"}`}>{d.label}</button>)}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><ListChecks className="w-4 h-4 text-primary" /> Number of stops</p>
+              <div className="grid grid-cols-3 gap-1.5">{[2,3,4].map((n) => <button key={n} onClick={() => setStopCount(n)} className={`rounded-lg py-2 text-xs font-bold border ${stopCount === n ? "bg-primary text-white border-primary" : "bg-muted/50"}`}>{n}</button>)}</div>
+            </div>
+            <p className="sm:col-span-2 text-xs text-muted-foreground">We keep stops within your selected area. “Same town” is best for a relaxed day with minimal driving.</p>
+          </div>
           <div>
             <p className="text-sm font-semibold mb-2">Where?</p>
             <div className="flex flex-wrap gap-2">
@@ -159,11 +181,11 @@ export default function DateBuilder() {
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : plan && plan.length > 0 ? (
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <h2 className="font-display text-xl font-bold">Your {VIBES.find((v) => v.id === vibe)?.label.toLowerCase()} plan</h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={generate}><Shuffle className="w-4 h-4" /> Shuffle</Button>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={savePlan}><Bookmark className="w-4 h-4" /> Save</Button>
+                <Button size="sm" className="gap-1.5 shadow-md" onClick={savePlan}><Bookmark className="w-4 h-4" /> Save plan</Button>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={share}><Share2 className="w-4 h-4" /> Share</Button>
               </div>
             </div>
@@ -186,6 +208,10 @@ export default function DateBuilder() {
                   </Link>
                 </div>
               ))}
+            </div>
+            <div className="mt-6 rounded-2xl bg-gradient-to-r from-primary to-teal-600 p-5 text-white shadow-xl flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1"><p className="font-display font-bold text-lg text-white">Love this route?</p><p className="text-sm text-white/80">Save it now so it’s waiting in My Plans when your day begins.</p></div>
+              <Button onClick={savePlan} size="lg" className="bg-white text-primary hover:bg-white/90 gap-2 shrink-0"><Bookmark className="w-5 h-5" /> Save this plan</Button>
             </div>
 
             <div className="mt-6 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-4 flex items-center justify-between gap-3">

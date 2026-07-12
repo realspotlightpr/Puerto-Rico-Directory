@@ -6,12 +6,12 @@ import { Bookmark, BookmarkCheck, X, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /** Saving favorites requires a (free) account. Not logged in -> prompt to create one. */
-export function SavePremiumButton({ name, img, kind, label = "Save", className = "" }: { name?: string; img?: string | null; kind?: string; label?: string; className?: string }) {
+export function SavePremiumButton({ name, img, kind, label = "Save to favorites", className = "", hrefOverride }: { name?: string; img?: string | null; kind?: string; label?: string; className?: string; hrefOverride?: string }) {
   const { isAuthenticated, openAuthModal } = useAuth();
   const { toast } = useToast();
   const [saved, setSaved] = useState(false);
   const [open, setOpen] = useState(false);
-  const href = typeof window !== "undefined" ? window.location.pathname : "";
+  const href = hrefOverride || (typeof window !== "undefined" ? window.location.pathname : "");
 
   useEffect(() => {
     (async () => {
@@ -39,7 +39,7 @@ export function SavePremiumButton({ name, img, kind, label = "Save", className =
 
   return (
     <>
-      <Button variant={saved ? "default" : "outline"} onClick={toggle} className={`gap-2 ${className}`}>
+      <Button variant="default" onClick={toggle} className={`gap-2 shadow-md transition-all ${saved ? "bg-emerald-600 hover:bg-emerald-700" : "bg-gradient-to-r from-primary to-teal-600 hover:brightness-105"} ${className}`}>
         {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />} {saved ? "Saved" : label}
       </Button>
       {open && (

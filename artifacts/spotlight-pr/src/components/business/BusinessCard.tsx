@@ -3,6 +3,7 @@ import { MapPin, Phone, ShieldCheck, BadgeCheck, Star } from "lucide-react";
 import { Business } from "@workspace/api-client-react";
 import { StarRating } from "@/components/ui/star-rating";
 import { Badge } from "@/components/ui/badge";
+import { SavePremiumButton } from "@/components/SavePremiumButton";
 
 interface BusinessCardProps {
   business: Business & { hasSpotlightReview?: boolean };
@@ -107,6 +108,9 @@ export function BusinessCard({ business, featured = false }: BusinessCardProps) 
                 <Phone className="w-4 h-4" />
               </button>
             )}
+          </div>
+          <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            <SavePremiumButton name={business.name} img={business.coverUrl} kind="business" hrefOverride={`/businesses/${(business as any).slug || business.id}`} className="w-full" />
           </div>
         </div>
       </div>

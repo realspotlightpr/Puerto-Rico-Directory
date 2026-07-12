@@ -4,13 +4,14 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import {
-  MapPin, Clock, Users, ShieldCheck, Share2, Phone, Instagram, Facebook, Globe,
+  MapPin, Clock, Users, ShieldCheck, Share2, Instagram, Facebook, Globe,
   ArrowLeft, Loader2, Check, Star, Languages, Sparkles, X, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MapEmbed } from "@/pages/ActivityDetail";
 import { BookingModal } from "@/pages/Experiences";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
+import { WEEEPAAA_GUIDE, WEEEPAAA_SERVICE } from "@/lib/curatedExperiences";
 
 const FALLBACK = "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/places/18.jpg";
 
@@ -32,11 +33,13 @@ export default function ExperienceDetail() {
   const [guide, setGuide] = useState<any | null>(null);
   const [booking, setBooking] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [showExternalContacts, setShowExternalContacts] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
+        if (slug === WEEEPAAA_SERVICE.slug) { setS(WEEEPAAA_SERVICE); setGuide(WEEEPAAA_GUIDE); setLoading(false); return; }
         const isNumeric = /^\d+$/.test(String(slug));
         let q = supabase.from("services").select("*").eq("status", "active");
         q = isNumeric ? q.eq("id", Number(slug)) : q.eq("slug", slug);
@@ -160,12 +163,15 @@ export default function ExperienceDetail() {
                 {(guide?.languages || []).length > 0 && <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-muted flex items-center gap-1"><Languages className="w-3 h-3" />{(guide.languages || []).join(", ")}</span>}
               </div>
               {(social.instagram || social.facebook || social.tiktok || social.website || guide?.phone) && (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                <div className="mt-4 pt-4 border-t">
+                  <button onClick={() => setShowExternalContacts((v) => !v)} className="text-xs text-muted-foreground hover:text-primary underline">{showExternalContacts ? "Hide external contact links" : "More guide links"}</button>
+                  {showExternalContacts && <div className="flex items-center gap-2 mt-3">
                   {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" title="Instagram" className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-pink-50 hover:text-pink-600 hover:border-pink-300 transition-colors"><Instagram className="w-4 h-4" /></a>}
                   {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" title="Facebook" className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-colors"><Facebook className="w-4 h-4" /></a>}
                   {social.tiktok && <a href={social.tiktok} target="_blank" rel="noopener noreferrer" title="TikTok" className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-muted transition-colors text-xs font-bold">TT</a>}
                   {social.website && <a href={social.website} target="_blank" rel="noopener noreferrer" title="Website" className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-muted transition-colors"><Globe className="w-4 h-4" /></a>}
                   {guide?.phone && <a href={`https://wa.me/1${String(guide.phone).replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" title="WhatsApp" className="w-9 h-9 rounded-full border flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-colors"><MessageCircle className="w-4 h-4" /></a>}
+                  </div>}
                 </div>
               )}
             </div>
@@ -181,10 +187,7 @@ export default function ExperienceDetail() {
             </div>
             <p className="text-xs text-muted-foreground mb-4">Secure checkout — a 3% service fee is added at checkout (covers payment processing).</p>
             <Button onClick={openBook} className="w-full gap-2 shadow-lg shadow-primary/20" size="lg">Request to book</Button>
-            {guide?.phone && (
-              <a href={`tel:${guide.phone}`} className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Phone className="w-4 h-4 text-primary" /> Call the guide</a>
-            )}
-            <Link href={`/messages?to=${s.guide_id}`}><button className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><MessageCircle className="w-4 h-4 text-primary" /> Message the guide</button></Link>
+            <Link href={`/messages?to=${s.guide_id}`}><button className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-primary/25 bg-primary/5 font-semibold text-sm hover:bg-primary/10"><MessageCircle className="w-4 h-4 text-primary" /> Ask a question on Spotlight</button></Link>
             <div className="mt-2"><SavePremiumButton name={s.title} img={images[0]} kind="experience" className="w-full" /></div>
             <div className="mt-4 pt-4 border-t space-y-2">
               {[

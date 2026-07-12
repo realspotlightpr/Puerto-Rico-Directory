@@ -200,8 +200,9 @@ export default function DiscoverSwipe() {
                 </div>
               )}
               <div
+                key={card.key}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-                className="absolute inset-0 rounded-3xl overflow-hidden border border-border bg-muted shadow-xl cursor-grab active:cursor-grabbing touch-none"
+                className="absolute inset-0 rounded-3xl overflow-hidden border border-border bg-muted shadow-xl cursor-grab active:cursor-grabbing touch-none animate-in fade-in zoom-in-95 duration-300"
                 style={{ transform: `translateX(${dragX}px) rotate(${dragX / 22}deg)`, transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }}
               >
                 <img src={card.img || FALLBACK} alt={card.name} className="w-full h-full object-cover pointer-events-none" />

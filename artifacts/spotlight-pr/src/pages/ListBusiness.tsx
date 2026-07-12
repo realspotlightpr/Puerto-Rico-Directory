@@ -50,7 +50,10 @@ const STEPS = [
 
 function StepIndicator({ current }: { current: number }) {
   return (
-    <div className="flex items-center justify-center gap-0 mb-8">
+    <div className="mb-8">
+      <div className="flex items-center justify-between text-xs font-semibold mb-2"><span className="text-primary">Step {current} of {STEPS.length}</span><span className="text-muted-foreground">About {Math.max(1, 7 - current)} min left</span></div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden mb-4"><div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-500" style={{ width: `${(current / STEPS.length) * 100}%` }} /></div>
+      <div className="hidden sm:flex items-center justify-center gap-0">
       {STEPS.map((step, i) => {
         const Icon = step.icon;
         const done = current > step.id;
@@ -76,6 +79,7 @@ function StepIndicator({ current }: { current: number }) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -180,6 +184,25 @@ export default function ListBusiness() {
     mode: "onTouched",
   });
 
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem("spotlight-business-draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed?.values) form.reset({ ...form.getValues(), ...parsed.values });
+        if (parsed?.step) setStep(Math.min(Number(parsed.step) || 1, STEPS.length));
+      }
+    } catch { /* ignore invalid drafts */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      try { localStorage.setItem("spotlight-business-draft", JSON.stringify({ values, step })); } catch { /* storage unavailable */ }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, step]);
+
   // Pre-fill the owner fields if the user is already logged in
   useEffect(() => {
     if (user) {
@@ -260,6 +283,7 @@ export default function ListBusiness() {
           title: "Listing submitted!",
           description: "Your business is pending review. We'll be in touch soon.",
         });
+        localStorage.removeItem("spotlight-business-draft");
         setLocation("/dashboard");
       } catch (err: any) {
         const body = (err?.data ?? null) as any;
@@ -292,6 +316,7 @@ export default function ListBusiness() {
       }
       if (res?.error) throw new Error(res.error);
 
+      localStorage.removeItem("spotlight-business-draft");
       setSuccessInfo({
         businessName: data.name,
         ownerEmail: data.ownerContactEmail,
@@ -317,8 +342,9 @@ export default function ListBusiness() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Add Your Business</h1>
-          <p className="text-muted-foreground">Step {step} of {STEPS.length} — {currentStep.title}</p>
+          <p className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-bold mb-3"><Sparkles className="w-3.5 h-3.5" /> Free forever · No credit card</p>
+          <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">Get discovered in Puerto Rico</h1>
+          <p className="text-muted-foreground">Create your free listing in a few guided steps. Your progress saves automatically.</p>
         </div>
 
         {/* Step indicator */}
@@ -626,7 +652,7 @@ export default function ListBusiness() {
               <div className="bg-white rounded-3xl shadow-xl border border-border p-6 md:p-8 space-y-6">
                 <div>
                   <h2 className="text-xl font-bold font-display flex items-center gap-2 mb-1">
-                    <ImageIcon className="w-5 h-5 text-primary" /> Business Photos
+                    <ImageIcon className="w-5 h-5 text-primary" /> Business Photos <span className="text-xs font-normal text-muted-foreground">(optional)</span>
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     Great photos make listings stand out. Both are optional — you can add or update them later from your dashboard.

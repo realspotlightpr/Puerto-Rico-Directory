@@ -1,0 +1,30 @@
+export const WEEEPAAA_SERVICE = {
+  id: -101,
+  guide_id: "weeepaaa-carlos",
+  slug: "weeepaaa-el-yunque",
+  title: "Weeepaaa Tours! El Yunque Adventure",
+  activity_type: "rainforest tour",
+  description: "Explore El Yunque with Carlos and Weeepaaa Tours! Enjoy a high-energy local rainforest experience with convenient pickup available from Luis Muñoz Marín Airport or your hotel. Waterfalls, swimming spots, local stories, and true Puerto Rican hospitality are all part of the day.",
+  municipality: "Río Grande",
+  meeting_point: "Hotel or airport pickup available; final pickup details are confirmed inside Spotlight after booking.",
+  images: ["/images/weeepaaa/el-yunque-tour.jpg", "/images/weeepaaa/carlos-profile.png"],
+  price: null,
+  price_unit: "per_person",
+  duration_minutes: 360,
+  max_group_size: 10,
+  provider: "Weeepaaa Tours!",
+  status: "active",
+  created_at: "2026-07-11T00:00:00.000Z",
+};
+
+export const WEEEPAAA_GUIDE = {
+  user_id: "weeepaaa-carlos",
+  display_name: "Carlos",
+  bio: "Carlos is the local host behind Weeepaaa Tours!, sharing El Yunque through an energetic, personal experience. Airport and hotel pickup make the adventure easy from the moment you arrive.",
+  specialties: ["El Yunque", "Waterfalls", "Airport pickup", "Hotel pickup"],
+  languages: ["English", "Spanish"],
+  municipality: "Río Grande",
+  is_verified: true,
+  photo_url: "/images/weeepaaa/carlos-profile.png",
+  social_links: {},
+};

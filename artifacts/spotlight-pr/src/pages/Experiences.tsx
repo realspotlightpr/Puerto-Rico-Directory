@@ -4,6 +4,8 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
 import { MapPin, Clock, Users, Loader2, Compass, ShieldCheck, X, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SavePremiumButton } from "@/components/SavePremiumButton";
+import { WEEEPAAA_GUIDE, WEEEPAAA_SERVICE } from "@/lib/curatedExperiences";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,9 +38,9 @@ export function BookingModal({ service, onClose }: { service: Service; onClose: 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast({ title: "Please sign in to request a booking", variant: "destructive" }); setSubmitting(false); return; }
       const { error } = await supabase.from("bookings").insert({
-        service_id: service.id, guide_id: service.guide_id, customer_id: user.id,
+        service_id: service.id > 0 ? service.id : null, guide_id: service.guide_id, customer_id: user.id,
         customer_name: name.trim() || null, customer_email: email.trim() || user.email || null, customer_phone: phone.trim() || null,
-        requested_date: date, party_size: Number(party) || 1, message: message.trim() || null,
+        requested_date: date, party_size: Number(party) || 1, message: service.id > 0 ? (message.trim() || null) : `[Curated experience: ${service.title}] ${message.trim() || "Please contact me with availability."}`,
         amount: service.price != null ? (service.price_unit === "per_person" ? service.price * (Number(party) || 1) : service.price) : null,
         status: "requested",
       });
@@ -110,13 +112,15 @@ export default function Experiences() {
       setLoading(true);
       try {
         const { data: svcs } = await supabase.from("services").select("*").eq("status", "active").order("created_at", { ascending: false });
-        const list = (svcs as Service[]) ?? [];
+        const list = [WEEEPAAA_SERVICE as any, ...((svcs as Service[]) ?? []).filter((s: any) => s.slug !== WEEEPAAA_SERVICE.slug)];
         const ids = [...new Set(list.map((s) => s.guide_id))];
         if (ids.length) {
           const { data: profs } = await supabase.from("guide_profiles").select("user_id, display_name, is_verified").in("user_id", ids);
           const pmap = Object.fromEntries((profs ?? []).map((p: any) => [p.user_id, p]));
           list.forEach((s) => { s.guide = pmap[s.guide_id] ?? null; });
         }
+        const curated = list.find((s: any) => s.slug === WEEEPAAA_SERVICE.slug);
+        if (curated) curated.guide = WEEEPAAA_GUIDE as any;
         setItems(list);
       } catch { setItems([]); } finally { setLoading(false); }
     })();
@@ -171,6 +175,7 @@ export default function Experiences() {
                     <span className="font-bold text-foreground">{s.price != null ? `$${s.price}` : "Inquire"}<span className="text-xs font-normal text-muted-foreground">{s.price != null ? `/${s.price_unit === "per_group" ? "group" : "person"}` : ""}</span></span>
                     <Button size="sm" onClick={(e) => { e.stopPropagation(); openBooking(s); }}>Request booking</Button>
                   </div>
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}><SavePremiumButton name={s.title} img={(s as any).images?.[0]} kind="experience" hrefOverride={`/experiences/${(s as any).slug || s.id}`} className="w-full" /></div>
                 </div>
               </div>
             ))}

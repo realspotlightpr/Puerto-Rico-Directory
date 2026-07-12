@@ -1296,9 +1296,9 @@ export default function Admin() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex min-w-0">
       {/* ── Sidebar ── */}
-      <div className="w-64 bg-white border-r border-border shadow-sm flex flex-col shrink-0">
+      <div className="hidden lg:flex w-64 bg-white border-r border-border shadow-sm flex-col shrink-0">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -1371,9 +1371,19 @@ export default function Admin() {
       </div>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto min-w-0">
+        <div className="lg:hidden sticky top-0 z-30 bg-white border-b shadow-sm">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /><span className="font-display font-bold">Admin</span></div>
+            <Button variant="outline" size="sm" onClick={() => setLocation("/")}>Exit</Button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto px-3 pb-3 snap-x">
+            {navItems.map((item) => { const Icon = item.icon; const active = section === item.id; return <button key={item.id} onClick={() => { setSection(item.id); setSearchTerm(""); }} className={`snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold ${active ? "bg-primary text-white" : "bg-muted text-foreground"}`}><Icon className="w-3.5 h-3.5" />{item.label}{item.badge ? <span className="rounded-full bg-amber-500 text-white px-1.5">{item.badge}</span> : null}</button>; })}
+            <button onClick={() => setLocation("/admin/bookings")} className="snap-start shrink-0 rounded-full px-3 py-2 text-xs font-semibold bg-muted">Bookings</button>
+          </div>
+        </div>
         {/* Top bar */}
-        <div className="bg-white border-b border-border sticky top-0 z-10 px-8 py-5 flex items-center justify-between">
+        <div className="bg-white border-b border-border sticky top-0 lg:top-0 z-10 px-4 md:px-8 py-4 md:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold font-display">{navItems.find(i => i.id === section)?.label}</h2>
             <p className="text-sm text-muted-foreground">
@@ -1386,7 +1396,7 @@ export default function Admin() {
               {section === "notifications" && `${totalNotifications} item${totalNotifications !== 1 ? "s" : ""} need attention`}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {totalNotifications > 0 && (
               <Button onClick={() => setSection("notifications")} variant="outline" className="rounded-xl gap-2 border-rose-200 text-rose-600 hover:bg-rose-50" title="View pending items">
                 <Bell className="w-4 h-4" /> {totalNotifications} Pending
@@ -1414,7 +1424,7 @@ export default function Admin() {
               </Button>
             )}
             {(section === "users" || section === "reviews") && (
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 rounded-xl" />
               </div>
@@ -1438,7 +1448,7 @@ export default function Admin() {
           </div>
         )}
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 md:p-8 space-y-6 overflow-x-hidden">
 
           {/* ── DASHBOARD ── */}
           {section === "dashboard" && (
