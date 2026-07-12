@@ -3,7 +3,7 @@ import { useAuth } from "@workspace/replit-auth-web";
 import {
   Menu, X, User as UserIcon, PlusCircle, LayoutDashboard,
   Shield, LogOut, Store, Star, ChevronDown, Compass, Waves,
-  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles, Bookmark, MessageCircle, ChevronLeft,
+  Palmtree, Megaphone, Crown, Anchor, Ticket, CalendarHeart, Sparkles, Bookmark, MessageCircle, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

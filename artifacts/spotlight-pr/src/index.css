@@ -248,3 +248,12 @@ body { top: 0 !important; }
     transition-duration: 0.01ms;
   }
 }
+
+@keyframes swipe-save-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.swipe-save-progress {
+  animation: swipe-save-progress 2.6s linear forwards;
+}

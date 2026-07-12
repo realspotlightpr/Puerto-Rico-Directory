@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Heart, X, Loader2, MapPin, Bookmark, Navigation, RotateCcw, Sparkles, Star, Utensils, Info, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@workspace/replit-auth-web";
 
 type Card = {
   key: string;
@@ -37,6 +38,7 @@ function persistSaved(list: Card[]) { try { localStorage.setItem(SAVE_KEY, JSON.
 export default function DiscoverSwipe() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const [loading, setLoading] = useState(true);
   const [deck, setDeck] = useState<Card[]>([]);
   const [i, setI] = useState(0);
@@ -50,8 +52,10 @@ export default function DiscoverSwipe() {
   const startX = useRef(0);
   const dragging = useRef(false);
   const moved = useRef(false);
+  const likeTimer = useRef<number | null>(null);
 
   useEffect(() => { setSaved(loadSaved()); }, []);
+  useEffect(() => () => { if (likeTimer.current) window.clearTimeout(likeTimer.current); }, []);
 
   useEffect(() => {
     (async () => {
@@ -73,17 +77,22 @@ export default function DiscoverSwipe() {
   }, []);
 
   const card = deck[i];
-  const advance = () => { setDragX(0); setLiked(null); setI((x) => x + 1); };
+  const advance = () => { if (likeTimer.current) window.clearTimeout(likeTimer.current); likeTimer.current = null; setDragX(0); setLiked(null); setI((x) => x + 1); };
   const onSkip = () => { setDragX(-(typeof window !== "undefined" ? window.innerWidth : 500)); window.setTimeout(() => advance(), 420); };
-  const onLike = () => { if (card) setLiked(card); };
-  const saveForLater = () => {
-    if (!liked) return;
-    const next = [liked, ...saved.filter((s) => s.key !== liked.key)];
+  const onLike = async () => {
+    if (!card) return;
+    if (!isAuthenticated) { setDragX(0); openAuthModal?.(); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setDragX(0); openAuthModal?.(); return; }
+    const { error } = await supabase.from("saved_items").insert({ user_id: user.id, href: card.href, name: card.name, img: card.img, kind: card.kind });
+    if (error && !String(error.message).toLowerCase().includes("duplicate")) { toast({ title: "Couldn't save", description: error.message, variant: "destructive" }); setDragX(0); return; }
+    const next = [card, ...saved.filter((s) => s.key !== card.key)];
     setSaved(next); persistSaved(next);
-    toast({ title: "Saved for later 🔖" });
-    advance();
+    setLiked(card);
+    likeTimer.current = window.setTimeout(() => advance(), 2600);
   };
   const visitNow = () => { if (liked) setLocation(liked.href); };
+  const quickLook = () => { if (!liked) return; const item = liked; void openPreview(item); };
 
   const cleanText = (value?: string | null) => (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const openPreview = async (item: Card) => {
@@ -176,7 +185,7 @@ export default function DiscoverSwipe() {
             <h1 className="font-display text-2xl font-bold flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> Discover</h1>
             <p className="text-sm text-muted-foreground">Swipe right on what you love.</p>
           </div>
-          {saved.length > 0 && <span className="text-xs font-semibold bg-white border border-border rounded-full px-3 py-1.5 flex items-center gap-1"><Bookmark className="w-3.5 h-3.5 text-primary" /> {saved.length} saved</span>}
+          {saved.length > 0 && <Link href="/saved"><span className="text-xs font-semibold bg-white border border-border rounded-full px-3 py-1.5 flex items-center gap-1 hover:border-primary hover:text-primary transition-colors"><Bookmark className="w-3.5 h-3.5 text-primary" /> {saved.length} saved</span></Link>}
         </div>
 
         {loading ? (
@@ -218,11 +227,13 @@ export default function DiscoverSwipe() {
               </div>
 
               {liked && (
-                <div className="absolute inset-0 rounded-3xl bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-6 text-white">
-                  <Heart className="w-10 h-10 text-rose-400 fill-rose-400" />
-                  <p className="font-display font-bold text-lg text-center">Nice pick — {liked.name}</p>
-                  <Button onClick={visitNow} className="w-full max-w-xs gap-2" size="lg"><Navigation className="w-4 h-4" /> Visit now</Button>
-                  <Button onClick={saveForLater} variant="outline" className="w-full max-w-xs gap-2 bg-white/10 border-white/40 text-white hover:bg-white/20" size="lg"><Bookmark className="w-4 h-4" /> Save for later</Button>
+                <div className="absolute inset-x-3 bottom-3 z-20 rounded-2xl bg-slate-950/95 border border-white/15 backdrop-blur-xl p-4 text-white shadow-2xl animate-in slide-in-from-bottom-6 zoom-in-95 duration-300">
+                  <div className="flex items-center gap-3 mb-3"><div className="w-11 h-11 rounded-xl bg-emerald-500 flex items-center justify-center"><Bookmark className="w-5 h-5 fill-white" /></div><div className="min-w-0"><p className="text-xs text-emerald-300 font-bold uppercase tracking-wide">Saved to your favorites</p><p className="font-display font-bold truncate text-white">{liked.name}</p></div></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={quickLook} variant="outline" className="bg-white/10 border-white/25 text-white hover:bg-white/20">Quick look</Button>
+                    <Button onClick={visitNow} className="gap-2"><Navigation className="w-4 h-4" /> Visit now</Button>
+                  </div>
+                  <div className="h-1 rounded-full bg-white/15 mt-3 overflow-hidden"><div className="swipe-save-progress h-full bg-emerald-400" /></div>
                 </div>
               )}
             </div>
