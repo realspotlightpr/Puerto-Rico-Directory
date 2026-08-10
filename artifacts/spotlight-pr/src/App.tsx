@@ -58,6 +58,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransitionLoader } from "@/components/layout/PageTransitionLoader";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { SeoManager } from "@/components/SeoManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -222,6 +223,7 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <ScrollToTop />
+      <SeoManager />
       <PageTransitionLoader />
       <AuthTokenWirer />
       <MagicLinkHandler />
