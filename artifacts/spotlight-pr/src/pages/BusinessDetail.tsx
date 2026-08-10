@@ -312,6 +312,39 @@ export default function BusinessDetail() {
     }
   }, [business?.id]);
 
+  // Keep the rendered head aligned with the business-specific HTML shell.
+  // This also covers client-side navigation from the directory.
+  useEffect(() => {
+    if (!business) return;
+    const category = business.categories?.name || "Local Business";
+    const municipality = business.municipality || "Puerto Rico";
+    const canonical = `https://spotlightpuertorico.com/businesses/${business.slug || business.id}`;
+    const descriptionNode = document.createElement("div");
+    descriptionNode.innerHTML = business.description || "";
+    const description = descriptionNode.textContent?.replace(/\s+/g, " ").trim() || `${business.name} is a ${category.toLowerCase()} listed in ${municipality}, Puerto Rico. View contact, location, reviews, and listing details.`;
+    const title = `${business.name} in ${municipality}, Puerto Rico | Spotlight Puerto Rico`;
+    const setMeta = (selector: string, attribute: "name" | "property", key: string, content: string) => {
+      let element = document.head.querySelector(selector) as HTMLMetaElement | null;
+      if (!element) { element = document.createElement("meta"); element.setAttribute(attribute, key); document.head.appendChild(element); }
+      element.content = content;
+    };
+    document.title = title;
+    setMeta('meta[name="description"]', "name", "description", description.slice(0, 160));
+    setMeta('meta[property="og:title"]', "property", "og:title", title);
+    setMeta('meta[property="og:description"]', "property", "og:description", description.slice(0, 200));
+    setMeta('meta[property="og:url"]', "property", "og:url", canonical);
+    let canonicalLink = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!canonicalLink) { canonicalLink = document.createElement("link"); canonicalLink.rel = "canonical"; document.head.appendChild(canonicalLink); }
+    canonicalLink.href = canonical;
+    document.querySelector("#spotlight-business-schema")?.remove();
+    const schema = document.createElement("script");
+    schema.id = "spotlight-business-schema";
+    schema.type = "application/ld+json";
+    schema.text = JSON.stringify({ "@context": "https://schema.org", "@type": "LocalBusiness", "@id": `${canonical}#business`, name: business.name, description, url: canonical, image: business.cover_url || business.logo_url || undefined, telephone: business.phone || undefined, address: { "@type": "PostalAddress", streetAddress: business.address || undefined, addressLocality: business.municipality || undefined, addressRegion: "PR", addressCountry: "US" } });
+    document.head.appendChild(schema);
+    return () => { schema.remove(); };
+  }, [business]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   }

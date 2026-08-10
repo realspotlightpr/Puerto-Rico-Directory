@@ -55,3 +55,5 @@ Thumbs.db
 # Generated programmatic SEO output (rebuilt by artifacts/spotlight-pr prebuild)
 artifacts/spotlight-pr/public/puerto-rico/
 artifacts/spotlight-pr/public/sitemap-seo-pages.xml
+artifacts/spotlight-pr/public/businesses/
+artifacts/spotlight-pr/public/sitemap-businesses.xml
