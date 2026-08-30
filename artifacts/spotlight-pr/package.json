@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "seo:roadmap": "node scripts/generate-500-page-roadmap.mjs",
     "generate:seo": "node scripts/generate-seo-pages.mjs",
     "prebuild": "node scripts/generate-seo-pages.mjs",
     "postbuild": "node scripts/generate-business-pages.mjs",
