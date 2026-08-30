@@ -62,11 +62,16 @@ export function ClaimsSection() {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
+      const outreach = (data as any)?.outreach ?? (data as any)?.delivery;
+      const deliveryFailed = outreach && Object.values(outreach).some((value) =>
+        value === "failed" || (typeof value === "object" && value !== null && (value as any).ok === false)
+      );
       toast({
         title: action === "approve" ? "Claim approved ✓" : "Claim rejected",
-        description: action === "approve"
-          ? "Owner account created and login emailed to the claimant."
-          : "The claimant has been notified.",
+        description: deliveryFailed
+          ? "The decision was saved, but one or more notifications failed. Review Communications for follow-up."
+          : "The decision was saved and the notification workflow was processed.",
+        variant: deliveryFailed ? "destructive" : "default",
       });
       await load();
       setReviewing(null);

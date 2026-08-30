@@ -1293,7 +1293,6 @@ export default function Admin() {
     { id: "users", label: "Users & Owners", icon: Users },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
-    { id: "email-logs", label: "Email Logs", icon: Mail },
     { id: "communications", label: "Communications", icon: MessageSquare },
     { id: "settings", label: "Page Settings", icon: Settings },
   ];
@@ -1302,7 +1301,7 @@ export default function Admin() {
     { heading: null, ids: ["dashboard"] },
     { heading: "Listings", ids: ["leads", "businesses", "claims"] },
     { heading: "People", ids: ["users", "team"] },
-    { heading: "Messaging", ids: ["reviews", "communications", "email-logs"] },
+    { heading: "Messaging", ids: ["reviews", "communications"] },
     { heading: "System", ids: ["settings"] },
   ];
 

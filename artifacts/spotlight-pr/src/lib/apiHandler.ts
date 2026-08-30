@@ -50,19 +50,36 @@ async function requireUserId(): Promise<string> {
   return data.user.id;
 }
 
-async function syncHighLevel(biz: any): Promise<void> {
+type DeliveryResult = { ok: boolean; detail?: string };
+
+function functionFailure(error: unknown, data: unknown): string | undefined {
+  if (error instanceof Error) return error.message;
+  if (error) return String(error);
+  const payload = data as any;
+  return payload?.error ? String(payload.error) : undefined;
+}
+
+async function syncHighLevel(biz: any): Promise<DeliveryResult> {
   try {
-    await supabase.functions.invoke("highlevel", { body: { action: "sync-business", business: biz } });
+    const { data, error } = await supabase.functions.invoke("highlevel", { body: { action: "sync-business", business: biz } });
+    const detail = functionFailure(error, data);
+    if (detail) throw new Error(detail);
+    return { ok: true };
   } catch (e) {
     console.warn("HighLevel sync failed", e);
+    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
   }
 }
 
-async function notifyHighLevel(event: string, biz: any): Promise<void> {
+async function notifyHighLevel(event: string, biz: any): Promise<DeliveryResult> {
   try {
-    await supabase.functions.invoke("highlevel", { body: { action: "notify", event, business: biz } });
+    const { data, error } = await supabase.functions.invoke("highlevel", { body: { action: "notify", event, business: biz } });
+    const detail = functionFailure(error, data);
+    if (detail) throw new Error(detail);
+    return { ok: true };
   } catch (e) {
     console.warn("HighLevel notify failed", e);
+    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -324,9 +341,9 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       };
       const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
       throwSb(error);
-      await syncHighLevel({ ...b, source: "user_submitted" });
-      void notifyHighLevel("listing_submitted", { ...b, source: "user_submitted" });
-      return mapBusiness(data);
+      const contactSync = await syncHighLevel({ ...b, source: "user_submitted" });
+      const ownerNotice = await notifyHighLevel("listing_submitted", { ...b, source: "user_submitted" });
+      return { ...mapBusiness(data), delivery: { contactSync, ownerNotice } };
     }
 
     if (id && !sub) {

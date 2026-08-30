@@ -278,10 +278,14 @@ export default function ListBusiness() {
     // Authenticated owners: create directly (listing is linked to their account)
     if (isAuthenticated) {
       try {
-        await createBusiness({ data: data as any });
+        const created = await createBusiness({ data: data as any }) as any;
+        const noticeSent = created?.delivery?.ownerNotice?.ok !== false;
         toast({
           title: "Listing submitted!",
-          description: "Your business is pending review. We'll be in touch soon.",
+          description: noticeSent
+            ? "Your business is pending review. A confirmation was sent to your contact details."
+            : "Your listing was saved, but the confirmation could not be delivered. The admin communications log will flag it for follow-up.",
+          variant: noticeSent ? "default" : "destructive",
         });
         localStorage.removeItem("spotlight-business-draft");
         setLocation("/dashboard");

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
@@ -22,6 +22,17 @@ export function AuthModal() {
   const [success, setSuccess] = useState<string | null>(null);
   const [smsMode, setSmsMode] = useState(false);
   const [smsPhone, setSmsPhone] = useState("");
+
+  useEffect(() => {
+    if (!showAuthModal) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auth") === "signup") {
+      setMode("sign-up");
+      params.delete("auth");
+      const query = params.toString();
+      window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    }
+  }, [showAuthModal]);
 
   if (!showAuthModal) return null;
 
@@ -82,11 +93,6 @@ export function AuthModal() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
-        if (!phone.trim()) {
-          setError("Please enter your phone number — we use it for updates and quick login.");
-          setLoading(false);
-          return;
-        }
         const nameParts = fullName.trim().split(" ");
         const firstName = nameParts[0] ?? "";
         const lastName = nameParts.slice(1).join(" ") || undefined;
@@ -101,8 +107,8 @@ export function AuthModal() {
           },
         });
         if (error) throw error;
-        // Send our branded "Confirm your email" email (via Spotlight's sender), non-blocking.
-        void supabase.functions.invoke("send-verify-email", { body: { email, name: fullName } });
+        // Supabase Auth owns the single confirmation email for self-service signup.
+        // Avoid sending a second branded verification message here.
         // Attribute the signup to a referring creator, if any.
         try { const ref = localStorage.getItem("sp_ref"); if (ref && data.user) void supabase.functions.invoke("track-referral", { body: { code: ref, user_id: data.user.id, kind: "signup" } }); } catch { /* ignore */ }
         // With email confirmation disabled, signUp returns a session — log them straight in
@@ -206,7 +212,7 @@ export function AuthModal() {
 
             {mode === "sign-up" && (
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(for text updates &amp; quick login)</span></Label>
+                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(optional — for text updates &amp; quick login)</span></Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -216,7 +222,6 @@ export function AuthModal() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="pl-9"
-                    required
                   />
                 </div>
               </div>
