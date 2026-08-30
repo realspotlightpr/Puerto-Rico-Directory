@@ -36,6 +36,14 @@ class AuthRequiredError extends Error {
   }
 }
 
+class ConflictError extends Error {
+  status = 409;
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
 async function requireUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
   if (!data.user) throw new AuthRequiredError();
@@ -390,9 +398,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     // POST /api/businesses/:id/claim
     if (id && sub === "claim" && method === "POST") {
       await requireUserId();
-      const { data, error } = await supabase.rpc("claim_business", { bid: Number(id) });
-      throwSb(error);
-      return mapBusiness(Array.isArray(data) ? data[0] : data);
+      throw new ConflictError("Ownership cannot be assigned directly. Use the verified claim form on the public business page.");
     }
 
     // POST /api/businesses/:id/inquiry  (public contact form)

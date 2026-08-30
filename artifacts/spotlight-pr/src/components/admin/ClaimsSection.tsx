@@ -33,6 +33,8 @@ export function ClaimsSection() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [filter, setFilter] = useState<string>("open");
+  const [reviewing, setReviewing] = useState<{ claim: Claim; action: "approve" | "reject" } | null>(null);
+  const [decisionNote, setDecisionNote] = useState("");
 
   async function load() {
     setLoading(true);
@@ -52,13 +54,7 @@ export function ClaimsSection() {
 
   useEffect(() => { load(); }, []);
 
-  async function act(claim: Claim, action: "approve" | "reject") {
-    let reason: string | undefined;
-    if (action === "reject") {
-      reason = window.prompt("Reason for rejecting this claim (optional, emailed to the claimant):") ?? undefined;
-    } else {
-      if (!window.confirm(`Approve ${claim.claimant_name}'s claim for ${claim.businesses?.name || "this business"}?\n\nThis creates their owner account, emails their login, and links the business to them.`)) return;
-    }
+  async function act(claim: Claim, action: "approve" | "reject", reason?: string) {
     setBusyId(claim.id);
     try {
       const { data, error } = await supabase.functions.invoke("claims", {
@@ -73,6 +69,8 @@ export function ClaimsSection() {
           : "The claimant has been notified.",
       });
       await load();
+      setReviewing(null);
+      setDecisionNote("");
     } catch (err: any) {
       toast({ title: "Action failed", description: err?.message, variant: "destructive" });
     } finally {
@@ -151,11 +149,11 @@ export function ClaimsSection() {
 
                   {isOpen && (
                     <div className="flex gap-2 shrink-0">
-                      <Button onClick={() => act(c, "approve")} disabled={busyId === c.id} className="bg-emerald-600 hover:bg-emerald-700">
-                        {busyId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4 mr-1" /> Approve</>}
+                      <Button onClick={() => { setReviewing({ claim: c, action: "approve" }); setDecisionNote(""); }} disabled={busyId === c.id} className="bg-emerald-600 hover:bg-emerald-700">
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> Review approval
                       </Button>
-                      <Button onClick={() => act(c, "reject")} disabled={busyId === c.id} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                        <XCircle className="w-4 h-4 mr-1" /> Reject
+                      <Button onClick={() => { setReviewing({ claim: c, action: "reject" }); setDecisionNote(""); }} disabled={busyId === c.id} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                        <XCircle className="w-4 h-4 mr-1" /> Review rejection
                       </Button>
                     </div>
                   )}
@@ -163,6 +161,23 @@ export function ClaimsSection() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {reviewing && (
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
+          <button className="absolute inset-0 bg-slate-950/60" onClick={() => setReviewing(null)} aria-label="Close review" />
+          <section className="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl">
+            <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Final review</p>
+            <h3 className="font-display text-2xl font-bold mt-2">{reviewing.action === "approve" ? "Approve ownership claim" : "Reject ownership claim"}</h3>
+            <p className="text-sm text-muted-foreground mt-2">{reviewing.claim.claimant_name} · {reviewing.claim.claimant_email}<br />{reviewing.claim.businesses?.name || `Business #${reviewing.claim.business_id}`}</p>
+            <div className={`mt-5 rounded-xl p-4 text-sm ${reviewing.action === "approve" ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"}`}>
+              {reviewing.action === "approve" ? "Approval creates or connects the owner account, assigns the listing, and sends login instructions." : "Rejection closes the claim and notifies the claimant. Add a clear reason so they know what to correct."}
+            </div>
+            <label className="block mt-5 text-sm font-medium" htmlFor="decision-note">{reviewing.action === "approve" ? "Internal verification note (optional)" : "Reason sent to claimant"}</label>
+            <textarea id="decision-note" value={decisionNote} onChange={event => setDecisionNote(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-border p-3 text-sm" placeholder={reviewing.action === "approve" ? "Example: matched business-domain email and public phone." : "Explain what proof is missing or why the claim cannot be approved."} />
+            <div className="mt-5 flex gap-2"><Button variant="outline" onClick={() => setReviewing(null)} className="h-11">Cancel</Button><Button disabled={busyId === reviewing.claim.id || (reviewing.action === "reject" && decisionNote.trim().length < 5)} onClick={() => act(reviewing.claim, reviewing.action, decisionNote.trim() || undefined)} className={`h-11 flex-1 ${reviewing.action === "approve" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"}`}>{busyId === reviewing.claim.id ? <Loader2 className="w-4 h-4 animate-spin" /> : reviewing.action === "approve" ? "Confirm approval" : "Confirm rejection"}</Button></div>
+          </section>
         </div>
       )}
     </div>

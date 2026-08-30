@@ -1574,6 +1574,13 @@ export default function ManageBusiness() {
 
   const avgRating = business.averageRating ?? 0;
   const reviewCount = business.reviewCount ?? 0;
+  const setupItems = [
+    { label: "Add a clear business description", done: (business.description ?? "").replace(/<[^>]+>/g, "").trim().length >= 80 },
+    { label: "Confirm phone, website, or email", done: !!(business.phone || business.website || business.email) },
+    { label: "Add a logo and cover photo", done: !!(business.logoUrl && business.coverUrl) },
+    { label: "Publish business hours", done: !!business.hours && Object.keys(business.hours as Record<string, string>).length > 0 },
+  ];
+  const setupComplete = setupItems.filter(item => item.done).length;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -1635,6 +1642,13 @@ export default function ManageBusiness() {
 
       {/* ── Content ── */}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {setupComplete < setupItems.length && (
+          <section className="mb-6 bg-white border border-border rounded-2xl p-5 md:p-6 shadow-sm" aria-labelledby="listing-setup-title">
+            <div className="flex items-start justify-between gap-5"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Owner setup</p><h2 id="listing-setup-title" className="font-display text-xl font-bold mt-1">Make your listing ready for customers</h2><p className="text-sm text-muted-foreground mt-1">Complete the essentials first. You can publish improvements one section at a time.</p></div><span className="text-sm font-bold text-primary shrink-0">{setupComplete}/{setupItems.length}</span></div>
+            <div className="h-2 bg-muted rounded-full mt-4"><div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(setupComplete / setupItems.length) * 100}%` }} /></div>
+            <ul className="mt-4 grid sm:grid-cols-2 gap-2">{setupItems.map(item => <li key={item.label} className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${item.done ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-700"}`}>{item.done ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <span className="w-4 h-4 rounded-full border-2 border-slate-300" />}{item.label}</li>)}</ul>
+          </section>
+        )}
         {!isPremium && (
           <div className="mb-6 rounded-2xl border border-amber-300/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-5 md:p-6 shadow-sm">
             <div className="flex flex-col lg:flex-row lg:items-center gap-5 justify-between">

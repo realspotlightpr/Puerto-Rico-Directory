@@ -1,84 +1,84 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = join(root, "..", "..");
 const output = join(root, "public", "puerto-rico");
 const site = "https://spotlightpuertorico.com";
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://zswvumzbtikzvwgtpprw.supabase.co";
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-const minimumListings = Number(process.env.SEO_MINIMUM_LISTINGS || 2);
+if (!anonKey) throw new Error("VITE_SUPABASE_ANON_KEY is required to generate SEO pages.");
 
-if (!anonKey) throw new Error("VITE_SUPABASE_ANON_KEY is required to generate inventory-backed SEO pages.");
+const roadmap = JSON.parse(await readFile(join(repoRoot, "docs", "seo", "500-page-roadmap.json"), "utf8"));
+if (!Array.isArray(roadmap) || roadmap.length !== 500) throw new Error(`Expected exactly 500 roadmap entries; received ${roadmap?.length ?? 0}.`);
 
-const response = await fetch(`${supabaseUrl}/rest/v1/businesses?select=${encodeURIComponent("id,name,slug,description,municipality,address,phone,website,status,categories(name)")}&status=eq.approved&order=name.asc&limit=1000`, {
+const response = await fetch(`${supabaseUrl}/rest/v1/businesses?select=${encodeURIComponent("id,name,slug,description,municipality,address,phone,website,status,categories(name,slug)")}&status=eq.approved&order=name.asc&limit=1000`, {
   headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
 });
 if (!response.ok) throw new Error(`Business fetch failed: ${response.status} ${await response.text()}`);
 const businesses = await response.json();
 
-const categoryDefinitions = {
-  "Restaurants": { slug: "restaurants", label: "Restaurants", labelEs: "Restaurantes" },
-  "Cafés & Bakeries": { slug: "cafes-and-bakeries", label: "Cafés and Bakeries", labelEs: "Cafés y panaderías" },
-  "Retail & Shopping": { slug: "shopping", label: "Local Shopping", labelEs: "Compras locales" },
-  "Professional Services": { slug: "professional-services", label: "Professional Services", labelEs: "Servicios profesionales" },
-  "Automotive": { slug: "automotive", label: "Automotive Services", labelEs: "Servicios automotrices" },
-  "Home Services": { slug: "home-services", label: "Home Services", labelEs: "Servicios para el hogar" },
-  "Beauty & Spa": { slug: "beauty-and-spa", label: "Beauty and Spa", labelEs: "Belleza y spa" },
-  "Health & Wellness": { slug: "health-and-wellness", label: "Health and Wellness", labelEs: "Salud y bienestar" },
-  "Tours & Experiences": { slug: "tours-and-experiences", label: "Tours and Experiences", labelEs: "Tours y experiencias" },
+const categoryAliases = {
+  restaurants: ["restaurants"], shopping: ["retail-shopping", "shopping"],
+  "cafes-and-bakeries": ["cafes-bakeries", "cafes-and-bakeries"],
+  "professional-services": ["professional-services"], automotive: ["automotive"],
+  "home-services": ["home-services"], "beauty-and-spa": ["beauty-spa", "beauty-and-spa"],
+  "tours-and-experiences": ["tours-experiences", "tours-and-experiences"],
+};
+const topicGuidance = {
+  tourism: { intro: "Use this local planning page to compare places, experiences, and practical options before choosing where to spend your time.", questions: ["What fits the weather and time available?", "Which options require reservations?", "What should be confirmed before traveling?"] },
+  food: { intro: "Compare local food options by location, contact details, and the information supplied by each listing.", questions: ["Is the menu and schedule current?", "Are reservations or takeout available?", "Does the location match your route?"] },
+  shopping: { intro: "Discover local shops while checking location, product focus, and direct contact information before visiting.", questions: ["What products are available locally?", "Can inventory be confirmed before visiting?", "Is pickup or delivery offered?"] },
+  business: { intro: "Find local providers and compare their service area, contact channels, and current listing details.", questions: ["Does the provider serve your municipality?", "Can pricing or availability be confirmed directly?", "Is the listing claimed by its owner?"] },
 };
 
-const slugify = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const plainText = value => String(value ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-const groups = new Map();
+const slugify = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const titleCase = value => value.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 
-for (const business of businesses) {
-  const municipality = plainText(business.municipality);
-  const category = categoryDefinitions[business.categories?.name];
-  if (!municipality || !category) continue;
-  const key = `${municipality}::${category.slug}`;
-  if (!groups.has(key)) groups.set(key, { municipality, category, listings: [] });
-  groups.get(key).listings.push(business);
+function listingsFor(page) {
+  const topicSlug = new URL(page.url).pathname.split("/").filter(Boolean).at(-1);
+  const aliases = categoryAliases[topicSlug] || [];
+  return businesses.filter(business => {
+    if (plainText(business.municipality).toLowerCase() !== page.municipality.toLowerCase()) return false;
+    if (!aliases.length) return true;
+    return aliases.includes(slugify(business.categories?.slug || business.categories?.name || ""));
+  });
 }
-
-const eligibleGroups = [...groups.values()]
-  .filter(group => group.listings.length >= minimumListings)
-  .sort((a, b) => b.listings.length - a.listings.length || a.municipality.localeCompare(b.municipality));
 
 await rm(output, { recursive: true, force: true });
 const generatedUrls = [];
-
-for (const group of eligibleGroups) {
-  const municipalitySlug = slugify(group.municipality);
-  const url = `${site}/puerto-rico/${municipalitySlug}/${group.category.slug}/`;
-  const title = `${group.category.label} in ${group.municipality}, Puerto Rico | Spotlight Puerto Rico`;
-  const description = `Browse ${group.listings.length} approved ${group.category.label.toLowerCase()} listings in ${group.municipality}, Puerto Rico, with current local contact and business details.`;
-  const cards = group.listings.map(business => {
-    const detail = plainText(business.description).slice(0, 180) || `${business.name} is an approved local listing in ${group.municipality}.`;
-    return `<article><h2><a href="/businesses/${encodeURIComponent(business.slug || String(business.id))}">${escapeHtml(business.name)}</a></h2><p>${escapeHtml(detail)}</p><ul>${business.address ? `<li>${escapeHtml(business.address)}</li>` : ""}${business.phone ? `<li><a href="tel:${escapeHtml(business.phone)}">${escapeHtml(business.phone)}</a></li>` : ""}${business.website ? `<li><a href="${escapeHtml(business.website)}" rel="nofollow">Official website</a></li>` : ""}</ul></article>`;
-  }).join("");
-  const itemList = group.listings.map((business, index) => ({ "@type": "ListItem", position: index + 1, url: `${site}/businesses/${encodeURIComponent(business.slug || String(business.id))}`, name: business.name }));
-  const schema = JSON.stringify({
-    "@context": "https://schema.org",
-    "@graph": [
-      { "@type": "CollectionPage", "@id": `${url}#page`, name: title, description, url, inLanguage: ["en", "es"], isPartOf: { "@type": "WebSite", name: "Spotlight Puerto Rico", url: site } },
-      { "@type": "BreadcrumbList", itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Puerto Rico", item: `${site}/` },
-        { "@type": "ListItem", position: 2, name: group.municipality, item: `${site}/directory?municipality=${encodeURIComponent(group.municipality)}` },
-        { "@type": "ListItem", position: 3, name: group.category.label, item: url },
-      ] },
-      { "@type": "ItemList", name: `${group.category.label} in ${group.municipality}`, numberOfItems: group.listings.length, itemListElement: itemList },
-    ],
-  }).replace(/</g, "\\u003c");
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index, follow, max-image-preview:large"><link rel="canonical" href="${url}"><meta property="og:type" content="website"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${site}/opengraph.jpg"><script type="application/ld+json">${schema}</script><style>:root{font-family:Inter,system-ui,sans-serif;color:#12352f;background:#f7faf8}*{box-sizing:border-box}body{margin:0}header,footer{padding:22px 5vw;background:#fff;border-bottom:1px solid #dce8e3}header a,a{color:#0f766e}main{max-width:1080px;margin:auto;padding:64px 24px}nav{margin-bottom:28px;color:#60766f}h1{font:700 clamp(2.5rem,7vw,5rem)/.98 Georgia,serif;letter-spacing:-.045em;margin:12px 0 20px}p{line-height:1.7;color:#506862}.intro{max-width:760px;font-size:1.1rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin:40px 0}.grid article{background:white;border:1px solid #dce8e3;border-radius:12px;padding:24px}.grid h2{font:700 1.45rem/1.2 Georgia,serif;margin:0 0 10px}.grid ul{padding-left:18px;color:#60766f}.cta{display:inline-block;background:#0f766e;color:white;padding:13px 17px;border-radius:8px;text-decoration:none;font-weight:800}footer{border-top:1px solid #dce8e3;border-bottom:0;color:#60766f}</style></head><body><header><a href="/"><strong>Spotlight Puerto Rico</strong></a> · <a href="/directory">Directory</a></header><main><nav><a href="/">Puerto Rico</a> › ${escapeHtml(group.municipality)} › ${escapeHtml(group.category.label)}</nav><p><strong>Local directory · Directorio local</strong></p><h1>${escapeHtml(group.category.label)} in ${escapeHtml(group.municipality)}</h1><p class="intro">${escapeHtml(description)} Explore ${escapeHtml(group.category.labelEs.toLowerCase())} en ${escapeHtml(group.municipality)} using information supplied by local listings. Confirm hours, availability, prices, and service areas directly with each business.</p><div class="grid">${cards}</div><a class="cta" href="/directory?municipality=${encodeURIComponent(group.municipality)}">Browse all ${escapeHtml(group.municipality)} listings</a></main><footer>Spotlight Puerto Rico · Supporting discovery of local businesses across Puerto Rico</footer></body></html>`;
-  const file = join(output, municipalitySlug, group.category.slug, "index.html");
+for (const page of roadmap) {
+  const pathname = new URL(page.url).pathname;
+  const segments = pathname.split("/").filter(Boolean);
+  const topicSlug = segments.at(-1);
+  const topicLabel = titleCase(topicSlug);
+  const listings = listingsFor(page);
+  const guidance = topicGuidance[page.pillar] || topicGuidance.business;
+  const related = roadmap.filter(candidate => candidate.municipality === page.municipality && candidate.url !== page.url).slice(0, 4);
+  const title = `${topicLabel} in ${page.municipality}, Puerto Rico | Spotlight Puerto Rico`;
+  const description = `${topicLabel} in ${page.municipality}, Puerto Rico: local listings, planning guidance, contact details, and related ways to explore or support local businesses.`;
+  const directoryUrl = `/directory?municipality=${encodeURIComponent(page.municipality)}`;
+  const cards = listings.length
+    ? listings.slice(0, 12).map(business => `<article class="listing"><p class="eyebrow">Approved local listing</p><h2><a href="/businesses/${encodeURIComponent(business.slug || String(business.id))}">${escapeHtml(business.name)}</a></h2><p>${escapeHtml(plainText(business.description).slice(0, 220) || `View current details for ${business.name} in ${page.municipality}.`)}</p><ul>${business.address ? `<li>${escapeHtml(business.address)}</li>` : ""}${business.phone ? `<li><a href="tel:${escapeHtml(business.phone)}">${escapeHtml(business.phone)}</a></li>` : ""}${business.website ? `<li><a href="${escapeHtml(business.website)}" rel="nofollow">Official website</a></li>` : ""}</ul></article>`).join("")
+    : `<section class="empty"><p class="eyebrow">Local coverage is growing</p><h2>Help build this ${escapeHtml(page.municipality)} guide</h2><p>We have not yet published a matching approved listing for this exact topic. Browse all current ${escapeHtml(page.municipality)} listings or add a local business for editorial review.</p><div class="actions"><a class="button" href="${directoryUrl}">Browse current listings</a><a class="secondary" href="/list-your-business">Add a business</a></div></section>`;
+  const faq = guidance.questions.map((question, index) => `<details${index === 0 ? " open" : ""}><summary>${escapeHtml(question)}</summary><p>${index === 0 ? "Start with the current listings and direct contact information on this page, then confirm details with the business or provider." : index === 1 ? "Availability, prices, access, and schedules can change. Contact the listed organization before making a special trip." : `Use the related ${escapeHtml(page.municipality)} guides below to compare other local categories without repeating the same search.`}</p></details>`).join("");
+  const relatedLinks = related.map(item => `<a href="${new URL(item.url).pathname}"><span>${escapeHtml(titleCase(new URL(item.url).pathname.split("/").filter(Boolean).at(-1)))}</span><small>${escapeHtml(item.primary_keyword_es)}</small></a>`).join("");
+  const itemList = listings.slice(0, 12).map((business, index) => ({ "@type": "ListItem", position: index + 1, url: `${site}/businesses/${encodeURIComponent(business.slug || String(business.id))}`, name: business.name }));
+  const graph = [
+    { "@type": "CollectionPage", "@id": `${page.url}#page`, name: title, description, url: page.url, inLanguage: ["en", "es"], isPartOf: { "@type": "WebSite", name: "Spotlight Puerto Rico", url: site } },
+    { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Puerto Rico", item: `${site}/` }, { "@type": "ListItem", position: 2, name: page.municipality, item: `${site}${directoryUrl}` }, { "@type": "ListItem", position: 3, name: topicLabel, item: page.url }] },
+  ];
+  if (itemList.length) graph.push({ "@type": "ItemList", name: `${topicLabel} in ${page.municipality}`, numberOfItems: itemList.length, itemListElement: itemList });
+  const schema = JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c");
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><meta name="description" content="${escapeHtml(description)}"><meta name="robots" content="index, follow, max-image-preview:large"><link rel="canonical" href="${page.url}"><meta property="og:type" content="website"><meta property="og:title" content="${escapeHtml(title)}"><meta property="og:description" content="${escapeHtml(description)}"><meta property="og:url" content="${page.url}"><meta property="og:image" content="${site}/opengraph.jpg"><script type="application/ld+json">${schema}</script><style>:root{font-family:Inter,system-ui,sans-serif;color:#15352f;background:#f5f8f6}*{box-sizing:border-box}body{margin:0}a{color:#087665}header,footer{padding:20px max(24px,5vw);background:#fff;border-bottom:1px solid #dce7e2}main{max-width:1120px;margin:auto;padding:64px 24px 80px}.crumbs{font-size:.9rem;color:#657871}.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:.72rem;font-weight:800;color:#087665}h1{font:700 clamp(2.7rem,7vw,5.5rem)/.95 Georgia,serif;letter-spacing:-.05em;max-width:900px;margin:18px 0}.lead{font-size:1.12rem;line-height:1.7;max-width:760px;color:#526963}.meta{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0 48px}.meta span{border-bottom:1px solid #a9beb7;padding:7px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}.listing,.empty{background:white;border-top:4px solid #087665;padding:26px}.listing h2,.empty h2{font:700 1.55rem/1.15 Georgia,serif}.listing p,.listing li,.empty p{line-height:1.65;color:#526963}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.button,.secondary{padding:12px 16px;border-radius:8px;text-decoration:none;font-weight:800}.button{background:#087665;color:white}.secondary{border:1px solid #9db4ac}.section{margin-top:64px}.section h2{font:700 2rem/1.1 Georgia,serif}.related{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:#dce7e2}.related a{background:white;padding:20px;text-decoration:none}.related span,.related small{display:block}.related span{font-weight:800}.related small{color:#657871;margin-top:6px}details{border-top:1px solid #cbdad4;padding:16px 0}summary{font-weight:800;cursor:pointer}details p{color:#526963;line-height:1.65}footer{border-top:1px solid #dce7e2;border-bottom:0;color:#657871}</style></head><body><header><a href="/"><strong>Spotlight Puerto Rico</strong></a> · <a href="/directory">Directory</a> · <a href="/list-your-business">List or claim a business</a></header><main><nav class="crumbs"><a href="/">Puerto Rico</a> › <a href="${directoryUrl}">${escapeHtml(page.municipality)}</a> › ${escapeHtml(topicLabel)}</nav><p class="eyebrow">Local guide · Guía local</p><h1>${escapeHtml(topicLabel)} in ${escapeHtml(page.municipality)}</h1><p class="lead">${escapeHtml(guidance.intro)} This page supports “${escapeHtml(page.primary_keyword_en)}” and “${escapeHtml(page.primary_keyword_es)}” with current Spotlight Puerto Rico directory information.</p><div class="meta"><span>${escapeHtml(page.municipality)}, Puerto Rico</span><span>${listings.length} matching approved listing${listings.length === 1 ? "" : "s"}</span><span>Confirm details directly</span></div><div class="grid">${cards}</div><section class="section"><p class="eyebrow">Plan with confidence</p><h2>Before you go or make contact</h2>${faq}</section><section class="section"><p class="eyebrow">Keep exploring</p><h2>More ${escapeHtml(page.municipality)} guides</h2><div class="related">${relatedLinks}</div></section></main><footer>Spotlight Puerto Rico · Local discovery across all 78 municipalities</footer></body></html>`;
+  const file = join(root, "public", ...segments, "index.html");
   await mkdir(dirname(file), { recursive: true });
   await writeFile(file, html);
-  generatedUrls.push(url);
+  generatedUrls.push(page.url);
 }
-
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${generatedUrls.map(url => `  <url><loc>${url}</loc><changefreq>weekly</changefreq></url>`).join("\n")}\n</urlset>\n`;
 await writeFile(join(root, "public", "sitemap-seo-pages.xml"), sitemap);
-console.log(`Generated ${generatedUrls.length} inventory-backed SEO pages from ${businesses.length} approved businesses (minimum ${minimumListings} matching listings per page).`);
+console.log(`Generated ${generatedUrls.length} live SEO pages from the 500-page roadmap and ${businesses.length} approved businesses.`);

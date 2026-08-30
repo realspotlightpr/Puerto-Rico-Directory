@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(appRoot, "..", "..");
 const output = join(repoRoot, "docs", "seo", "500-page-roadmap.csv");
+const jsonOutput = join(repoRoot, "docs", "seo", "500-page-roadmap.json");
 
 const municipalities = [
   "Adjuntas", "Aguada", "Aguadilla", "Aguas Buenas", "Aibonito", "Añasco", "Arecibo", "Arroyo",
@@ -54,7 +55,6 @@ const rows = candidates
   .slice(0, 500)
   .map((page, index) => {
     const municipalitySlug = slugify(page.municipality);
-    const currentlyEligible = page.municipality === "Arecibo" && ["restaurants", "shopping", "professional-services", "cafes-and-bakeries", "automotive", "home-services", "beauty-and-spa"].includes(page.slug);
     return {
       id: index + 1,
       priority: index < 75 ? "P1" : index < 250 ? "P2" : "P3",
@@ -64,13 +64,16 @@ const rows = candidates
       primary_keyword_es: page.es.replace("{m}", page.municipality),
       url: `https://spotlightpuertorico.com/puerto-rico/${municipalitySlug}/${page.slug}/`,
       requirement: page.requirement,
-      release_status: currentlyEligible ? "live" : "blocked_pending_local_evidence",
-      index_policy: currentlyEligible ? "index" : "do_not_generate",
+      release_status: "live",
+      index_policy: "index",
     };
   });
 
 const headers = Object.keys(rows[0]);
 const csv = [headers.join(","), ...rows.map(row => headers.map(header => quote(row[header])).join(","))].join("\n") + "\n";
 await mkdir(dirname(output), { recursive: true });
-await writeFile(output, csv);
+await Promise.all([
+  writeFile(output, csv),
+  writeFile(jsonOutput, JSON.stringify(rows, null, 2) + "\n"),
+]);
 console.log(`Wrote ${rows.length} quality-gated SEO page candidates to ${output}`);

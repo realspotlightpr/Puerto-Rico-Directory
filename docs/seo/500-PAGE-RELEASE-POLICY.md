@@ -1,6 +1,6 @@
 # 500-page SEO release policy
 
-This roadmap targets 500 distinct English/Spanish keyword intents across Puerto Rico's 78 municipalities. It is a production backlog, not permission to publish empty URL combinations.
+This roadmap powers 500 distinct English/Spanish keyword-intent pages across Puerto Rico's 78 municipalities. Every page is published with honest coverage status, useful planning guidance, related local guides, and live directory links. Pages never invent businesses, rankings, reviews, availability, prices, or attractions.
 
 ## Release gate
 
@@ -14,11 +14,11 @@ A page may be generated, indexed, and added to an XML sitemap only when its docu
 - English and Spanish search language handled naturally without duplicated pages;
 - no unsupported “best,” “near me,” open-now, price, review, or verification claims.
 
-Pages that fail the gate remain `do_not_generate`; they are not published, linked, or submitted to Google. This protects the domain from doorway-page and scaled-content risk.
+Pages without matching approved listings publish as transparent local guide and contribution pages. They link to current municipality inventory and the business submission flow, and clearly disclose when exact-category coverage is still growing.
 
 ## Current release
 
-The live generator reads approved Supabase inventory at build time. It currently releases seven Arecibo category pages with at least two matching approved businesses, plus the individual approved business pages. The broader roadmap expands automatically only as usable local evidence is added.
+The live generator reads approved Supabase inventory at build time and builds all 500 roadmap URLs. Matching businesses appear automatically. Empty categories remain factual and become richer as approved businesses and editorial data are added.
 
 ## Measurement
 
