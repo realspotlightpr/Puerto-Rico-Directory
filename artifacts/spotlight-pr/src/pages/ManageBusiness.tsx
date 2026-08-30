@@ -1107,6 +1107,7 @@ export default function ManageBusiness() {
 
   // ── Analytics (real interaction data from listing_events) ──
   const [analytics, setAnalytics] = useState<{ views: number; phone: number; website: number; maps: number; daily: { date: string; count: number }[]; sources: { source: string; count: number }[] } | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   useEffect(() => {
     const bid = (business as any)?.id;
@@ -1656,41 +1657,10 @@ export default function ManageBusiness() {
           </section>
         )}
         {!isPremium && (
-          <div className="mb-6 rounded-2xl border border-amber-300/70 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-5 md:p-6 shadow-sm">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-5 justify-between">
-              <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-xl bg-amber-400/20 flex items-center justify-center shrink-0">
-                  <Star className="w-6 h-6 text-amber-500 fill-amber-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold font-display text-lg">Get Promoted</p>
-                    <span className="text-[11px] font-bold uppercase tracking-wide bg-amber-500 text-white px-2 py-0.5 rounded-full">Most popular</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 mb-3">Turn your free listing into a customer magnet &mdash; more views and calls, a monthly Instagram feature, AI tools to create your content, and full page customization.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 max-w-xl">
-                    {[
-                      "\u2b50 Featured across the site — more views, calls & clicks",
-                      "\ud83d\uddbc\ufe0f AI image generation (Image Studio)",
-                      "\u270d\ufe0f AI text & content generation (AI Assistant)",
-                      "\ud83c\udfac 1 monthly Instagram feature on @spotlightpromopr — reach thousands",
-                      "\ud83d\udccb Your menu + full page customization",
-                      "\ud83e\udd1d Premium PR business community + events ($49/mo value)",
-                    ].map((ff, i) => (
-                      <p key={i} className="text-sm text-amber-900 flex items-center gap-1.5">{ff}</p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="shrink-0 w-full lg:w-56 bg-white rounded-2xl border border-amber-200 p-4 text-center">
-                <div className="flex items-end justify-center gap-1.5">
-                  <span className="text-muted-foreground/60 text-lg line-through mb-1">$87</span>
-                  <span className="text-3xl font-display font-bold text-amber-600">$29</span>
-                </div>
-                <p className="text-xs text-muted-foreground">for 3 months &middot; save $58</p>
-                <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="mt-3 block w-full px-4 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition-colors text-center shadow-sm">Get Promoted</a>
-              </div>
-            </div>
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <Star className="w-5 h-5 text-amber-500 shrink-0" />
+            <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-amber-950">Promote this listing</p><p className="text-xs text-amber-800 mt-0.5">Featured placement, AI tools, and monthly Instagram promotion.</p></div>
+            <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600">View upgrade</a>
           </div>
         )}
         {isPremium && (
@@ -1699,50 +1669,43 @@ export default function ManageBusiness() {
             <p className="text-sm font-semibold text-amber-800">Premium listing active — all features unlocked. Thank you for supporting Spotlight Puerto Rico! 🎉</p>
           </div>
         )}
-        <Tabs defaultValue="details">
-          <TabsList className="w-full mb-6 bg-white border border-border rounded-xl p-1 h-auto flex flex-nowrap gap-1 overflow-x-auto justify-start" style={{ scrollbarWidth: "thin" }}>
-            <TabsTrigger value="details" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="mb-6 sticky top-16 z-20 bg-slate-50/95 backdrop-blur py-2">
+            <label htmlFor="owner-mobile-section" className="sr-only">Listing section</label>
+            <select id="owner-mobile-section" value={activeTab} onChange={event => setActiveTab(event.target.value)} className="md:hidden w-full h-12 rounded-xl border border-border bg-white px-3 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <optgroup label="Listing"><option value="details">Business details</option><option value="hours">Hours</option><option value="media">Logo & cover</option><option value="social">Social links</option><option value="menu">Menu</option></optgroup>
+              <optgroup label="Customers"><option value="reviews">Reviews</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option></optgroup>
+              <optgroup label="Growth"><option value="analytics">Analytics</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option></optgroup>
+            </select>
+            <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm">
+          <TabsList className="bg-transparent p-0 h-auto flex gap-1 justify-start flex-1">
+            <TabsTrigger value="details" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <Store className="w-4 h-4" /> Details
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
-              <Star className="w-4 h-4" /> Reviews {reviewCount > 0 && `(${reviewCount})`}
-            </TabsTrigger>
-            <TabsTrigger value="hours" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="hours" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <Clock className="w-4 h-4" /> Hours
             </TabsTrigger>
-            <TabsTrigger value="media" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="media" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <Upload className="w-4 h-4" /> Media
             </TabsTrigger>
-            <TabsTrigger value="ai" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-500 data-[state=active]:text-white gap-2 py-2">
-              <Bot className="w-4 h-4" /> AI Assistant
-            </TabsTrigger>
-            <TabsTrigger value="image-studio" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-primary data-[state=active]:text-white gap-2 py-2">
-              <Sparkles className="w-4 h-4" /> Image Studio
-            </TabsTrigger>
-            <TabsTrigger value="media-library" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
-              <LayoutGrid className="w-4 h-4" /> Media Library {mediaItems.length > 0 && `(${mediaItems.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="social-planner" disabled className="shrink-0 whitespace-nowrap rounded-lg gap-2 py-2 opacity-60 cursor-not-allowed">
-              <Calendar className="w-4 h-4" /> Social Planner
-              <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Soon</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
-              <BarChart3 className="w-4 h-4" /> Analytics
-            </TabsTrigger>
-            <TabsTrigger value="social" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="social" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <Globe className="w-4 h-4" /> Social Links
             </TabsTrigger>
-            <TabsTrigger value="menu" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="menu" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <FileText className="w-4 h-4" /> Menu
-              <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Premium</span>
             </TabsTrigger>
-            <TabsTrigger value="inbox" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
+            <TabsTrigger value="reviews" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
+              <Star className="w-4 h-4" /> Reviews {reviewCount > 0 && `(${reviewCount})`}
+            </TabsTrigger>
+            <TabsTrigger value="inbox" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
               <Inbox className="w-4 h-4" /> Inbox
             </TabsTrigger>
-            <TabsTrigger value="form-builder" className="shrink-0 whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2">
-              <FormInput className="w-4 h-4" /> Form Builder
-            </TabsTrigger>
           </TabsList>
+              <select aria-label="More listing tools" value={["analytics","ai","image-studio","media-library","form-builder"].includes(activeTab) ? activeTab : ""} onChange={event => event.target.value && setActiveTab(event.target.value)} className="h-10 rounded-lg border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">More tools</option><option value="analytics">Analytics</option><option value="form-builder">Contact form</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option>
+              </select>
+            </div>
+          </div>
 
           {/* ── DETAILS ── */}
           <TabsContent value="details">

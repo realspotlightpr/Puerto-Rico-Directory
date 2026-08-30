@@ -35,7 +35,7 @@ import {
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, KeyRound, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
-  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass,
+  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass, MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
 type BusinessTab = "approved" | "claimed" | "unclaimed" | "pending" | "rejected" | "all";
@@ -1416,9 +1417,11 @@ export default function Admin() {
             <div className="flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /><span className="font-display font-bold">Admin</span></div>
             <Button variant="outline" size="sm" onClick={() => setLocation("/")}>Exit</Button>
           </div>
-          <div className="flex gap-2 overflow-x-auto px-3 pb-3 snap-x">
-            {navItems.map((item) => { const Icon = item.icon; const active = section === item.id; return <button key={item.id} onClick={() => { setSection(item.id); setSearchTerm(""); }} className={`snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold ${active ? "bg-primary text-white" : "bg-muted text-foreground"}`}><Icon className="w-3.5 h-3.5" />{item.label}{item.badge ? <span className="rounded-full bg-amber-500 text-white px-1.5">{item.badge}</span> : null}</button>; })}
-            <button onClick={() => setLocation("/admin/bookings")} className="snap-start shrink-0 rounded-full px-3 py-2 text-xs font-semibold bg-muted">Bookings</button>
+          <div className="px-3 pb-3">
+            <label htmlFor="admin-mobile-section" className="sr-only">Admin section</label>
+            <select id="admin-mobile-section" value={section} onChange={event => { setSection(event.target.value as AdminSection); setSearchTerm(""); }} className="w-full h-11 rounded-xl border border-border bg-slate-50 px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30">
+              {navGroups.map((group, index) => <optgroup key={index} label={group.heading || "Overview"}>{group.ids.map(id => { const item = navItems.find(candidate => candidate.id === id); return item ? <option key={id} value={id}>{item.label}{item.badge ? ` (${item.badge})` : ""}</option> : null; })}</optgroup>)}
+            </select>
           </div>
         </div>
         {/* Top bar */}
@@ -1589,7 +1592,7 @@ export default function Admin() {
               {/* Leads table */}
               {(leadsData?.leads?.length ?? 0) > 0 ? (
                 <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                       <thead className="bg-muted/40 text-muted-foreground border-b border-border">
                         <tr>
@@ -1691,7 +1694,12 @@ export default function Admin() {
           {/* ── BUSINESSES ── */}
           {section === "businesses" && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 bg-white border border-border rounded-2xl p-2 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 bg-white border border-border rounded-2xl p-2 shadow-sm">
+                <label htmlFor="business-status-mobile" className="sr-only">Listing status</label>
+                <select id="business-status-mobile" value={businessTab} onChange={event => { setBusinessTab(event.target.value as BusinessTab); setSearchTerm(""); }} className="md:hidden w-full h-11 rounded-xl border border-border bg-slate-50 px-3 text-sm font-semibold">
+                  {businessTabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label} ({tab.count})</option>)}
+                </select>
+                <div className="hidden md:flex items-center gap-1.5">
                 {businessTabs.map(tab => {
                   const active = businessTab === tab.id;
                   return (
@@ -1707,7 +1715,8 @@ export default function Admin() {
                     </button>
                   );
                 })}
-                <div className="relative ml-auto w-56">
+                </div>
+                <div className="relative md:ml-auto w-full md:w-56">
                   <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                   <Input placeholder="Search listings…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 h-9 rounded-xl border-border text-sm" />
                 </div>
@@ -1800,7 +1809,23 @@ export default function Admin() {
                               </div>
                             </td>
                             <td className="p-4">
-                              <div className="flex items-center justify-end gap-1">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button size="sm" className="h-9 rounded-lg gap-1.5" onClick={() => setLocation(`/manage/${b.id}`)}><Edit3 className="w-3.5 h-3.5" /> Manage</Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild><Button size="icon" variant="outline" className="h-9 w-9" aria-label={`More actions for ${b.name}`}><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-52">
+                                    <DropdownMenuItem onSelect={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}><ExternalLink className="w-4 h-4 mr-2" /> View public page</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setLogoBusiness({ id: b.id, name: b.name, logoUrl: (b as any).logoUrl })}><Image className="w-4 h-4 mr-2" /> {(b as any).logoUrl ? "Replace logo" : "Upload logo"}</DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setStatsBusinessId(b.id)}><BarChart3 className="w-4 h-4 mr-2" /> View analytics</DropdownMenuItem>
+                                    {!(b as any).isClaimed && <DropdownMenuItem onSelect={() => { setAssigningOwner({ id: b.id, name: b.name }); setAssignOwnerSearch(""); }}><UserPlus className="w-4 h-4 mr-2" /> Assign owner</DropdownMenuItem>}
+                                    <DropdownMenuItem onSelect={() => feature({ id: b.id })}><Star className="w-4 h-4 mr-2" /> {b.featured ? "Remove featured" : "Mark featured"}</DropdownMenuItem>
+                                    {b.status !== "approved" && <DropdownMenuItem onSelect={() => approve({ id: b.id })}><Check className="w-4 h-4 mr-2" /> Approve listing</DropdownMenuItem>}
+                                    {b.status !== "rejected" && <DropdownMenuItem onSelect={() => reject({ id: b.id })}><X className="w-4 h-4 mr-2" /> Reject listing</DropdownMenuItem>}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setDeletingBusiness({ id: b.id, name: b.name })}><Trash2 className="w-4 h-4 mr-2" /> Delete listing</DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                <div className="hidden">
                                 <Button size="icon" variant="outline" title={(b as any).logoUrl ? "Replace Logo" : "Upload Logo"} className={(b as any).logoUrl ? "text-slate-600" : "text-rose-600 border-rose-200 bg-rose-50 hover:bg-rose-100"} onClick={() => setLogoBusiness({ id: b.id, name: b.name, logoUrl: (b as any).logoUrl })}>
                                   <Image className="w-4 h-4" />
                                 </Button>
@@ -1834,12 +1859,28 @@ export default function Admin() {
                                 <Button size="icon" variant="outline" title="Delete Business" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setDeletingBusiness({ id: b.id, name: b.name })}>
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
+                                </div>
                               </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="md:hidden divide-y divide-border">
+                    {filteredBusinesses.map(b => (
+                      <article key={b.id} className="p-4 space-y-4">
+                        <div className="flex items-start gap-3">
+                          {(b as any).logoUrl ? <img src={(b as any).logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover border shrink-0" /> : <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Store className="w-5 h-5 text-primary" /></div>}
+                          <div className="min-w-0 flex-1"><h3 className="font-semibold truncate">{b.name}</h3><p className="text-xs text-muted-foreground mt-0.5">{(b as any).categoryName || "Local business"} · {b.municipality || "Location not set"}</p><div className="flex flex-wrap gap-1.5 mt-2">{b.status === "approved" && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Active</Badge>}{b.status === "pending" && <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Needs review</Badge>}{(b as any).isClaimed ? <Badge variant="outline">Claimed</Badge> : <Badge variant="outline" className="text-orange-700">Unclaimed</Badge>}</div></div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button className="flex-1 h-11 rounded-xl" onClick={() => setLocation(`/manage/${b.id}`)}><Edit3 className="w-4 h-4 mr-2" /> Manage</Button>
+                          <Button variant="outline" className="h-11 rounded-xl" onClick={() => window.open(`/businesses/${b.slug || b.id}`, "_blank")}><ExternalLink className="w-4 h-4 mr-2" /> View</Button>
+                          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="icon" className="h-11 w-11 rounded-xl" aria-label={`More actions for ${b.name}`}><MoreHorizontal className="w-5 h-5" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => setLogoBusiness({ id: b.id, name: b.name, logoUrl: (b as any).logoUrl })}><Image className="w-4 h-4 mr-2" /> {(b as any).logoUrl ? "Replace logo" : "Upload logo"}</DropdownMenuItem><DropdownMenuItem onSelect={() => setStatsBusinessId(b.id)}><BarChart3 className="w-4 h-4 mr-2" /> Analytics</DropdownMenuItem>{!(b as any).isClaimed && <DropdownMenuItem onSelect={() => { setAssigningOwner({ id: b.id, name: b.name }); setAssignOwnerSearch(""); }}><UserPlus className="w-4 h-4 mr-2" /> Assign owner</DropdownMenuItem>}<DropdownMenuItem onSelect={() => feature({ id: b.id })}><Star className="w-4 h-4 mr-2" /> {b.featured ? "Remove featured" : "Mark featured"}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => setDeletingBusiness({ id: b.id, name: b.name })}><Trash2 className="w-4 h-4 mr-2" /> Delete listing</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                        </div>
+                      </article>
+                    ))}
                   </div>
                 </div>
               )}
