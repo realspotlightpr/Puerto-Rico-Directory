@@ -1,0 +1,17 @@
+priority,cluster,primary_keyword,language,intent,recommended_url,page_type,evidence,status
+1,Arecibo dining,restaurants in Arecibo,en,local-commercial,/puerto-rico/arecibo/restaurants/,inventory category,"9 approved restaurant listings; recurring competitor and community demand",ready-after-deploy
+1,Arecibo dining,restaurantes en Arecibo,es,local-commercial,/puerto-rico/arecibo/restaurants/,inventory category,"9 approved restaurant listings; Spanish competitor content exists",ready-after-deploy
+1,Arecibo discovery,things to do in Arecibo,en,travel-informational,/blog/things-to-do-in-arecibo/,editorial hub,"Current Discover Puerto Rico result and repeated traveler questions",research-and-write
+1,Arecibo discovery,qué hacer en Arecibo,es,travel-informational,/blog/que-hacer-en-arecibo/,editorial hub,"Repeated Spanish-language traveler phrasing",research-and-write
+1,Arecibo directory,Arecibo local businesses,en,local-commercial,/directory?municipality=Arecibo,directory landing,"39 of 40 approved businesses are in Arecibo",optimize-existing
+2,Arecibo shopping,shopping in Arecibo,en,local-commercial,/puerto-rico/arecibo/shopping/,inventory category,"5 approved retail and shopping listings",ready-after-deploy
+2,Arecibo services,professional services in Arecibo,en,local-commercial,/puerto-rico/arecibo/professional-services/,inventory category,"4 approved professional-service listings",ready-after-deploy
+2,Arecibo automotive,auto services in Arecibo,en,local-commercial,/puerto-rico/arecibo/automotive/,inventory category,"3 approved automotive listings",ready-after-deploy
+2,Arecibo home services,home services in Arecibo,en,local-commercial,/puerto-rico/arecibo/home-services/,inventory category,"3 approved home-service listings",ready-after-deploy
+2,Arecibo cafes,cafes and bakeries in Arecibo,en,local-commercial,/puerto-rico/arecibo/cafes-and-bakeries/,inventory category,"2 approved cafe and bakery listings",ready-after-deploy
+2,Arecibo beauty,beauty and spa in Arecibo,en,local-commercial,/puerto-rico/arecibo/beauty-and-spa/,inventory category,"2 approved beauty and spa listings",ready-after-deploy
+3,Puerto Rico directory,Puerto Rico business directory,en,navigational-commercial,/directory,directory hub,"Core product category; competitive SERP requires authority",optimize-existing
+3,Puerto Rico directory,directorio de negocios Puerto Rico,es,navigational-commercial,/directory,directory hub,"Core Spanish product category; volume not yet measured",optimize-existing
+3,Support local,support local businesses Puerto Rico,en,informational-commercial,/blog/support-local-businesses-puerto-rico,editorial,"Existing content aligned with merchant acquisition",refresh
+4,Future municipalities,[category] in [municipality],en,local-commercial,/puerto-rico/[municipality]/[category]/,inventory category,"Generate only after at least 2 approved matching listings and demand review",gated
+4,Future municipalities,[categoría] en [municipio],es,local-commercial,/puerto-rico/[municipality]/[category]/,inventory category,"Generate only with complete localized visible content and demand review",gated
