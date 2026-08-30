@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@workspace/replit-auth-web";
 import { supabase } from "@/lib/supabase";
+import { isStandaloneWebsite, socialPlatformForUrl } from "@/lib/businessLinks";
 
 // Premium checkout (HighLevel payment links). Payments/invoices/receipts run through HighLevel.
 const PREMIUM_CHECKOUT = {
@@ -1464,7 +1465,7 @@ export default function ManageBusiness() {
       address: business.address ?? "",
       phone: business.phone ?? "",
       email: business.email ?? "",
-      website: business.website ?? "",
+      website: isStandaloneWebsite(business.website) ? business.website : "",
       specialOffer: detail.specialOffer ?? "",
       menuTitle: detail.menuTitle ?? "",
       menuUrl: detail.menuUrl ?? "",
@@ -1475,12 +1476,14 @@ export default function ManageBusiness() {
       coverUrl: business.coverUrl ?? "",
     });
     const sl = detail.socialLinks;
+    const importedSocialPlatform = socialPlatformForUrl(business.website);
+    const importedSocialUrl = importedSocialPlatform ? business.website ?? "" : "";
     socialForm.reset({
-      facebook: sl?.facebook ?? "",
-      instagram: sl?.instagram ?? "",
-      tiktok: sl?.tiktok ?? "",
-      twitter: sl?.twitter ?? "",
-      youtube: sl?.youtube ?? "",
+      facebook: sl?.facebook ?? (importedSocialPlatform === "facebook" ? importedSocialUrl : ""),
+      instagram: sl?.instagram ?? (importedSocialPlatform === "instagram" ? importedSocialUrl : ""),
+      tiktok: sl?.tiktok ?? (importedSocialPlatform === "tiktok" ? importedSocialUrl : ""),
+      twitter: sl?.twitter ?? (importedSocialPlatform === "twitter" ? importedSocialUrl : ""),
+      youtube: sl?.youtube ?? (importedSocialPlatform === "youtube" ? importedSocialUrl : ""),
     });
   }, [business]);
 

@@ -13,6 +13,7 @@ import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { InteractiveBusinessMap } from "@/components/business/InteractiveBusinessMap";
+import { isStandaloneWebsite, socialPlatformForUrl } from "@/lib/businessLinks";
 
 // ── Analytics: log listing interactions via the log_listing_event RPC ──────────
 // Never let analytics break the page — every call is best-effort.
@@ -363,13 +364,14 @@ export default function BusinessDetail() {
 
   const b = business;
   const catName = b.categories?.name || "Local Business";
-  const social = (b.social_links || {}) as Record<string, string>;
+  const social = { ...((b.social_links || {}) as Record<string, string>) };
+  const importedSocialPlatform = socialPlatformForUrl(b.website);
+  if (importedSocialPlatform && !social[importedSocialPlatform]) social[importedSocialPlatform] = b.website;
   const descHtml = b.description ? DOMPurify.sanitize(b.description) : "";
   const looksHtml = /<[a-z][\s\S]*>/i.test(b.description || "");
   const rating = Number(b.average_rating || 0);
   const hasSocial = social.facebook || social.instagram || social.tiktok || social.twitter || social.youtube;
-  const websiteHost = (() => { try { return b.website ? new URL(b.website).hostname.replace(/^www\./, "") : ""; } catch { return ""; } })();
-  const publicWebsite = websiteHost && !/(^|\.)(facebook|instagram|tiktok|x|twitter|youtube)\.com$/i.test(websiteHost) ? b.website : null;
+  const publicWebsite = isStandaloneWebsite(b.website) ? b.website : null;
   const isVerified = b.status === "approved";
   const isClaimed = !!b.is_claimed;
 
