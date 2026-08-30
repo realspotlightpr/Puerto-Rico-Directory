@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { MUNICIPALITIES } from "@/lib/constants";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 
 type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
 type BusinessTab = "approved" | "claimed" | "unclaimed" | "pending" | "rejected" | "all";
@@ -824,6 +825,9 @@ export default function Admin() {
 
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [businessTab, setBusinessTab] = useState<BusinessTab>("approved");
+  const [missingLogosOnly, setMissingLogosOnly] = useState(false);
+  const [logoBusiness, setLogoBusiness] = useState<{ id: number; name: string; logoUrl?: string } | null>(null);
+  const [savingLogo, setSavingLogo] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [leadSearch, setLeadSearch] = useState("");
@@ -950,11 +954,13 @@ export default function Admin() {
   }[businessTab];
 
   const showStatusCol = businessTab === "pending" || businessTab === "rejected" || businessTab === "all";
-  const filteredBusinesses = tabBusinesses.filter(b =>
-    b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (b as any).ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.municipality?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBusinesses = tabBusinesses.filter(b => {
+    const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (b as any).ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.municipality?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch && (!missingLogosOnly || !(b as any).logoUrl);
+  });
+  const missingLogoCount = tabBusinesses.filter(b => !(b as any).logoUrl).length;
 
   const filteredUsers = (usersData?.users ?? []).filter(u => {
     const matchesSearch = 
@@ -971,6 +977,20 @@ export default function Admin() {
     queryClient.invalidateQueries({ queryKey: [`/api/admin/stats`] });
   };
   const invalidateLeads = () => queryClient.invalidateQueries({ queryKey: [`/api/admin/leads`] });
+
+  const saveQuickLogo = async (url: string) => {
+    if (!logoBusiness || !url) return;
+    setSavingLogo(true);
+    try {
+      const { error } = await supabase.from("businesses").update({ logo_url: url }).eq("id", logoBusiness.id);
+      if (error) throw error;
+      invalidateBusinesses();
+      toast({ title: "Logo updated", description: `${logoBusiness.name} now uses the new logo.` });
+      setLogoBusiness(null);
+    } catch (error: any) {
+      toast({ title: "Logo save failed", description: error?.message || "Try again.", variant: "destructive" });
+    } finally { setSavingLogo(false); }
+  };
 
   const { getToken } = useAuth();
 
@@ -1693,6 +1713,16 @@ export default function Admin() {
                 </div>
               </div>
 
+              <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+                <div>
+                  <p className="text-sm font-semibold">Logo manager</p>
+                  <p className="text-xs text-muted-foreground">Use the image button on any row to upload or replace its logo.</p>
+                </div>
+                <Button variant={missingLogosOnly ? "default" : "outline"} size="sm" className="rounded-xl gap-2" onClick={() => setMissingLogosOnly(value => !value)}>
+                  <Image className="w-4 h-4" /> {missingLogosOnly ? "Showing missing logos" : `Missing logos (${missingLogoCount})`}
+                </Button>
+              </div>
+
               {businessTab === "pending" && pendingCount > 0 && (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-4">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-500" />
@@ -1771,6 +1801,9 @@ export default function Admin() {
                             </td>
                             <td className="p-4">
                               <div className="flex items-center justify-end gap-1">
+                                <Button size="icon" variant="outline" title={(b as any).logoUrl ? "Replace Logo" : "Upload Logo"} className={(b as any).logoUrl ? "text-slate-600" : "text-rose-600 border-rose-200 bg-rose-50 hover:bg-rose-100"} onClick={() => setLogoBusiness({ id: b.id, name: b.name, logoUrl: (b as any).logoUrl })}>
+                                  <Image className="w-4 h-4" />
+                                </Button>
                                 {!(b as any).isClaimed && (
                                   <Button size="icon" variant="outline" title="Assign Business Owner" className="text-violet-600 border-violet-200 hover:bg-violet-50" onClick={() => { setAssigningOwner({ id: b.id, name: b.name }); setAssignOwnerSearch(""); }}>
                                     <UserPlus className="w-4 h-4" />
@@ -1819,6 +1852,18 @@ export default function Admin() {
               )}
             </div>
           )}
+
+          <Dialog open={!!logoBusiness} onOpenChange={open => { if (!open && !savingLogo) setLogoBusiness(null); }}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>{logoBusiness?.logoUrl ? "Replace logo" : "Upload logo"}</DialogTitle>
+                <DialogDescription>{logoBusiness?.name}. Square PNG, JPG, or WebP works best.</DialogDescription>
+              </DialogHeader>
+              {logoBusiness && (
+                <ImageUploadField value={logoBusiness.logoUrl} onChange={saveQuickLogo} label="Business logo" hint="The logo saves automatically after upload." aspectRatio="square" className="flex flex-col items-center" />
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* ── USERS ── */}
           {section === "users" && (
