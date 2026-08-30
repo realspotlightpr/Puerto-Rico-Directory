@@ -66,9 +66,9 @@ export function ClaimBusinessModal({ businessId, businessName, onClose }: ClaimB
             {error && <div role="alert" className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">{error}</div>}
             {step === 1 ? <>
               <div><h3 className="font-bold text-lg">How can we reach you?</h3><p className="text-sm text-muted-foreground mt-1">Use an email you check regularly. Business-domain email is fastest when available.</p></div>
-              <Field label="Full name" icon={<User className="w-4 h-4" />}><Input value={name} onChange={e => setName(e.target.value)} autoComplete="name" placeholder="Ana García" className="pl-10 h-12" autoFocus /></Field>
-              <Field label="Email" icon={<Mail className="w-4 h-4" />}><Input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" placeholder="you@business.com" className="pl-10 h-12" /></Field>
-              <Field label="Mobile number (optional)" icon={<Phone className="w-4 h-4" />}><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" inputMode="tel" placeholder="(787) 555-0123" className="pl-10 h-12" /></Field>
+              <Field id="claim-name" label="Full name" icon={<User className="w-4 h-4" />}><Input id="claim-name" value={name} onChange={e => setName(e.target.value)} autoComplete="name" placeholder="Ana García" className="pl-10 h-12" autoFocus /></Field>
+              <Field id="claim-email" label="Email" icon={<Mail className="w-4 h-4" />}><Input id="claim-email" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" placeholder="you@business.com" className="pl-10 h-12" /></Field>
+              <Field id="claim-phone" label="Mobile number (optional)" icon={<Phone className="w-4 h-4" />}><Input id="claim-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} autoComplete="tel" inputMode="tel" placeholder="(787) 555-0123" className="pl-10 h-12" /></Field>
               <Button type="button" onClick={continueToVerification} className="w-full h-12">Continue <ArrowRight className="w-4 h-4 ml-2" /></Button>
             </> : <>
               <div><h3 className="font-bold text-lg">Confirm your connection</h3><p className="text-sm text-muted-foreground mt-1">Choose the closest match. No documents are uploaded on this screen.</p></div>
@@ -85,6 +85,6 @@ export function ClaimBusinessModal({ businessId, businessName, onClose }: ClaimB
   );
 }
 
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return <div className="space-y-2"><Label>{label}</Label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>{children}</div></div>;
+function Field({ id, label, icon, children }: { id: string; label: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return <div className="space-y-2"><Label htmlFor={id}>{label}</Label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{icon}</span>{children}</div></div>;
 }
