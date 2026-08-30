@@ -155,6 +155,8 @@ function mapBusiness(row: any): any {
     phone: row.phone ?? undefined,
     email: row.email ?? undefined,
     website: row.website ?? undefined,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
     logoUrl: row.logo_url ?? undefined,
     coverUrl: row.cover_url ?? undefined,
     status: row.status,
@@ -170,6 +172,8 @@ function mapBusiness(row: any): any {
     // detail-only fields
     hours: row.hours ?? undefined,
     socialLinks: row.social_links ?? undefined,
+    menuTitle: row.menu_title ?? undefined,
+    menuUrl: row.menu_url ?? undefined,
     specialOffer: row.special_offer ?? null,
     isClaimed: !!row.is_claimed,
     pageViews: row.page_views ?? 0,
@@ -371,6 +375,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
           address: "address", phone: "phone", email: "email", website: "website",
           logoUrl: "logo_url", coverUrl: "cover_url", categoryId: "category_id",
           hours: "hours", socialLinks: "social_links", specialOffer: "special_offer", slug: "slug",
+          menuTitle: "menu_title", menuUrl: "menu_url",
         };
         for (const [k, col] of Object.entries(m)) if (b[k] !== undefined) upd[col] = b[k];
         const { data, error } = await supabase

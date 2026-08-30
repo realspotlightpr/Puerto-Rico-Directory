@@ -60,7 +60,7 @@ const detailsSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
-  website: z.string().url().optional().or(z.literal("")),
+  website: z.string().url().refine(value => !/(facebook|instagram|tiktok|twitter|x|youtube)\.com/i.test(new URL(value).hostname), "Use the Social Links tab for social profiles.").optional().or(z.literal("")),
   specialOffer: z.string().max(160, "Special offer must be 160 characters or fewer.").optional().or(z.literal("")),
   menuTitle: z.string().optional().or(z.literal("")),
   menuUrl: z.string().url().optional().or(z.literal("")),
@@ -84,6 +84,7 @@ const mediaSchema = z.object({
 const socialSchema = z.object({
   facebook: z.string().url().optional().or(z.literal("")),
   instagram: z.string().url().optional().or(z.literal("")),
+  tiktok: z.string().url().optional().or(z.literal("")),
   twitter: z.string().url().optional().or(z.literal("")),
   youtube: z.string().url().optional().or(z.literal("")),
 });
@@ -1447,7 +1448,7 @@ export default function ManageBusiness() {
 
   const socialForm = useForm({
     resolver: zodResolver(socialSchema),
-    defaultValues: { facebook: "", instagram: "", twitter: "" },
+    defaultValues: { facebook: "", instagram: "", tiktok: "", twitter: "", youtube: "" },
   });
 
   // Populate forms when business loads
@@ -1477,6 +1478,7 @@ export default function ManageBusiness() {
     socialForm.reset({
       facebook: sl?.facebook ?? "",
       instagram: sl?.instagram ?? "",
+      tiktok: sl?.tiktok ?? "",
       twitter: sl?.twitter ?? "",
       youtube: sl?.youtube ?? "",
     });
@@ -1530,6 +1532,7 @@ export default function ManageBusiness() {
         socialLinks: {
           facebook: data.facebook,
           instagram: data.instagram,
+          tiktok: data.tiktok,
           twitter: data.twitter,
           youtube: data.youtube,
         },
@@ -2306,6 +2309,13 @@ export default function ManageBusiness() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2"><Instagram className="w-4 h-4 text-pink-500" /> Instagram</FormLabel>
                       <FormControl><Input className="rounded-xl" placeholder="https://instagram.com/yourbusiness" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={socialForm.control} name="tiktok" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2"><span className="text-xs font-black">TT</span> TikTok</FormLabel>
+                      <FormControl><Input className="rounded-xl" placeholder="https://tiktok.com/@yourbusiness" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

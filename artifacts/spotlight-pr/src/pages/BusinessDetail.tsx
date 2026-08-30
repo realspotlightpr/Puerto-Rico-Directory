@@ -12,7 +12,7 @@ import DOMPurify from "dompurify";
 import { ClaimBusinessModal } from "@/components/business/ClaimBusinessModal";
 import { SavePremiumButton } from "@/components/SavePremiumButton";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { MapEmbed } from "@/pages/ActivityDetail";
+import { InteractiveBusinessMap } from "@/components/business/InteractiveBusinessMap";
 
 // ── Analytics: log listing interactions via the log_listing_event RPC ──────────
 // Never let analytics break the page — every call is best-effort.
@@ -58,6 +58,9 @@ type NearbyBusiness = {
   logo_url: string | null;
   cover_url: string | null;
   municipality: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   average_rating: number | null;
   review_count: number | null;
   categories?: { name: string | null } | null;
@@ -243,7 +246,7 @@ export default function BusinessDetail() {
 
   const loadNearby = useCallback(async (b: any) => {
     try {
-      const cols = "id, name, slug, logo_url, cover_url, municipality, average_rating, review_count, categories(name)";
+      const cols = "id, name, slug, logo_url, cover_url, municipality, address, latitude, longitude, average_rating, review_count, categories(name)";
       const collected: NearbyBusiness[] = [];
       const seen = new Set<number>([b.id]);
       const push = (rows: NearbyBusiness[] | null) => {
@@ -364,7 +367,9 @@ export default function BusinessDetail() {
   const descHtml = b.description ? DOMPurify.sanitize(b.description) : "";
   const looksHtml = /<[a-z][\s\S]*>/i.test(b.description || "");
   const rating = Number(b.average_rating || 0);
-  const hasSocial = social.facebook || social.instagram || social.twitter || social.youtube;
+  const hasSocial = social.facebook || social.instagram || social.tiktok || social.twitter || social.youtube;
+  const websiteHost = (() => { try { return b.website ? new URL(b.website).hostname.replace(/^www\./, "") : ""; } catch { return ""; } })();
+  const publicWebsite = websiteHost && !/(^|\.)(facebook|instagram|tiktok|x|twitter|youtube)\.com$/i.test(websiteHost) ? b.website : null;
   const isVerified = b.status === "approved";
   const isClaimed = !!b.is_claimed;
 
@@ -425,6 +430,7 @@ export default function BusinessDetail() {
               <div className="flex items-center gap-3 border-t pt-4 mt-4">
                 {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Facebook className="w-5 h-5" /></a>}
                 {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Instagram className="w-5 h-5" /></a>}
+                {social.tiktok && <a href={social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="text-muted-foreground hover:text-primary font-bold text-xs">TT</a>}
                 {social.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Twitter className="w-5 h-5" /></a>}
                 {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><Youtube className="w-5 h-5" /></a>}
               </div>
@@ -467,7 +473,7 @@ export default function BusinessDetail() {
             <h3 className="font-display font-bold">Contact &amp; visit</h3>
             <div className="grid gap-2">
               {b.phone && <a href={`tel:${b.phone}`} onClick={() => track(b.id, "phone_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90"><Phone className="w-4 h-4" /> Call now</a>}
-              {b.website && <a href={b.website} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Globe className="w-4 h-4" /> Visit website</a>}
+              {publicWebsite && <a href={publicWebsite} target="_blank" rel="noopener noreferrer" onClick={() => track(b.id, "website_click")} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Globe className="w-4 h-4" /> Visit website</a>}
               {b.email && <a href={`mailto:${b.email}`} className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border font-semibold text-sm hover:bg-muted"><Mail className="w-4 h-4" /> Email</a>}
             </div>
             {hasSocial && (
@@ -476,6 +482,7 @@ export default function BusinessDetail() {
                 <div className="flex items-center gap-2">
                   {social.facebook && <a href={social.facebook} target="_blank" rel="noopener noreferrer" title="Facebook" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 transition-colors"><Facebook className="w-4 h-4" /></a>}
                   {social.instagram && <a href={social.instagram} target="_blank" rel="noopener noreferrer" title="Instagram" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-pink-50 hover:border-pink-300 hover:text-pink-600 transition-colors"><Instagram className="w-4 h-4" /></a>}
+                  {social.tiktok && <a href={social.tiktok} target="_blank" rel="noopener noreferrer" title="TikTok" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-slate-100 hover:border-slate-400 transition-colors text-xs font-bold">TT</a>}
                   {social.twitter && <a href={social.twitter} target="_blank" rel="noopener noreferrer" title="X (Twitter)" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-muted hover:border-foreground/30 transition-colors"><Twitter className="w-4 h-4" /></a>}
                   {social.youtube && <a href={social.youtube} target="_blank" rel="noopener noreferrer" title="YouTube" className="flex-1 flex items-center justify-center py-2 rounded-xl border hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors"><Youtube className="w-4 h-4" /></a>}
                 </div>
@@ -494,7 +501,7 @@ export default function BusinessDetail() {
           {b.hours && <Card><CardContent className="p-5"><HoursBlock hours={b.hours} /></CardContent></Card>}
 
           {(b.address || b.municipality) && (
-            <MapEmbed query={[b.address, b.municipality, "Puerto Rico"].filter(Boolean).join(", ")} lat={(b as any).latitude} lon={(b as any).longitude} title={b.name} />
+            <InteractiveBusinessMap business={b} nearby={nearby} />
           )}
 
           {!isClaimed && !b.owner_id && (
