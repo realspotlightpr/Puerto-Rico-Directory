@@ -337,6 +337,14 @@ export default function BusinessDetail() {
     setMeta('meta[property="og:title"]', "property", "og:title", title);
     setMeta('meta[property="og:description"]', "property", "og:description", description.slice(0, 200));
     setMeta('meta[property="og:url"]', "property", "og:url", canonical);
+    setMeta('meta[property="og:site_name"]', "property", "og:site_name", "Spotlight Puerto Rico");
+    setMeta('meta[property="og:locale"]', "property", "og:locale", "en_US");
+    const image = business.cover_url || business.logo_url || "https://spotlightpuertorico.com/opengraph.jpg";
+    setMeta('meta[property="og:image"]', "property", "og:image", image);
+    setMeta('meta[property="og:image:alt"]', "property", "og:image:alt", `${business.name} in ${municipality}, Puerto Rico`);
+    setMeta('meta[name="twitter:title"]', "name", "twitter:title", title);
+    setMeta('meta[name="twitter:description"]', "name", "twitter:description", description.slice(0, 200));
+    setMeta('meta[name="twitter:image"]', "name", "twitter:image", image);
     let canonicalLink = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonicalLink) { canonicalLink = document.createElement("link"); canonicalLink.rel = "canonical"; document.head.appendChild(canonicalLink); }
     canonicalLink.href = canonical;
@@ -344,7 +352,11 @@ export default function BusinessDetail() {
     const schema = document.createElement("script");
     schema.id = "spotlight-business-schema";
     schema.type = "application/ld+json";
-    schema.text = JSON.stringify({ "@context": "https://schema.org", "@type": "LocalBusiness", "@id": `${canonical}#business`, name: business.name, description, url: canonical, image: business.cover_url || business.logo_url || undefined, telephone: business.phone || undefined, address: { "@type": "PostalAddress", streetAddress: business.address || undefined, addressLocality: business.municipality || undefined, addressRegion: "PR", addressCountry: "US" } });
+    const sameAs = [business.website, ...Object.values((business.social_links || {}) as Record<string, string>)].filter((value): value is string => typeof value === "string" && /^https?:\/\//i.test(value));
+    const localBusiness: Record<string, unknown> = { "@type": "LocalBusiness", "@id": `${canonical}#business`, name: business.name, description, url: canonical, image, logo: business.logo_url || undefined, telephone: business.phone || undefined, email: business.email || undefined, sameAs: sameAs.length ? [...new Set(sameAs)] : undefined, address: { "@type": "PostalAddress", streetAddress: business.address || undefined, addressLocality: business.municipality || undefined, addressRegion: "PR", addressCountry: "US" } };
+    if (Number.isFinite(Number(business.latitude)) && Number.isFinite(Number(business.longitude))) localBusiness.geo = { "@type": "GeoCoordinates", latitude: Number(business.latitude), longitude: Number(business.longitude) };
+    if (Number(business.average_rating) > 0 && Number(business.review_count) > 0) localBusiness.aggregateRating = { "@type": "AggregateRating", ratingValue: Number(business.average_rating), reviewCount: Number(business.review_count) };
+    schema.text = JSON.stringify({ "@context": "https://schema.org", "@graph": [localBusiness, { "@type": "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: title, description, inLanguage: "en", mainEntity: { "@id": `${canonical}#business` }, isPartOf: { "@id": "https://spotlightpuertorico.com/#website" } }] });
     document.head.appendChild(schema);
     return () => { schema.remove(); };
   }, [business]);
