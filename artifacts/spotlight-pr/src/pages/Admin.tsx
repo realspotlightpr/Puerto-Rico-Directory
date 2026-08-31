@@ -35,7 +35,7 @@ import {
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, KeyRound, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
-  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass, MoreHorizontal,
+  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass, MoreHorizontal, ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -827,6 +827,7 @@ export default function Admin() {
   const [section, setSection] = useState<AdminSection>("dashboard");
   const [businessTab, setBusinessTab] = useState<BusinessTab>("approved");
   const [missingLogosOnly, setMissingLogosOnly] = useState(false);
+  const [businessPage, setBusinessPage] = useState(1);
   const [logoBusiness, setLogoBusiness] = useState<{ id: number; name: string; logoUrl?: string } | null>(null);
   const [savingLogo, setSavingLogo] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>("all");
@@ -922,10 +923,10 @@ export default function Admin() {
   // ── Queries ──
   const { data: stats } = useGetAdminStats({ query: { enabled: isAdmin } });
   const { data: categoriesData } = useListCategories();
-  const { data: approvedData } = useAdminListBusinesses({ status: "approved" }, { query: { enabled: isAdmin } });
-  const { data: pendingData } = useAdminListBusinesses({ status: "pending" }, { query: { enabled: isAdmin } });
-  const { data: rejectedData } = useAdminListBusinesses({ status: "rejected" }, { query: { enabled: isAdmin } });
-  const { data: allData } = useAdminListBusinesses({ status: "all" }, { query: { enabled: isAdmin && businessTab === "all" } });
+  const { data: approvedData } = useAdminListBusinesses({ status: "approved", limit: 1000 }, { query: { enabled: isAdmin } });
+  const { data: pendingData } = useAdminListBusinesses({ status: "pending", limit: 1000 }, { query: { enabled: isAdmin } });
+  const { data: rejectedData } = useAdminListBusinesses({ status: "rejected", limit: 1000 }, { query: { enabled: isAdmin } });
+  const { data: allData } = useAdminListBusinesses({ status: "all", limit: 1000 }, { query: { enabled: isAdmin && businessTab === "all" } });
   const { data: usersData } = useAdminListUsers({}, { query: { enabled: isAdmin } });
   const { data: reviewsData } = useAdminListReviews({}, { query: { enabled: isAdmin } });
   const { data: leadsData, refetch: refetchLeads } = useAdminGetLeads(
@@ -962,6 +963,14 @@ export default function Admin() {
     return matchesSearch && (!missingLogosOnly || !(b as any).logoUrl);
   });
   const missingLogoCount = tabBusinesses.filter(b => !(b as any).logoUrl).length;
+  const businessesPerPage = 20;
+  const businessTotalPages = Math.max(1, Math.ceil(filteredBusinesses.length / businessesPerPage));
+  const visibleBusinesses = filteredBusinesses.slice((businessPage - 1) * businessesPerPage, businessPage * businessesPerPage);
+
+  useEffect(() => { setBusinessPage(1); }, [businessTab, searchTerm, missingLogosOnly]);
+  useEffect(() => {
+    if (businessPage > businessTotalPages) setBusinessPage(businessTotalPages);
+  }, [businessPage, businessTotalPages]);
 
   const filteredUsers = (usersData?.users ?? []).filter(u => {
     const matchesSearch = 
@@ -1754,7 +1763,7 @@ export default function Admin() {
 
               {filteredBusinesses.length > 0 && (
                 <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
+                  <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left text-sm">
                       <thead className="bg-muted/40 text-muted-foreground border-b border-border">
                         <tr>
@@ -1767,7 +1776,7 @@ export default function Admin() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {filteredBusinesses.map(b => (
+                        {visibleBusinesses.map(b => (
                           <tr key={b.id} className={`hover:bg-muted/20 transition-colors ${businessTab === "pending" ? "bg-amber-50/30" : ""}`}>
                             <td className="p-4">
                               <div className="flex items-center gap-3">
@@ -1868,7 +1877,7 @@ export default function Admin() {
                     </table>
                   </div>
                   <div className="md:hidden divide-y divide-border">
-                    {filteredBusinesses.map(b => (
+                    {visibleBusinesses.map(b => (
                       <article key={b.id} className="p-4 space-y-4">
                         <div className="flex items-start gap-3">
                           {(b as any).logoUrl ? <img src={(b as any).logoUrl} alt="" className="w-12 h-12 rounded-xl object-cover border shrink-0" /> : <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><Store className="w-5 h-5 text-primary" /></div>}
@@ -1881,6 +1890,20 @@ export default function Admin() {
                         </div>
                       </article>
                     ))}
+                  </div>
+                  <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-muted-foreground" aria-live="polite">
+                      Showing {(businessPage - 1) * businessesPerPage + 1}–{Math.min(businessPage * businessesPerPage, filteredBusinesses.length)} of {filteredBusinesses.length} listings
+                    </p>
+                    <div className="flex items-center justify-between gap-2 sm:justify-end">
+                      <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" disabled={businessPage === 1} onClick={() => setBusinessPage(page => Math.max(1, page - 1))}>
+                        <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                      </Button>
+                      <span className="min-w-20 text-center text-xs font-semibold">Page {businessPage} of {businessTotalPages}</span>
+                      <Button type="button" variant="outline" size="sm" className="h-9 rounded-lg" disabled={businessPage === businessTotalPages} onClick={() => setBusinessPage(page => Math.min(businessTotalPages, page + 1))}>
+                        Next <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

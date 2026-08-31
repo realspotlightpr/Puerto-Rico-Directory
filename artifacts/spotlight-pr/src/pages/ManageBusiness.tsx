@@ -102,10 +102,10 @@ const API_BASE = import.meta.env.BASE_URL || "/";
 
 function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ["div", "p", "h1", "h2", "h3", "h4", "span", "ul", "ol", "li", "strong", "em", "br", "section", "article"],
-    ALLOWED_ATTR: ["style"],
+    ALLOWED_TAGS: ["div", "p", "h1", "h2", "h3", "h4", "span", "ul", "ol", "li", "strong", "em", "br", "section", "article", "a", "img", "hr"],
+    ALLOWED_ATTR: ["style", "href", "src", "alt", "title", "target", "rel"],
     FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "link"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "href", "src"],
+    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover"],
   });
 }
 
@@ -127,6 +127,40 @@ const BLOCK_PALETTE: { type: BuilderBlockType; label: string; icon: string; defa
   { type: "cta",       label: "CTA Button",  icon: "↗",  defaults: { text: "Contact Us", url: "", align: "center", color: "primary" } },
   { type: "image",     label: "Image",       icon: "🖼", defaults: { url: "", alt: "", width: "full", caption: "" } },
   { type: "divider",   label: "Divider",     icon: "—",  defaults: { style: "solid" } },
+];
+
+const PAGE_TEMPLATES: { id: string; name: string; description: string; accent: string; blocks: Omit<BuilderBlock, "id">[] }[] = [
+  { id: "essentials", name: "Business Essentials", description: "A polished overview for most local businesses.", accent: "bg-teal-500", blocks: [
+    { type: "heading", data: { text: "Welcome to Our Business", level: "h2", align: "left" } },
+    { type: "text", data: { content: "Tell visitors what makes your business special, who you serve, and what they can expect when they visit.", align: "left" } },
+    { type: "highlight", data: { content: "Add your most important customer promise, specialty, or current offer here.", color: "green" } },
+    { type: "heading", data: { text: "What We Offer", level: "h3", align: "left" } },
+    { type: "list", data: { items: ["Primary product or service", "Second popular offering", "Another reason customers choose you"], style: "bullet" } },
+    { type: "cta", data: { text: "Contact Us", url: "", align: "left", color: "primary" } },
+  ] },
+  { id: "food", name: "Restaurant & Café", description: "Lead with atmosphere, specialties, and a reservation action.", accent: "bg-orange-500", blocks: [
+    { type: "heading", data: { text: "A Taste Worth Discovering", level: "h2", align: "center" } },
+    { type: "text", data: { content: "Describe your food, atmosphere, neighborhood, and the experience guests can look forward to.", align: "center" } },
+    { type: "columns", data: { left: "Signature dishes\n• Add a customer favorite\n• Add another specialty", right: "Good to know\n• Dining style\n• Dietary options\n• Parking or reservations" } },
+    { type: "highlight", data: { content: "Share a chef special, happy hour, live-music night, or seasonal menu update.", color: "orange" } },
+    { type: "cta", data: { text: "Reserve or Contact Us", url: "", align: "center", color: "orange" } },
+  ] },
+  { id: "services", name: "Professional Services", description: "Build trust and explain the path from inquiry to completion.", accent: "bg-blue-600", blocks: [
+    { type: "heading", data: { text: "Trusted Local Expertise", level: "h2", align: "left" } },
+    { type: "text", data: { content: "Explain the problem you solve, your experience, and the clients or communities you serve.", align: "left" } },
+    { type: "heading", data: { text: "How We Can Help", level: "h3", align: "left" } },
+    { type: "list", data: { items: ["Core service and its benefit", "Additional service or specialty", "Ongoing support or consultation"], style: "bullet" } },
+    { type: "highlight", data: { content: "Add a license, credential, years of experience, service guarantee, or trust signal.", color: "blue" } },
+    { type: "cta", data: { text: "Request a Consultation", url: "", align: "left", color: "dark" } },
+  ] },
+  { id: "experience", name: "Tours & Experiences", description: "Show the experience, key details, and booking action.", accent: "bg-purple-600", blocks: [
+    { type: "heading", data: { text: "Experience Puerto Rico With Us", level: "h2", align: "center" } },
+    { type: "text", data: { content: "Describe the experience, the places guests will see, and what makes your approach memorable.", align: "center" } },
+    { type: "heading", data: { text: "Experience Highlights", level: "h3", align: "left" } },
+    { type: "list", data: { items: ["Highlight or destination", "What is included", "Ideal group size or guest type"], style: "bullet" } },
+    { type: "columns", data: { left: "Plan ahead\n• Duration\n• Meeting point\n• What to bring", right: "Included\n• Add inclusions\n• Languages offered\n• Accessibility details" } },
+    { type: "cta", data: { text: "Book This Experience", url: "", align: "center", color: "green" } },
+  ] },
 ];
 
 const HIGHLIGHT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -495,6 +529,21 @@ function HtmlDescriptionEditor({
     setShowPalette(false);
   }
 
+  function applyTemplate(templateId: string) {
+    const template = PAGE_TEMPLATES.find(item => item.id === templateId);
+    if (!template) return;
+    if (builderBlocks.length > 0 && !window.confirm(`Replace the current builder blocks with the ${template.name} template? Your saved description will not change until you select Apply to Description.`)) return;
+    const stamp = Date.now();
+    setBuilderBlocks(template.blocks.map((block, index) => ({
+      ...block,
+      id: `template_${template.id}_${stamp}_${index}`,
+      data: { ...block.data },
+    })));
+    setMode("builder");
+    setShowPalette(false);
+    toast({ title: `${template.name} loaded`, description: "Customize each block, then apply it to your description when ready." });
+  }
+
   function updateBlock(id: string, data: Record<string, any>) {
     setBuilderBlocks(prev => prev.map(b => b.id === id ? { ...b, data } : b));
   }
@@ -559,6 +608,28 @@ function HtmlDescriptionEditor({
       {/* ── BUILDER MODE ── */}
       {mode === "builder" && (
         <div className="space-y-3">
+          <section className="rounded-xl border border-border bg-muted/20 p-3 sm:p-4" aria-labelledby="page-template-heading">
+            <div className="mb-3">
+              <h3 id="page-template-heading" className="text-sm font-semibold text-foreground">Start with a template</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">Choose a layout, then edit, reorder, or remove every element below.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {PAGE_TEMPLATES.map(template => (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={() => applyTemplate(template.id)}
+                  className="group rounded-xl border border-border bg-white p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <span className={`mb-3 block h-1.5 w-10 rounded-full ${template.accent}`} />
+                  <span className="block text-sm font-semibold text-foreground group-hover:text-primary">{template.name}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{template.description}</span>
+                  <span className="mt-3 block text-xs font-semibold text-primary">Use template →</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Blocks */}
           {builderBlocks.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 text-center py-10">
