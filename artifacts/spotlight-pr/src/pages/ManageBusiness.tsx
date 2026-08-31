@@ -1719,20 +1719,16 @@ export default function ManageBusiness() {
       )}
 
       {/* ── Content ── */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {setupComplete < setupItems.length && (
-          <section className="mb-6 bg-white border border-border rounded-2xl p-5 md:p-6 shadow-sm" aria-labelledby="listing-setup-title">
-            <div className="flex items-start justify-between gap-5"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Owner setup</p><h2 id="listing-setup-title" className="font-display text-xl font-bold mt-1">Make your listing ready for customers</h2><p className="text-sm text-muted-foreground mt-1">Complete the essentials first. You can publish improvements one section at a time.</p></div><span className="text-sm font-bold text-primary shrink-0">{setupComplete}/{setupItems.length}</span></div>
-            <div className="h-2 bg-muted rounded-full mt-4"><div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(setupComplete / setupItems.length) * 100}%` }} /></div>
-            <ul className="mt-4 grid sm:grid-cols-2 gap-2">{setupItems.map(item => <li key={item.label} className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${item.done ? "bg-emerald-50 text-emerald-800" : "bg-slate-50 text-slate-700"}`}>{item.done ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <span className="w-4 h-4 rounded-full border-2 border-slate-300" />}{item.label}</li>)}</ul>
-          </section>
-        )}
+      <div className={`container mx-auto px-4 py-8 ${setupComplete < setupItems.length ? "max-w-7xl lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6" : "max-w-4xl"}`}>
+        <main className="order-2 min-w-0 lg:order-1">
         {!isPremium && (
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
-            <Star className="w-5 h-5 text-amber-500 shrink-0" />
-            <div className="min-w-0 flex-1"><p className="text-sm font-semibold text-amber-950">Promote this listing</p><p className="text-xs text-amber-800 mt-0.5">Featured placement, AI tools, and monthly Instagram promotion.</p></div>
-            <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-white hover:bg-amber-600">View upgrade</a>
-          </div>
+          <section className="mb-4 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-white shadow-sm" aria-labelledby="upgrade-listing-title">
+            <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm"><Star className="h-5 w-5" /></div>
+              <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-700">Grow your reach</p><h2 id="upgrade-listing-title" className="mt-0.5 text-base font-bold text-amber-950">Promote this listing</h2><p className="mt-1 text-sm text-amber-900/80">Get featured placement, AI tools, and monthly Instagram promotion.</p></div>
+              <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2">View upgrade</a>
+            </div>
+          </section>
         )}
         {isPremium && (
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 flex items-center gap-3">
@@ -2658,6 +2654,21 @@ export default function ManageBusiness() {
           </TabsContent>
 
         </Tabs>
+        </main>
+        {setupComplete < setupItems.length && (
+          <aside className="order-1 mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-36" aria-label="Listing setup progress">
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-sm" aria-labelledby="listing-setup-title">
+              <div className="flex items-start justify-between gap-4">
+                <div><p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Owner setup</p><h2 id="listing-setup-title" className="mt-1 font-display text-lg font-bold">Ready for customers</h2></div>
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{setupComplete}/{setupItems.length}</span>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Complete these essentials to make your listing easier to trust and use.</p>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(setupComplete / setupItems.length) * 100}%` }} /></div>
+              <ul className="mt-4 space-y-2">{setupItems.map(item => <li key={item.label} className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-sm ${item.done ? "bg-emerald-50 text-emerald-800" : "border border-slate-200 bg-slate-50 text-slate-700"}`}>{item.done ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> : <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border-2 border-slate-300" />}<span className="leading-snug">{item.label}</span></li>)}</ul>
+              <p className="mt-4 text-xs text-muted-foreground">This panel disappears automatically when all steps are complete.</p>
+            </section>
+          </aside>
+        )}
       </div>
 
       {/* ── AI Image Generation Dialog ── */}
