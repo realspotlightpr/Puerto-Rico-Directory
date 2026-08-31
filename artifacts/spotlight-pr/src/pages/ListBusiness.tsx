@@ -387,15 +387,12 @@ export default function ListBusiness() {
                         type="email"
                         placeholder="you@example.com"
                         className="rounded-xl h-11"
-                        readOnly={isAuthenticated && !!user?.email}
                         {...field}
                       />
                     </FormControl>
-                    {!isAuthenticated && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        An account will be created at this email so you can manage your listing.
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isAuthenticated ? "Confirm the email where you want listing updates sent." : "An account will be created at this email so you can manage your listing."}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )} />
