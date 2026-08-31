@@ -4,7 +4,7 @@ import { useListMyBusinesses } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import {
   PlusCircle, Store, Clock, CheckCircle2, XCircle, Settings,
-  Eye, Star, MessageSquare, ChevronRight, TrendingUp, AlertCircle, Bot,
+  Eye, Star, MessageSquare, ChevronRight, TrendingUp, AlertCircle, Bot, BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -194,7 +194,12 @@ export default function Dashboard() {
                       </Link>
                     )}
                     <Link href={`/manage/${business.id}`} className="flex-1 sm:flex-none">
-                      <Button size="sm" className="rounded-lg gap-1.5 w-full shadow-sm shadow-primary/20">
+                      <Button variant="outline" size="sm" className="rounded-lg gap-1.5 w-full border-primary/30 text-primary hover:bg-primary/5">
+                        <BarChart3 className="w-3.5 h-3.5" /> Analytics
+                      </Button>
+                    </Link>
+                    <Link href={`/manage/${business.id}`} className="flex-1 sm:flex-none">
+                      <Button variant="outline" size="sm" className="rounded-lg gap-1.5 w-full">
                         <Settings className="w-3.5 h-3.5" /> Manage
                       </Button>
                     </Link>

@@ -229,12 +229,14 @@ function blocksToHtml(blocks: BuilderBlock[]): string {
   return blocks.map(blockToHtml).join("\n");
 }
 
-function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst, isLast }: {
+function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, onSelect, isEditing, isFirst, isLast }: {
   block: BuilderBlock;
   onChange: (data: Record<string, any>) => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onSelect: () => void;
+  isEditing: boolean;
   isFirst: boolean;
   isLast: boolean;
 }) {
@@ -244,7 +246,7 @@ function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
   const labelCls = "text-xs font-medium text-muted-foreground block mb-1";
 
   return (
-    <div className="rounded-xl border border-border bg-white shadow-sm">
+    <div className={`group rounded-xl border bg-white transition-all ${isEditing ? "border-primary shadow-md ring-2 ring-primary/10" : "border-border hover:border-primary/40"}`}>
       {/* Block header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/30 rounded-t-xl">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex-1">
@@ -261,8 +263,14 @@ function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
         </button>
       </div>
 
+      <button type="button" onClick={onSelect} className="block w-full cursor-pointer px-5 py-5 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30" aria-expanded={isEditing}>
+        <span className="sr-only">Edit this {BLOCK_PALETTE.find(p => p.type === type)?.label || type} section</span>
+        <div className="pointer-events-none about-html-preview" dangerouslySetInnerHTML={{ __html: sanitizeHtml(blockToHtml(block)) || "<p style='color:#94a3b8;font-style:italic'>Click to add content</p>" }} />
+        {!isEditing && <span className="mt-2 block text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">Click to edit</span>}
+      </button>
+
       {/* Block fields */}
-      <div className="p-4 space-y-3">
+      {isEditing && <div className="border-t border-border bg-slate-50/70 p-4 space-y-3">
         {type === "heading" && (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -461,7 +469,7 @@ function BlockEditor({ block, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
             </select>
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -481,6 +489,7 @@ function HtmlDescriptionEditor({
   const [aiHtml, setAiHtml] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [builderBlocks, setBuilderBlocks] = useState<BuilderBlock[]>([]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [showPalette, setShowPalette] = useState(false);
   const { toast } = useToast();
   const { getToken } = useAuth();
@@ -526,6 +535,7 @@ function HtmlDescriptionEditor({
       data: { ...(palette?.defaults || {}) },
     };
     setBuilderBlocks(prev => [...prev, newBlock]);
+    setSelectedBlockId(newBlock.id);
     setShowPalette(false);
   }
 
@@ -539,6 +549,7 @@ function HtmlDescriptionEditor({
       id: `template_${template.id}_${stamp}_${index}`,
       data: { ...block.data },
     })));
+    setSelectedBlockId(`template_${template.id}_${stamp}_0`);
     setMode("builder");
     setShowPalette(false);
     toast({ title: `${template.name} loaded`, description: "Customize each block, then apply it to your description when ready." });
@@ -550,6 +561,7 @@ function HtmlDescriptionEditor({
 
   function removeBlock(id: string) {
     setBuilderBlocks(prev => prev.filter(b => b.id !== id));
+    setSelectedBlockId(current => current === id ? null : current);
   }
 
   function moveBlock(id: string, dir: "up" | "down") {
@@ -649,6 +661,8 @@ function HtmlDescriptionEditor({
                   onRemove={() => removeBlock(block.id)}
                   onMoveUp={() => moveBlock(block.id, "up")}
                   onMoveDown={() => moveBlock(block.id, "down")}
+                  onSelect={() => setSelectedBlockId(current => current === block.id ? null : block.id)}
+                  isEditing={selectedBlockId === block.id}
                 />
               ))}
             </div>
@@ -717,10 +731,13 @@ function HtmlDescriptionEditor({
 
       {/* ── PREVIEW MODE ── */}
       {mode === "preview" && (
-        <div
-          className="min-h-[160px] rounded-xl border border-border bg-white p-4 text-sm leading-relaxed text-foreground overflow-auto about-html-preview"
-          dangerouslySetInnerHTML={{ __html: sanitized || "<p class='text-muted-foreground italic'>Preview will appear here…</p>" }}
-        />
+        <div className="space-y-2">
+          {builderBlocks.length > 0 && <p className="text-xs font-medium text-amber-700">Previewing your unsaved builder layout. Select Apply to Description when it is ready.</p>}
+          <div
+            className="min-h-[160px] rounded-xl border border-border bg-white p-5 text-sm leading-relaxed text-foreground overflow-auto about-html-preview"
+            dangerouslySetInnerHTML={{ __html: (builderBlocks.length ? builderPreview : sanitized) || "<p class='text-muted-foreground italic'>Preview will appear here…</p>" }}
+          />
+        </div>
       )}
 
       {/* ── AI PANEL ── */}
@@ -1178,7 +1195,8 @@ export default function ManageBusiness() {
 
   // ── Analytics (real interaction data from listing_events) ──
   const [analytics, setAnalytics] = useState<{ views: number; phone: number; website: number; maps: number; daily: { date: string; count: number }[]; sources: { source: string; count: number }[] } | null>(null);
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState("analytics");
+  const [detailsSection, setDetailsSection] = useState<"page" | "business" | "url">("page");
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   useEffect(() => {
     const bid = (business as any)?.id;
@@ -1740,36 +1758,27 @@ export default function ManageBusiness() {
           <div className="mb-6 sticky top-16 z-20 bg-slate-50/95 backdrop-blur py-2">
             <label htmlFor="owner-mobile-section" className="sr-only">Listing section</label>
             <select id="owner-mobile-section" value={activeTab} onChange={event => setActiveTab(event.target.value)} className="md:hidden w-full h-12 rounded-xl border border-border bg-white px-3 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <optgroup label="Listing"><option value="details">Business details</option><option value="hours">Hours</option><option value="media">Logo & cover</option><option value="social">Social links</option><option value="menu">Menu</option></optgroup>
-              <optgroup label="Customers"><option value="reviews">Reviews</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option></optgroup>
-              <optgroup label="Growth"><option value="analytics">Analytics</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option></optgroup>
+              <optgroup label="Workspace"><option value="analytics">Analytics</option><option value="details">Edit page & business info</option><option value="reviews">Customers & reviews</option></optgroup>
+              <optgroup label="Listing tools"><option value="hours">Hours</option><option value="media">Photos & branding</option><option value="social">Links & social</option><option value="menu">Menu</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option></optgroup>
+              <optgroup label="Creative tools"><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option></optgroup>
             </select>
             <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm">
           <TabsList className="bg-transparent p-0 h-auto flex gap-1 justify-start flex-1">
-            <TabsTrigger value="details" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Store className="w-4 h-4" /> Details
+            <TabsTrigger value="analytics" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
+              <BarChart3 className="w-4 h-4" /> Analytics
             </TabsTrigger>
-            <TabsTrigger value="hours" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Clock className="w-4 h-4" /> Hours
-            </TabsTrigger>
-            <TabsTrigger value="media" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Upload className="w-4 h-4" /> Media
-            </TabsTrigger>
-            <TabsTrigger value="social" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Globe className="w-4 h-4" /> Social Links
-            </TabsTrigger>
-            <TabsTrigger value="menu" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <FileText className="w-4 h-4" /> Menu
-            </TabsTrigger>
+            <button type="button" onClick={() => { setDetailsSection("page"); setActiveTab("details"); }} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${activeTab === "details" && detailsSection === "page" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <LayoutGrid className="w-4 h-4" /> Edit page
+            </button>
+            <button type="button" onClick={() => { setDetailsSection("business"); setActiveTab("details"); }} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${activeTab === "details" && detailsSection === "business" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+              <MapPin className="w-4 h-4" /> Business info
+            </button>
             <TabsTrigger value="reviews" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Star className="w-4 h-4" /> Reviews {reviewCount > 0 && `(${reviewCount})`}
-            </TabsTrigger>
-            <TabsTrigger value="inbox" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <Inbox className="w-4 h-4" /> Inbox
+              <MessageSquare className="w-4 h-4" /> Customers {reviewCount > 0 && `(${reviewCount})`}
             </TabsTrigger>
           </TabsList>
-              <select aria-label="More listing tools" value={["analytics","ai","image-studio","media-library","form-builder"].includes(activeTab) ? activeTab : ""} onChange={event => event.target.value && setActiveTab(event.target.value)} className="h-10 rounded-lg border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option value="">More tools</option><option value="analytics">Analytics</option><option value="form-builder">Contact form</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option>
+              <select aria-label="More listing tools" value={["hours","media","social","menu","inbox","ai","image-studio","media-library","form-builder"].includes(activeTab) ? activeTab : ""} onChange={event => event.target.value && setActiveTab(event.target.value)} className="h-10 rounded-lg border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">More tools</option><option value="hours">Hours</option><option value="media">Photos & branding</option><option value="social">Links & social</option><option value="menu">Menu</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option>
               </select>
             </div>
           </div>
@@ -1777,11 +1786,17 @@ export default function ManageBusiness() {
           {/* ── DETAILS ── */}
           <TabsContent value="details">
             <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
-              <h2 className="text-lg font-bold font-display mb-6 flex items-center gap-2">
-                <Store className="w-5 h-5 text-primary" /> Business Information
-              </h2>
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Listing editor</p>
+                <h2 className="mt-1 text-xl font-bold font-display">{detailsSection === "page" ? "Tell customers about your business" : detailsSection === "business" ? "Business information" : "Custom listing URL"}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{detailsSection === "page" ? "Tell us about your business, style your page, and preview the experience before publishing." : detailsSection === "business" ? "Keep your category, municipality, address, and contact details accurate." : "Choose the short, memorable web address customers use to open your listing."}</p>
+                <div className="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+                  {([{ id: "page", label: "Page & story", icon: LayoutGrid }, { id: "business", label: "Location & contact", icon: MapPin }, { id: "url", label: "Listing URL", icon: Link2 }] as const).map(item => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setDetailsSection(item.id)} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${detailsSection === item.id ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><Icon className="h-3.5 w-3.5" />{item.label}</button>; })}
+                </div>
+              </div>
               <Form {...detailsForm}>
                 <form onSubmit={detailsForm.handleSubmit(saveDetails)} className="space-y-6">
+                  {detailsSection === "page" && <div className="space-y-6">
                   <FormField control={detailsForm.control} name="name" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Business Name <span className="text-destructive">*</span></FormLabel>
@@ -1792,7 +1807,7 @@ export default function ManageBusiness() {
 
                   <FormField control={detailsForm.control} name="description" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description <span className="text-destructive">*</span></FormLabel>
+                      <FormLabel>Page story <span className="text-destructive">*</span></FormLabel>
                       <FormControl>
                         <HtmlDescriptionEditor
                           value={field.value}
@@ -1803,7 +1818,9 @@ export default function ManageBusiness() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  </div>}
 
+                  {detailsSection === "business" && <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={detailsForm.control} name="categoryId" render={({ field }) => (
                       <FormItem>
@@ -1960,8 +1977,10 @@ export default function ManageBusiness() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  </div>}
 
                   {/* ── Special Offer ── */}
+                  {detailsSection === "page" &&
                   <FormField control={detailsForm.control} name="specialOffer" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-1.5">
@@ -1979,9 +1998,10 @@ export default function ManageBusiness() {
                       <FormMessage />
                       <p className="text-xs text-muted-foreground">{(field.value || "").length}/160 — Displayed as a highlighted banner on your public listing.</p>
                     </FormItem>
-                  )} />
+                  )} />}
 
                   {/* ── Custom URL slug ── */}
+                  {detailsSection === "url" &&
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <Link2 className="w-4 h-4 text-primary" />
@@ -2008,7 +2028,7 @@ export default function ManageBusiness() {
                         </p>
                       </FormItem>
                     )} />
-                  </div>
+                  </div>}
 
                   <div className="flex justify-end pt-4 border-t border-border">
                     <Button type="submit" disabled={isSaving} className="rounded-xl gap-2 px-8">
