@@ -1197,6 +1197,8 @@ export default function ManageBusiness() {
   const [analytics, setAnalytics] = useState<{ views: number; phone: number; website: number; maps: number; daily: { date: string; count: number }[]; sources: { source: string; count: number }[] } | null>(null);
   const [activeTab, setActiveTab] = useState("analytics");
   const [detailsSection, setDetailsSection] = useState<"page" | "business" | "url">("page");
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [aiHelperOpen, setAiHelperOpen] = useState(false);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   useEffect(() => {
     const bid = (business as any)?.id;
@@ -1708,6 +1710,7 @@ export default function ManageBusiness() {
                     </span>
                   </Link>
                 )}
+                <button type="button" onClick={() => setActiveTab("analytics")} className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"><BarChart3 className="h-3 w-3" /> Analytics</button>
               </div>
             </div>
           </div>
@@ -1744,7 +1747,7 @@ export default function ManageBusiness() {
             <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm"><Star className="h-5 w-5" /></div>
               <div className="min-w-0 flex-1"><p className="text-xs font-bold uppercase tracking-[.14em] text-amber-700">Grow your reach</p><h2 id="upgrade-listing-title" className="mt-0.5 text-base font-bold text-amber-950">Promote this listing</h2><p className="mt-1 text-sm text-amber-900/80">Get featured placement, AI tools, and monthly Instagram promotion.</p></div>
-              <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2">View upgrade</a>
+              <button type="button" onClick={() => setUpgradeOpen(true)} className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2">View upgrade</button>
             </div>
           </section>
         )}
@@ -1758,9 +1761,8 @@ export default function ManageBusiness() {
           <div className="mb-6 sticky top-16 z-20 bg-slate-50/95 backdrop-blur py-2">
             <label htmlFor="owner-mobile-section" className="sr-only">Listing section</label>
             <select id="owner-mobile-section" value={activeTab} onChange={event => setActiveTab(event.target.value)} className="md:hidden w-full h-12 rounded-xl border border-border bg-white px-3 text-sm font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-              <optgroup label="Workspace"><option value="analytics">Analytics</option><option value="details">Edit page & business info</option><option value="reviews">Customers & reviews</option></optgroup>
-              <optgroup label="Listing tools"><option value="hours">Hours</option><option value="media">Photos & branding</option><option value="social">Links & social</option><option value="menu">Menu</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option></optgroup>
-              <optgroup label="Creative tools"><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option></optgroup>
+              <optgroup label="Workspace"><option value="analytics">Analytics</option><option value="details">Edit page / Business info</option><option value="media">Photos & branding</option><option value="reviews">Reviews</option><option value="menu">Menu ★ Paid</option></optgroup>
+              <optgroup label="More tools"><option value="social">Links & social</option><option value="inbox">Inbox & contact form</option><option value="image-studio">Creative studio</option></optgroup>
             </select>
             <div className="hidden md:flex items-center gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm">
           <TabsList className="bg-transparent p-0 h-auto flex gap-1 justify-start flex-1">
@@ -1773,12 +1775,18 @@ export default function ManageBusiness() {
             <button type="button" onClick={() => { setDetailsSection("business"); setActiveTab("details"); }} className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${activeTab === "details" && detailsSection === "business" ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
               <MapPin className="w-4 h-4" /> Business info
             </button>
+            <TabsTrigger value="media" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
+              <Upload className="w-4 h-4" /> Photos & branding
+            </TabsTrigger>
             <TabsTrigger value="reviews" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-2 py-2.5">
-              <MessageSquare className="w-4 h-4" /> Customers {reviewCount > 0 && `(${reviewCount})`}
+              <MessageSquare className="w-4 h-4" /> Reviews {reviewCount > 0 && `(${reviewCount})`}
+            </TabsTrigger>
+            <TabsTrigger value="menu" className="whitespace-nowrap rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white gap-1.5 py-2.5">
+              <FileText className="w-4 h-4" /> Menu <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" aria-label="Paid feature" />
             </TabsTrigger>
           </TabsList>
-              <select aria-label="More listing tools" value={["hours","media","social","menu","inbox","ai","image-studio","media-library","form-builder"].includes(activeTab) ? activeTab : ""} onChange={event => event.target.value && setActiveTab(event.target.value)} className="h-10 rounded-lg border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option value="">More tools</option><option value="hours">Hours</option><option value="media">Photos & branding</option><option value="social">Links & social</option><option value="menu">Menu</option><option value="inbox">Inbox</option><option value="form-builder">Contact form</option><option value="ai">AI assistant</option><option value="image-studio">Image studio</option><option value="media-library">Media library</option>
+              <select aria-label="More listing tools" value={["social","inbox","image-studio"].includes(activeTab) ? activeTab : ""} onChange={event => event.target.value && setActiveTab(event.target.value)} className="h-10 rounded-lg border border-border bg-slate-50 px-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">More tools</option><option value="social">Links & social</option><option value="inbox">Inbox & contact form</option><option value="image-studio">Creative studio</option>
               </select>
             </div>
           </div>
@@ -1790,9 +1798,9 @@ export default function ManageBusiness() {
                 <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Listing editor</p>
                 <h2 className="mt-1 text-xl font-bold font-display">{detailsSection === "page" ? "Tell customers about your business" : detailsSection === "business" ? "Business information" : "Custom listing URL"}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">{detailsSection === "page" ? "Tell us about your business, style your page, and preview the experience before publishing." : detailsSection === "business" ? "Keep your category, municipality, address, and contact details accurate." : "Choose the short, memorable web address customers use to open your listing."}</p>
-                <div className="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
-                  {([{ id: "page", label: "Page & story", icon: LayoutGrid }, { id: "business", label: "Location & contact", icon: MapPin }, { id: "url", label: "Listing URL", icon: Link2 }] as const).map(item => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setDetailsSection(item.id)} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${detailsSection === item.id ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><Icon className="h-3.5 w-3.5" />{item.label}</button>; })}
-                </div>
+                {detailsSection !== "business" && <div className="mt-4 inline-flex max-w-full gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+                  {([{ id: "page", label: "Page & story", icon: LayoutGrid }, { id: "url", label: "Listing URL", icon: Link2 }] as const).map(item => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setDetailsSection(item.id)} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${detailsSection === item.id ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"}`}><Icon className="h-3.5 w-3.5" />{item.label}</button>; })}
+                </div>}
               </div>
               <Form {...detailsForm}>
                 <form onSubmit={detailsForm.handleSubmit(saveDetails)} className="space-y-6">
@@ -1977,6 +1985,12 @@ export default function ManageBusiness() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  <div className="border-t border-border pt-6">
+                    <h3 className="flex items-center gap-2 text-base font-bold"><Clock className="h-4 w-4 text-primary" /> Business hours</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">These hours appear everywhere your business is shown. Leave a day blank to mark it closed.</p>
+                    <div className="mt-4 space-y-3">{DAYS.map(day => <div key={day} className="flex items-center gap-3"><span className="w-24 shrink-0 text-sm font-medium">{day}</span><Input className="flex-1 rounded-xl text-sm" placeholder="9:00 AM – 6:00 PM or Closed" value={hours[day] ?? ""} onChange={event => setHours(previous => ({ ...previous, [day]: event.target.value }))} /></div>)}</div>
+                    <div className="mt-4 flex justify-end"><Button type="button" variant="outline" onClick={saveHours} disabled={isSaving} className="rounded-xl gap-2"><Save className="h-4 w-4" /> Save hours</Button></div>
+                  </div>
                   </div>}
 
                   {/* ── Special Offer ── */}
@@ -2328,7 +2342,7 @@ export default function ManageBusiness() {
               {!isPremium && (
                 <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
                   <p className="text-sm text-amber-900"><span className="font-semibold">Want bigger numbers?</span> Get Promoted for featured placement and higher visibility across Spotlight &mdash; plus AI tools to create your content.</p>
-                  <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 text-center">Get Promoted &mdash; $29/3mo</a>
+                  <button type="button" onClick={() => setUpgradeOpen(true)} className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 text-center">See upgrade benefits</button>
                 </div>
               )}
 
@@ -2571,7 +2585,7 @@ export default function ManageBusiness() {
           </TabsContent>
 
           {/* ── MEDIA LIBRARY ── */}
-          <TabsContent value="media-library">
+          <TabsContent value="image-studio">
             <div className="bg-white rounded-2xl border border-border shadow-sm p-6 md:p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold font-display flex items-center gap-2">
@@ -2669,7 +2683,7 @@ export default function ManageBusiness() {
           </TabsContent>
 
           {/* ── FORM BUILDER ── */}
-          <TabsContent value="form-builder">
+          <TabsContent value="inbox">
             <FormBuilderTab businessId={business.id} />
           </TabsContent>
 
@@ -2690,6 +2704,29 @@ export default function ManageBusiness() {
           </aside>
         )}
       </div>
+
+      <button type="button" onClick={() => setAiHelperOpen(true)} className="fixed bottom-4 left-4 z-40 inline-flex h-11 items-center gap-2 rounded-full bg-slate-900 px-4 text-sm font-semibold text-white shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-label="Open AI listing assistant">
+        <Bot className="h-4 w-4" /> <span className="hidden sm:inline">Ask AI</span>
+      </button>
+
+      <Dialog open={aiHelperOpen} onOpenChange={setAiHelperOpen}>
+        <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Bot className="h-5 w-5 text-primary" /> Listing assistant</DialogTitle><DialogDescription>Get quick help improving {business.name} without leaving your current section.</DialogDescription></DialogHeader>
+          <AIAssistant businessId={business.id} businessName={business.name} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="max-w-lg overflow-hidden p-0">
+          <div className="bg-slate-950 px-6 py-6 text-white"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400 text-slate-950"><Star className="h-5 w-5 fill-current" /></div><DialogHeader className="mt-4"><DialogTitle className="text-2xl text-white">Put your business in the spotlight</DialogTitle><DialogDescription className="text-slate-300">Upgrade this listing for more visibility and better tools to turn visitors into customers.</DialogDescription></DialogHeader></div>
+          <div className="space-y-5 p-6">
+            <ul className="space-y-3">{["Featured placement across Spotlight Puerto Rico", "Full performance analytics and customer interaction insights", "AI writing and image tools for your listing", "Monthly Instagram promotion", "Menu and advanced listing features", "Priority support for your business"].map(benefit => <li key={benefit} className="flex items-start gap-3 text-sm"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" /><span>{benefit}</span></li>)}</ul>
+            <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950"><span className="font-bold">Promoted plan:</span> $29 for 3 months. Review the secure payment form before completing your purchase.</div>
+            <a href={PREMIUM_CHECKOUT.promoted} target="_blank" rel="noopener noreferrer" className="flex min-h-12 w-full items-center justify-center rounded-xl bg-amber-500 px-5 text-sm font-bold text-white hover:bg-amber-600">Continue to secure checkout</a>
+            <p className="text-center text-xs text-muted-foreground">Checkout opens securely in a new tab, so your listing edits stay open.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── AI Image Generation Dialog ── */}
       <Dialog open={aiGenOpen} onOpenChange={open => { if (!open) { setAiGenOpen(false); setAiGenPreview(null); } }}>
