@@ -587,6 +587,15 @@ export default function BusinessDetail() {
           </div>
         </div>
 
+        {detail.slug === "marullos-cafe-arecibo" && (
+          <img
+            src="/images/businesses/marullos-cafe/counter.webp"
+            alt="Marullo's Café counter with pastries and food"
+            loading="lazy"
+            className="w-full max-h-96 object-cover rounded-2xl mb-8"
+          />
+        )}
+
         {/* Special Offer Banner */}
         {detail.specialOffer && (
           <div className="mb-8 bg-gradient-to-r from-amber-50 to-teal-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
