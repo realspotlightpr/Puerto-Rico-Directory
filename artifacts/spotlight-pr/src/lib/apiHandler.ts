@@ -101,6 +101,7 @@ function mapCategory(row: any): any {
 function mapReview(row: any): any {
   const u = row.users ?? undefined;
   const authorName =
+    row.author_name ??
     row.authorName ??
     (u ? [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username : undefined) ??
     undefined;
@@ -113,6 +114,7 @@ function mapReview(row: any): any {
     body: row.body ?? undefined,
     authorName: authorName || "Anonymous",
     authorImage: u?.profile_image_url ?? undefined,
+    isSpotlightReview: !!row.is_spotlight_review,
     createdAt: row.created_at,
   };
 }
