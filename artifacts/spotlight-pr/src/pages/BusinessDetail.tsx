@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { BusinessMap } from "@/components/business/BusinessMap";
+import { supabase } from "@/lib/supabase";
 
 const API_BASE = import.meta.env.BASE_URL || "/";
 
@@ -403,13 +404,13 @@ export default function BusinessDetail() {
   useEffect(() => {
     if (!businessId) return;
     setMediaLoading(true);
-    fetch(`${API_BASE}api/media/items?businessId=${businessId}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.items) setMediaItems(data.items);
-      })
-      .catch(() => {})
-      .finally(() => setMediaLoading(false));
+    let active = true;
+    supabase.from("media_items").select("id, url").eq("business_id", businessId).order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (active && !error) setMediaItems(data ?? []);
+        if (active) setMediaLoading(false);
+      });
+    return () => { active = false; };
   }, [businessId]);
 
   useEffect(() => {
