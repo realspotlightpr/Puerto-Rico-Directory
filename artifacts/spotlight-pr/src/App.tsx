@@ -27,6 +27,7 @@ import { SystemExplained } from "@/pages/SystemExplained";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { AdManager } from "@/components/monetization/AdManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -114,6 +115,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      <AdManager />
       <Footer />
       <AuthModal />
     </div>
