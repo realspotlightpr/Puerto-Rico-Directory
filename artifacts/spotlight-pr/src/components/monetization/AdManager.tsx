@@ -40,6 +40,16 @@ function loadAdSense() {
   document.head.appendChild(script);
 }
 
+function loadMonetag() {
+  if (document.querySelector('script[data-zone="12062320"]')) return;
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.dataset.zone = "12062320";
+  script.src = "https://nap5k.com/tag.min.js";
+  document.body.appendChild(script);
+}
+
 function AdsterraFrame({
   unit,
 }: {
@@ -98,7 +108,10 @@ export function AdManager() {
   }, []);
 
   useEffect(() => {
-    if (consent === "accepted") loadAdSense();
+    if (consent === "accepted") {
+      loadAdSense();
+      loadMonetag();
+    }
   }, [consent]);
 
   const saveConsent = (choice: Exclude<Consent, null>) => {
