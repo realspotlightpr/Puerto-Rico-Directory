@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Facebook, Instagram } from "lucide-react";
+import { openAdPreferences } from "@/components/monetization/AdManager";
 
 export function Footer() {
   return (
@@ -64,6 +65,7 @@ export function Footer() {
           <div className="flex items-center gap-4">
             <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
             <Link href="/privacy-policy" className="hover:text-primary transition-colors">Privacy</Link>
+            <button type="button" onClick={openAdPreferences} className="hover:text-primary transition-colors">Ad preferences</button>
             <span className="flex items-center gap-1">Made with <span className="text-secondary">♥</span> in PR</span>
           </div>
         </div>

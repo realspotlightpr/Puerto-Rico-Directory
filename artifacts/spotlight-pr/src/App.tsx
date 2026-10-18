@@ -59,6 +59,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PageTransitionLoader } from "@/components/layout/PageTransitionLoader";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SeoManager } from "@/components/SeoManager";
+import { AdManager } from "@/components/monetization/AdManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -286,6 +287,7 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
+      <AdManager />
       <Footer />
       <BottomNav />
       <AuthModal />
