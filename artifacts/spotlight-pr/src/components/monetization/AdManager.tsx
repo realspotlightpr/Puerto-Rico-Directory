@@ -24,12 +24,17 @@ const adsterraUnits = {
 } as const;
 
 function loadAdSense() {
-  if (document.querySelector('script[data-spotlight-adsense="true"]')) return;
+  if (
+    document.querySelector(
+      'script[src^="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]',
+    )
+  ) {
+    return;
+  }
 
   const script = document.createElement("script");
   script.async = true;
   script.crossOrigin = "anonymous";
-  script.dataset.spotlightAdsense = "true";
   script.src =
     "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3103663019302736";
   document.head.appendChild(script);
@@ -50,7 +55,7 @@ function AdsterraFrame({
       height={unit.height}
       scrolling="no"
       loading="lazy"
-      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       className="border-0 max-w-full"
     />
   );
