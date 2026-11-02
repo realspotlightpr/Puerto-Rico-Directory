@@ -10,6 +10,7 @@ out-tsc
 
 # dependencies
 node_modules
+.wrangler/
 
 # IDEs and editors
 /.idea
@@ -57,3 +58,4 @@ artifacts/spotlight-pr/public/puerto-rico/
 artifacts/spotlight-pr/public/sitemap-seo-pages.xml
 artifacts/spotlight-pr/public/businesses/
 artifacts/spotlight-pr/public/sitemap-businesses.xml
+supabase/.temp/
