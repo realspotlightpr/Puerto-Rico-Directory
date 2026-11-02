@@ -35,7 +35,7 @@ import {
   CheckCircle2, Bell, AlertCircle, UserPlus, Building2, ExternalLink, XCircle,
   Target, Plus, Globe, Phone, Mail, MapPin, BadgeCheck, Link, UserCog, KeyRound, Handshake,
   ToggleLeft, ToggleRight, Key, Briefcase, BarChart3,
-  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass, MoreHorizontal, ChevronLeft,
+  Upload, FileJson, CheckCircle, AlertTriangle, Settings, Image, Compass, MoreHorizontal, ChevronLeft, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,7 @@ import { MUNICIPALITIES } from "@/lib/constants";
 import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-type AdminSection = "dashboard" | "businesses" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
+type AdminSection = "dashboard" | "businesses" | "contacts" | "users" | "reviews" | "notifications" | "leads" | "team" | "settings" | "email-logs" | "communications" | "claims";
 type BusinessTab = "approved" | "claimed" | "unclaimed" | "pending" | "rejected" | "all";
 type UserRole = "all" | "user" | "business_owner" | "tour_guide" | "influencer" | "admin";
 
@@ -874,7 +874,15 @@ export default function Admin() {
   const [commsTotal, setCommsTotal] = useState(0);
   const [commsOffset, setCommsOffset] = useState(0);
   const [commsChannel, setCommsChannel] = useState<"" | "email" | "sms">("");
-  const [commsStatus, setCommsStatus] = useState<"" | "sent" | "failed" | "skipped">("");
+  const [commsStatus, setCommsStatus] = useState<"" | "queued" | "sending" | "sent" | "delivered" | "failed" | "skipped" | "received">("");
+  const [commsSource, setCommsSource] = useState<"first-party" | "legacy">("first-party");
+  const [commsError, setCommsError] = useState("");
+  const [commsRefresh, setCommsRefresh] = useState(0);
+  const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
+  const [crmContacts, setCrmContacts] = useState<any[]>([]);
+  const [crmContactsLoading, setCrmContactsLoading] = useState(false);
+  const [crmContactsError, setCrmContactsError] = useState("");
+  const [crmContactSearch, setCrmContactSearch] = useState("");
 
   const [openClaimsCount, setOpenClaimsCount] = useState(0);
   const [isInvitingUser, setIsInvitingUser] = useState(false);
@@ -895,13 +903,19 @@ export default function Admin() {
     })();
   }, [isAdmin, section]);
 
-  // Communications log (every SMS/email sent through HighLevel)
+  // Provider-neutral communications delivery log.
   useEffect(() => {
     if (!isAdmin || section !== "communications") return;
     let cancelled = false;
     (async () => {
       setCommsLoading(true);
+      setCommsError("");
       try {
+        const { data: crmData, error: crmError } = await supabase.functions.invoke("crm-admin", { body: { action: "communications", offset: commsOffset, channel: commsChannel, status: commsStatus } });
+        if (!crmError && !(crmData as any)?.error) {
+          if (!cancelled) { setCommsLogs((crmData as any)?.logs ?? []); setCommsTotal((crmData as any)?.total ?? 0); setCommsSource("first-party"); }
+          return;
+        }
         let q = supabase
           .from("communications_log")
           .select("*", { count: "exact" })
@@ -910,15 +924,44 @@ export default function Admin() {
         if (commsChannel) q = q.eq("channel", commsChannel);
         if (commsStatus) q = q.eq("status", commsStatus);
         const { data, count } = await q;
-        if (!cancelled) { setCommsLogs(data ?? []); setCommsTotal(count ?? 0); }
-      } catch {
-        if (!cancelled) { setCommsLogs([]); setCommsTotal(0); }
+        if (!cancelled) { setCommsLogs(data ?? []); setCommsTotal(count ?? 0); setCommsSource("legacy"); setCommsError("First-party communications are not available yet. Showing the legacy log."); }
+      } catch (error) {
+        if (!cancelled) { setCommsLogs([]); setCommsTotal(0); setCommsError(error instanceof Error ? error.message : "Communications could not be loaded."); }
       } finally {
         if (!cancelled) setCommsLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [isAdmin, section, commsOffset, commsChannel, commsStatus]);
+  }, [isAdmin, section, commsOffset, commsChannel, commsStatus, commsRefresh]);
+
+  const retryCommunication = async (messageId: string) => {
+    setRetryingMessageId(messageId);
+    try {
+      const { data, error } = await supabase.functions.invoke("crm-admin", { body: { action: "retry-message", messageId } });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Retry failed");
+      toast({ title: "Message retry accepted", description: "Delivery status will update when the provider responds." });
+      setCommsRefresh(value => value + 1);
+    } catch (error) {
+      toast({ title: "Message retry blocked", description: error instanceof Error ? error.message : "Retry failed", variant: "destructive" });
+    } finally {
+      setRetryingMessageId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAdmin || section !== "contacts") return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setCrmContactsLoading(true); setCrmContactsError("");
+      const { data, error } = await supabase.functions.invoke("crm-admin", { body: { action: "contacts", search: crmContactSearch } });
+      if (!cancelled) {
+        if (error || (data as any)?.error) { setCrmContacts([]); setCrmContactsError(error?.message || (data as any)?.error || "Contacts could not be loaded."); }
+        else setCrmContacts((data as any)?.contacts ?? []);
+        setCrmContactsLoading(false);
+      }
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [isAdmin, section, crmContactSearch]);
 
   // ── Queries ──
   const { data: stats } = useGetAdminStats({ query: { enabled: isAdmin } });
@@ -1075,8 +1118,8 @@ export default function Admin() {
   const { mutate: reject } = useRejectBusiness({ mutation: { onSuccess: () => { toast({ title: "Business rejected" }); invalidateBusinesses(); } } });
   const { mutate: deleteBusiness, isPending: isDeletingBusiness } = useAdminDeleteBusiness({
     mutation: {
-      onSuccess: () => { toast({ title: "Business deleted", description: "The listing has been permanently removed." }); invalidateBusinesses(); setDeletingBusiness(null); },
-      onError: () => toast({ title: "Failed to delete business", variant: "destructive" }),
+      onSuccess: () => { toast({ title: "Business archived", description: "The listing is hidden and its data is retained for recovery." }); invalidateBusinesses(); setDeletingBusiness(null); },
+      onError: () => toast({ title: "Failed to archive business", variant: "destructive" }),
     },
   });
   const { mutate: deleteUser, isPending: isDeletingUser } = useAdminDeleteUser({
@@ -1321,6 +1364,7 @@ export default function Admin() {
     { id: "businesses", label: "Business Listings", icon: Store },
     { id: "claims", label: "Claims", icon: ShieldCheck, badge: openClaimsCount || undefined, badgeColor: "bg-amber-500" },
     { id: "users", label: "Users & Owners", icon: Users },
+    { id: "contacts", label: "CRM Contacts", icon: UserCog },
     { id: "reviews", label: "Reviews", icon: MessageSquare },
     { id: "team", label: "Team & Affiliates", icon: Handshake, badge: activeTeamCount || undefined, badgeColor: "bg-teal-500" },
     { id: "communications", label: "Communications", icon: MessageSquare },
@@ -1330,7 +1374,7 @@ export default function Admin() {
   const navGroups: { heading: string | null; ids: AdminSection[] }[] = [
     { heading: null, ids: ["dashboard"] },
     { heading: "Listings", ids: ["leads", "businesses", "claims"] },
-    { heading: "People", ids: ["users", "team"] },
+    { heading: "People", ids: ["contacts", "users", "team"] },
     { heading: "Messaging", ids: ["reviews", "communications"] },
     { heading: "System", ids: ["settings"] },
   ];
@@ -1442,8 +1486,9 @@ export default function Admin() {
               {section === "businesses" && `${stats?.totalBusinesses ?? 0} total listings · ${pendingCount} pending approval`}
               {section === "leads" && `${leadsCount} scouted · ${claimedLeads} claimed · ${unclaimedLeads} unclaimed`}
               {section === "users" && `${usersData?.total ?? 0} registered users`}
+              {section === "contacts" && `${crmContacts.length} CRM contact${crmContacts.length !== 1 ? "s" : ""} shown`}
               {section === "reviews" && `${reviewsData?.total ?? 0} reviews`}
-            {section === "communications" && `${commsTotal} message${commsTotal !== 1 ? "s" : ""} sent through HighLevel`}
+            {section === "communications" && `${commsTotal} message${commsTotal !== 1 ? "s" : ""} processed by messaging providers`}
               {section === "notifications" && `${totalNotifications} item${totalNotifications !== 1 ? "s" : ""} need attention`}
             </p>
           </div>
@@ -2194,6 +2239,9 @@ export default function Admin() {
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="queued">Queued</SelectItem>
+                    <SelectItem value="sending">Sending</SelectItem>
                     <SelectItem value="failed">Failed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -2235,6 +2283,7 @@ export default function Admin() {
                           <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Subject</th>
                           <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Status</th>
                           <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Sent At</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Recovery</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2259,6 +2308,7 @@ export default function Admin() {
                                 {log.status === "sent" ? <CheckCircle className="w-3 h-3 mr-1" /> : <AlertCircle className="w-3 h-3 mr-1" />}
                                 {log.status}
                               </Badge>
+                              {log.status === "failed" && (log.error_detail || log.error_code) && <p className="mt-1 max-w-56 text-xs text-red-700" title={log.error_detail || log.error_code}>{log.error_code ? `${log.error_code}: ` : ""}{log.error_detail || "Delivery failed"}</p>}
                             </td>
                             <td className="px-5 py-3 text-sm text-muted-foreground">
                               {format(new Date(log.createdAt), "MMM d, yyyy HH:mm")}
@@ -2297,16 +2347,106 @@ export default function Admin() {
             </div>
           )}
 
-          {section === "communications" && (
+          {section === "contacts" && (
             <div className="space-y-6">
-              <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-                <MessageSquare className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+                <UserCog className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm text-cyan-900">Communications Log</p>
-                  <p className="text-xs text-cyan-700 mt-0.5">
-                    Every SMS &amp; email sent through HighLevel — review alerts, claims, approvals and more. Nothing goes out without a record here, including skipped sends.
+                  <p className="font-semibold text-sm text-indigo-900">First-party CRM Contacts</p>
+                  <p className="text-xs text-indigo-700 mt-0.5">
+                    Search the contact records stored in Supabase. This view is read-only while the HighLevel migration is reconciled and audited.
                   </p>
                 </div>
+              </div>
+
+              <div className="relative max-w-xl">
+                <Label htmlFor="crm-contact-search" className="sr-only">Search CRM contacts</Label>
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="crm-contact-search"
+                  placeholder="Search by name, email, or phone…"
+                  value={crmContactSearch}
+                  onChange={event => setCrmContactSearch(event.target.value)}
+                  className="pl-10 rounded-xl"
+                />
+              </div>
+
+              {crmContactsLoading ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm" aria-live="polite">
+                  <Loader2 className="w-8 h-8 mx-auto mb-4 text-muted-foreground animate-spin" />
+                  <p className="text-muted-foreground">Loading CRM contacts...</p>
+                </div>
+              ) : crmContactsError ? (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center" role="alert">
+                  <AlertCircle className="w-10 h-10 mx-auto mb-3 text-red-500" />
+                  <h3 className="font-bold text-red-900">CRM contacts could not be loaded</h3>
+                  <p className="text-sm text-red-700 mt-1">{crmContactsError}</p>
+                  <p className="text-xs text-red-700 mt-3">Confirm the CRM migration and <span className="font-mono">crm-admin</span> function are deployed, then try again.</p>
+                </div>
+              ) : crmContacts.length === 0 ? (
+                <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
+                  <UserCog className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+                  <h3 className="text-lg font-bold font-display mb-2">No CRM contacts found</h3>
+                  <p className="text-muted-foreground text-sm">Try a different search, or verify that the contact import completed successfully.</p>
+                </div>
+              ) : (
+                <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] text-left">
+                      <thead className="bg-slate-50 border-b border-border">
+                        <tr>
+                          <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Name</th>
+                          <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Contact</th>
+                          <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Source</th>
+                          <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Locale</th>
+                          <th className="px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Updated</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {crmContacts.map((contact: any) => {
+                          const contactName = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || "Unnamed contact";
+                          return (
+                            <tr key={contact.id} className="border-b border-border last:border-0 hover:bg-slate-50 transition-colors">
+                              <td className="px-5 py-4"><p className="text-sm font-medium text-foreground">{contactName}</p></td>
+                              <td className="px-5 py-4">
+                                <div className="space-y-1">
+                                  {contact.email && <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline"><Mail className="w-3.5 h-3.5" />{contact.email}</a>}
+                                  {contact.phone_e164 && <a href={`tel:${contact.phone_e164}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><Phone className="w-3.5 h-3.5" />{contact.phone_e164}</a>}
+                                  {!contact.email && !contact.phone_e164 && <span className="text-sm text-muted-foreground">No contact details</span>}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4"><Badge variant="secondary" className="font-mono text-xs">{String(contact.source || "spotlight").replace(/_/g, " ")}</Badge></td>
+                              <td className="px-5 py-4 text-sm text-muted-foreground">{contact.preferred_locale || "—"}</td>
+                              <td className="px-5 py-4 text-sm text-muted-foreground">{contact.updated_at ? formatDistanceToNow(new Date(contact.updated_at), { addSuffix: true }) : "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="px-5 py-4 border-t border-border text-sm text-muted-foreground">
+                    Showing {crmContacts.length} contact{crmContacts.length !== 1 ? "s" : ""}. Search results are limited to 50 records.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {section === "communications" && (
+            <div className="space-y-6">
+              <div className="bg-cyan-50 border border-cyan-200 rounded-2xl px-5 py-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+                <MessageSquare className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm text-cyan-900">Communications Log</p>
+                  <p className="text-xs text-cyan-700 mt-0.5">
+                    Review SMS and email delivery attempts for alerts, claims, approvals, and more. The first-party CRM records sent, failed, and skipped messages regardless of provider.
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge className={commsSource === "first-party" ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>{commsSource === "first-party" ? "First-party CRM" : "Legacy fallback"}</Badge>
+                    {commsError && <span className="text-xs text-amber-800">{commsError}</span>}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="shrink-0 gap-2 bg-white" onClick={() => setCommsRefresh(value => value + 1)} disabled={commsLoading}><RefreshCw className={`h-4 w-4 ${commsLoading ? "animate-spin" : ""}`} /> Refresh</Button>
               </div>
 
               <div className="flex gap-4">
@@ -2322,9 +2462,13 @@ export default function Admin() {
                   <SelectTrigger className="w-40 rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="queued">Queued</SelectItem>
+                    <SelectItem value="sending">Sending</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
                     <SelectItem value="failed">Failed</SelectItem>
                     <SelectItem value="skipped">Skipped</SelectItem>
+                    <SelectItem value="received">Received</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -2338,7 +2482,7 @@ export default function Admin() {
                 <div className="bg-white border border-border rounded-2xl p-16 text-center shadow-sm">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
                   <h3 className="text-lg font-bold font-display mb-2">No Messages Yet</h3>
-                  <p className="text-muted-foreground text-sm">Nothing has been sent through HighLevel matching your filters.</p>
+                  <p className="text-muted-foreground text-sm">No communications match your filters. Clear the filters or refresh after the next delivery attempt.</p>
                 </div>
               ) : (
                 <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
@@ -2375,8 +2519,16 @@ export default function Admin() {
                                 {log.status === "sent" ? <CheckCircle className="w-3 h-3 mr-1" /> : log.status === "failed" ? <AlertCircle className="w-3 h-3 mr-1" /> : null}
                                 {log.status}
                               </Badge>
+                              {log.status === "failed" && (log.error_detail || log.error_code) && <p className="mt-1 max-w-56 text-xs text-red-700" title={log.error_detail || log.error_code}>{log.error_code ? `${log.error_code}: ` : ""}{log.error_detail || "Delivery failed"}</p>}
                             </td>
                             <td className="px-5 py-3 text-sm text-muted-foreground">{format(new Date(log.created_at), "MMM d, yyyy HH:mm")}</td>
+                            <td className="px-5 py-3">
+                              {commsSource === "first-party" && log.status === "failed" ? (
+                                <Button type="button" size="sm" variant="outline" disabled={retryingMessageId === log.id} onClick={() => retryCommunication(log.id)} className="gap-1.5">
+                                  <RefreshCw className={`h-3.5 w-3.5 ${retryingMessageId === log.id ? "animate-spin" : ""}`} /> Retry
+                                </Button>
+                              ) : <span className="text-xs text-muted-foreground">—</span>}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2509,15 +2661,15 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* ── Delete Business Confirmation Dialog ── */}
+      {/* ── Archive Business Confirmation Dialog ── */}
       <Dialog open={!!deletingBusiness} onOpenChange={open => !open && setDeletingBusiness(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <Trash2 className="w-5 h-5" /> Delete Business Listing
+              <Trash2 className="w-5 h-5" /> Archive Business Listing
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to permanently delete <strong>{deletingBusiness?.name}</strong>? This action cannot be undone.
+              Archive <strong>{deletingBusiness?.name}</strong>? The listing will be hidden, while contacts, communications, and audit history remain available for recovery.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-4 border-t border-border gap-2">
@@ -2528,7 +2680,7 @@ export default function Admin() {
               disabled={isDeletingBusiness}
               onClick={() => deletingBusiness && deleteBusiness({ id: deletingBusiness.id })}
             >
-              {isDeletingBusiness ? <><Loader2 className="w-4 h-4 animate-spin" /> Deleting…</> : <><Trash2 className="w-4 h-4" /> Delete Permanently</>}
+              {isDeletingBusiness ? <><Loader2 className="w-4 h-4 animate-spin" /> Archiving…</> : <><Trash2 className="w-4 h-4" /> Archive Listing</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3172,7 +3324,7 @@ function AdSenseSettingsSection() {
     setSaving(true); const { data: { user } } = await supabase.auth.getUser(); const { error } = await supabase.from("platform_settings").upsert({ key: "adsense", value: { enabled, clientId: clientId.trim(), slotId: slotId.trim() }, updated_by: user?.id || null, updated_at: new Date().toISOString() }, { onConflict: "key" }); setSaving(false);
     if (error) toast({ title: "Ad settings could not be saved", description: error.message, variant: "destructive" }); else toast({ title: enabled ? "AdSense enabled" : "AdSense disabled", description: "Active Spotlight Pass members never see ads." });
   };
-  return <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4"><div className="flex items-center justify-between gap-4"><div><p className="font-display font-bold">Google AdSense</p><p className="text-xs text-muted-foreground mt-1">Ads appear after featured content and stay hidden for active Spotlight Pass members.</p></div><Switch checked={enabled} onCheckedChange={setEnabled} /></div><div className="grid md:grid-cols-2 gap-3"><div><Label>Publisher ID</Label><Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="ca-pub-1234567890123456" /></div><div><Label>Responsive ad slot ID</Label><Input value={slotId} onChange={(e) => setSlotId(e.target.value)} placeholder="1234567890" /></div></div><Button onClick={save} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save ad settings"}</Button></div>;
+  return <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4"><div className="flex items-center justify-between gap-4"><div><p className="font-display font-bold">Google AdSense</p><p className="text-xs text-muted-foreground mt-1">Responsive ads appear only in labeled inline and footer placements, never as pop-ups or overlays. Active Spotlight Pass members do not see ads.</p></div><Switch checked={enabled} onCheckedChange={setEnabled} /></div><div className="grid md:grid-cols-2 gap-3"><div><Label>Publisher ID</Label><Input value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="ca-pub-1234567890123456" /></div><div><Label>Responsive ad slot ID</Label><Input value={slotId} onChange={(e) => setSlotId(e.target.value)} placeholder="1234567890" /></div></div><Button onClick={save} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save ad settings"}</Button></div>;
 }
 
 interface SliderImage {

@@ -7,8 +7,8 @@ const repoRoot = join(root, "..", "..");
 const output = join(root, "public", "puerto-rico");
 const site = "https://spotlightpuertorico.com";
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://zswvumzbtikzvwgtpprw.supabase.co";
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-if (!anonKey) throw new Error("VITE_SUPABASE_ANON_KEY is required to generate SEO pages.");
+const anonKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+if (!anonKey) throw new Error("VITE_SUPABASE_PUBLISHABLE_KEY is required to generate SEO pages.");
 
 const roadmap = JSON.parse(await readFile(join(repoRoot, "docs", "seo", "500-page-roadmap.json"), "utf8"));
 if (!Array.isArray(roadmap) || roadmap.length !== 500) throw new Error(`Expected exactly 500 roadmap entries; received ${roadmap?.length ?? 0}.`);

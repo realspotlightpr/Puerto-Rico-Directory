@@ -3,22 +3,16 @@ import { useAuth } from "@workspace/replit-auth-web";
 import { useLocation, Link } from "wouter";
 import { Mail, CheckCircle2, Loader2, Compass, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
 
 export default function VerifyEmail() {
   const { isAuthenticated, isLoading, supabaseUser } = useAuth();
   const [, setLocation] = useLocation();
   const [confirming, setConfirming] = useState(true);
 
-  // Landing here via the emailed link means the address is verified — record it and clear the reminder.
+  // Supabase Auth is authoritative for confirmation; this page only reflects the session state.
   useEffect(() => {
     if (isLoading) return;
-    (async () => {
-      if (isAuthenticated) {
-        try { await supabase.auth.updateUser({ data: { email_confirmed: true } }); } catch { /* non-blocking */ }
-      }
-      setConfirming(false);
-    })();
+    setConfirming(false);
   }, [isLoading, isAuthenticated]);
 
   const email = (supabaseUser as any)?.email;

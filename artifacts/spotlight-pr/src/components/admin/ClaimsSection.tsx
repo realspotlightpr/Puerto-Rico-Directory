@@ -95,8 +95,8 @@ export function ClaimsSection() {
         <div>
           <p className="font-semibold text-sm">Business Ownership Claims</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            When someone claims a business, they're asked (by email + SMS) to send proof of ownership. Verify the proof in
-            GoHighLevel, then <strong>Approve</strong> here to auto-create their owner account, email their login, and start the welcome flow.
+            When someone claims a business, they're asked by email and SMS to send proof of ownership. Verify the proof in
+            the communications record, then <strong>Approve</strong> here to create their owner account, send their login, and start the welcome flow.
           </p>
         </div>
       </div>

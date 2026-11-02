@@ -11,11 +11,12 @@
  * match the OpenAPI types the components already expect (camelCase).
  *
  * Endpoints that genuinely require a server (OpenAI assistant/image, object
- * storage uploads, HighLevel social posting, team/affiliate features) throw a
+ * storage uploads, legacy social posting, team/affiliate features) throw a
  * clear "coming soon" error so those isolated UI panels show an error state
  * instead of silently failing.
  */
 import { supabase } from "@/lib/supabase";
+import { publishCrmEvent, type DeliveryResult } from "@/lib/crmEvents";
 import { setApiHandler, type ApiHandlerRequest } from "@workspace/api-client-react";
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -50,41 +51,25 @@ async function requireUserId(): Promise<string> {
   return data.user.id;
 }
 
-type DeliveryResult = { ok: boolean; detail?: string };
-
-function functionFailure(error: unknown, data: unknown): string | undefined {
-  if (error instanceof Error) return error.message;
-  if (error) return String(error);
-  const payload = data as any;
-  return payload?.error ? String(payload.error) : undefined;
+async function syncContact(biz: any): Promise<DeliveryResult> {
+  const subject = String(biz.id ?? biz.email ?? biz.phone ?? biz.name ?? crypto.randomUUID());
+  return publishCrmEvent("contact.upserted", subject, biz, { action: "sync-business", business: biz });
 }
 
-async function syncHighLevel(biz: any): Promise<DeliveryResult> {
-  try {
-    const { data, error } = await supabase.functions.invoke("highlevel", { body: { action: "sync-business", business: biz } });
-    const detail = functionFailure(error, data);
-    if (detail) throw new Error(detail);
-    return { ok: true };
-  } catch (e) {
-    console.warn("HighLevel sync failed", e);
-    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
-  }
-}
+const automationEventTypes = {
+  listing_submitted: "listing.submitted",
+  new_inquiry: "inquiry.received",
+  listing_approved: "listing.approved",
+  listing_rejected: "listing.rejected",
+} as const;
 
-async function notifyHighLevel(event: string, biz: any): Promise<DeliveryResult> {
-  try {
-    const { data, error } = await supabase.functions.invoke("highlevel", { body: { action: "notify", event, business: biz } });
-    const detail = functionFailure(error, data);
-    if (detail) throw new Error(detail);
-    return { ok: true };
-  } catch (e) {
-    console.warn("HighLevel notify failed", e);
-    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
-  }
+async function publishAutomationEvent(event: keyof typeof automationEventTypes, biz: any): Promise<DeliveryResult> {
+  const subject = String(biz.id ?? biz.ownerContactEmail ?? biz.email ?? biz.name ?? crypto.randomUUID());
+  return publishCrmEvent(automationEventTypes[event], subject, { ...biz, businessName: biz.name, email: biz.ownerContactEmail ?? biz.email, phone: biz.ownerPhone ?? biz.phone, firstName: biz.ownerName }, { action: "notify", event, business: biz });
 }
 
 function bizFromRow(row: any): any {
-  return { name: row?.name, ownerName: row?.owner_name, ownerContactEmail: row?.owner_contact_email, ownerPhone: row?.owner_phone };
+  return { id: row?.id, businessId: row?.id, name: row?.name, ownerName: row?.owner_name, ownerContactEmail: row?.owner_contact_email, ownerPhone: row?.owner_phone };
 }
 
 function mapTeamMember(row: any, user?: any, businessesAdded?: number): any {
@@ -294,7 +279,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       let q = supabase
         .from("businesses")
         .select(BUSINESS_SELECT, { count: "exact" })
-        .eq("status", "approved");
+        .eq("status", "approved")
+        .is("archived_at", null);
       if (query.featured === "true" || query.featured === true) q = q.eq("featured", true);
       if (query.municipality && query.municipality !== "all")
         q = q.eq("municipality", String(query.municipality));
@@ -345,8 +331,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       };
       const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
       throwSb(error);
-      const contactSync = await syncHighLevel({ ...b, source: "user_submitted" });
-      const ownerNotice = await notifyHighLevel("listing_submitted", { ...b, source: "user_submitted" });
+      const contactSync = await syncContact({ ...b, id: data.id, businessId: data.id, source: "user_submitted" });
+      const ownerNotice = await publishAutomationEvent("listing_submitted", { ...bizFromRow(data), source: "user_submitted" });
       return { ...mapBusiness(data), delivery: { contactSync, ownerNotice } };
     }
 
@@ -354,7 +340,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       // GET /api/businesses/:id
       if (method === "GET") {
         const numeric = /^\d+$/.test(id);
-        let q = supabase.from("businesses").select(BUSINESS_SELECT);
+        let q = supabase.from("businesses").select(BUSINESS_SELECT).is("archived_at", null);
         q = numeric ? q.eq("id", Number(id)) : q.eq("slug", id);
         const { data, error } = await q.maybeSingle();
         throwSb(error);
@@ -434,8 +420,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         data: rest ?? {},
       });
       throwSb(error);
-      const { data: inqBiz } = await supabase.from("businesses").select("name, owner_name, owner_contact_email, owner_phone").eq("id", Number(id)).maybeSingle();
-      void notifyHighLevel("new_inquiry", { ...bizFromRow(inqBiz), inquiryFrom: name, inquiryMessage: (rest as any)?.message });
+      const { data: inqBiz } = await supabase.from("businesses").select("id, name, owner_name, owner_contact_email, owner_phone").eq("id", Number(id)).is("archived_at", null).maybeSingle();
+      void publishAutomationEvent("new_inquiry", { ...bizFromRow(inqBiz), inquiryFrom: name, inquiryMessage: (rest as any)?.message, message: (rest as any)?.message });
       return { success: true };
     }
 
@@ -461,7 +447,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
   if (path === "/api/my/businesses" && method === "GET") {
     const uid = await requireUserId();
     const { data, error } = await supabase
-      .from("businesses").select(BUSINESS_SELECT).eq("owner_id", uid).order("created_at", { ascending: false });
+      .from("businesses").select(BUSINESS_SELECT).eq("owner_id", uid).is("archived_at", null).order("created_at", { ascending: false });
     throwSb(error);
     const businesses = (data ?? []).map(mapBusiness);
     return { businesses, total: businesses.length, page: 1, limit: businesses.length || 1, totalPages: 1 };
@@ -473,7 +459,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     // GET messages
     if (seg[3] === "messages" && !seg[4] && method === "GET") {
       const { data, error } = await supabase
-        .from("form_submissions").select("*").eq("business_id", bid).order("created_at", { ascending: false });
+        .from("form_submissions").select("*").eq("business_id", bid).is("archived_at", null).order("created_at", { ascending: false });
       throwSb(error);
       const messages = (data ?? []).map(mapSubmission);
       return { messages, unreadCount: messages.filter((m: any) => !m.isRead).length };
@@ -486,7 +472,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     }
     // DELETE message
     if (seg[3] === "messages" && seg[4] && method === "DELETE") {
-      const { error } = await supabase.from("form_submissions").delete().eq("id", Number(seg[4]));
+      const uid = await requireUserId();
+      const { error } = await supabase.from("form_submissions").update({ archived_at: new Date().toISOString(), archived_by: uid }).eq("id", Number(seg[4]));
       throwSb(error);
       return { success: true };
     }
@@ -516,7 +503,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     // stats
     if (path === "/api/admin/stats" && method === "GET") {
       const counts = async (build: (q: any) => any) => {
-        const { count } = await build(supabase.from("businesses").select("id", { count: "exact", head: true }));
+        const { count } = await build(supabase.from("businesses").select("id", { count: "exact", head: true }).is("archived_at", null));
         return count ?? 0;
       };
       const totalBusinesses = await counts((q) => q);
@@ -524,7 +511,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       const approvedBusinesses = await counts((q) => q.eq("status", "approved"));
       const { count: totalReviews } = await supabase.from("reviews").select("id", { count: "exact", head: true });
       const { count: totalUsers } = await supabase.from("users").select("id", { count: "exact", head: true });
-      const { data: ratings } = await supabase.from("businesses").select("average_rating").gt("review_count", 0);
+      const { data: ratings } = await supabase.from("businesses").select("average_rating").is("archived_at", null).gt("review_count", 0);
       const avgRating = ratings && ratings.length
         ? ratings.reduce((s: number, r: any) => s + (r.average_rating ?? 0), 0) / ratings.length
         : 0;
@@ -542,7 +529,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         const page = Number(query.page ?? 1) || 1;
         const limit = Number(query.limit ?? 20) || 20;
         const from = (page - 1) * limit;
-        let q = supabase.from("businesses").select(BUSINESS_SELECT, { count: "exact" });
+        let q = supabase.from("businesses").select(BUSINESS_SELECT, { count: "exact" }).is("archived_at", null);
         if (query.status && query.status !== "all") q = q.eq("status", String(query.status));
         q = q.order("created_at", { ascending: false }).range(from, from + limit - 1);
         const { data, count, error } = await q;
@@ -553,13 +540,13 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       if (id && action === "approve" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "approved" }).eq("id", Number(id)).select(BUSINESS_SELECT).single();
         throwSb(error);
-        void notifyHighLevel("listing_approved", bizFromRow(data));
+        void publishAutomationEvent("listing_approved", bizFromRow(data));
         return mapBusiness(data);
       }
       if (id && action === "reject" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "rejected" }).eq("id", Number(id)).select(BUSINESS_SELECT).single();
         throwSb(error);
-        void notifyHighLevel("listing_rejected", bizFromRow(data));
+        void publishAutomationEvent("listing_rejected", bizFromRow(data));
         return mapBusiness(data);
       }
       if (id && action === "feature" && method === "POST") {
@@ -580,7 +567,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         throwSb(error); return mapBusiness(data);
       }
       if (id && !action && method === "DELETE") {
-        const { error } = await supabase.from("businesses").delete().eq("id", Number(id));
+        const uid = await requireUserId();
+        const { error } = await supabase.from("businesses").update({ status: "rejected", archived_at: new Date().toISOString(), archived_by: uid }).eq("id", Number(id));
         throwSb(error); return { success: true };
       }
     }
@@ -687,10 +675,10 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
           imported++;
         }
         if (rows.length) {
-          const { error } = await supabase.from("businesses").insert(rows);
+          const { data: insertedRows, error } = await supabase.from("businesses").insert(rows).select(BUSINESS_SELECT);
           throwSb(error);
-          for (const row of rows) {
-            void syncHighLevel({ name: row.name, email: row.email, phone: row.phone, municipality: row.municipality, address: row.address, source: "spotlight_rep" });
+          for (const row of insertedRows ?? []) {
+            void syncContact({ ...bizFromRow(row), email: row.email, phone: row.phone, municipality: row.municipality, address: row.address, source: "spotlight_rep" });
           }
         }
         return { imported, skipped, duplicates };
@@ -705,7 +693,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         return fnData;
       }
       if (!id && method === "GET") {
-        const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("source", "spotlight_rep").order("created_at", { ascending: false });
+        const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("source", "spotlight_rep").is("archived_at", null).order("created_at", { ascending: false });
         throwSb(error);
         return { leads: (data ?? []).map(mapLead), total: (data ?? []).length };
       }
@@ -721,7 +709,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         };
         const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
         throwSb(error);
-        await syncHighLevel({ ...b, source: "spotlight_rep" });
+        await syncContact({ ...b, id: data.id, businessId: data.id, source: "spotlight_rep" });
         return mapLead(data);
       }
       if (id && (method === "PATCH" || method === "PUT")) {
@@ -733,7 +721,8 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         throwSb(error); return mapLead(data);
       }
       if (id && method === "DELETE") {
-        const { error } = await supabase.from("businesses").delete().eq("id", Number(id));
+        const uid = await requireUserId();
+        const { error } = await supabase.from("businesses").update({ status: "rejected", archived_at: new Date().toISOString(), archived_by: uid }).eq("id", Number(id));
         throwSb(error); return { success: true };
       }
     }
@@ -749,7 +738,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         const { data: users } = userIds.length ? await supabase.from("users").select("*").in("id", userIds) : { data: [] as any[] };
         const umap: Record<string, any> = {};
         (users ?? []).forEach((u: any) => { umap[u.id] = u; });
-        const { data: biz } = userIds.length ? await supabase.from("businesses").select("added_by_rep_id").in("added_by_rep_id", userIds) : { data: [] as any[] };
+        const { data: biz } = userIds.length ? await supabase.from("businesses").select("added_by_rep_id").in("added_by_rep_id", userIds).is("archived_at", null) : { data: [] as any[] };
         const counts: Record<string, number> = {};
         (biz ?? []).forEach((x: any) => { if (x.added_by_rep_id) counts[x.added_by_rep_id] = (counts[x.added_by_rep_id] || 0) + 1; });
         return { members: list.map((m) => mapTeamMember(m, umap[m.user_id], counts[m.user_id] || 0)), total: list.length };
@@ -798,7 +787,7 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
     }
     if (sub === "stats" && method === "GET") {
       const { data: member } = await supabase.from("team_members").select("*").eq("user_id", uid).maybeSingle();
-      const { data: biz } = await supabase.from("businesses").select("status, is_claimed").eq("added_by_rep_id", uid);
+      const { data: biz } = await supabase.from("businesses").select("status, is_claimed").eq("added_by_rep_id", uid).is("archived_at", null);
       const list = (biz ?? []) as any[];
       return {
         totalAdded: list.length,
@@ -811,12 +800,12 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
       };
     }
     if (sub === "my-submissions" && method === "GET") {
-      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("added_by_rep_id", uid).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("added_by_rep_id", uid).is("archived_at", null).order("created_at", { ascending: false });
       throwSb(error);
       return { businesses: (data ?? []).map(mapBusiness), total: (data ?? []).length };
     }
     if (sub === "pending-reviews" && method === "GET") {
-      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("status", "pending").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("businesses").select(BUSINESS_SELECT).eq("status", "pending").is("archived_at", null).order("created_at", { ascending: false });
       throwSb(error);
       return { businesses: (data ?? []).map(mapBusiness), total: (data ?? []).length };
     }
@@ -834,19 +823,19 @@ async function handle(req: ApiHandlerRequest): Promise<unknown> {
         };
         const { data, error } = await supabase.from("businesses").insert(insert).select(BUSINESS_SELECT).single();
         throwSb(error);
-        await syncHighLevel({ ...b, source: "spotlight_rep" });
+        await syncContact({ ...b, source: "spotlight_rep" });
         return mapBusiness(data);
       }
       if (tbId && tbAction === "approve" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "approved" }).eq("id", Number(tbId)).select(BUSINESS_SELECT).single();
         throwSb(error);
-        void notifyHighLevel("listing_approved", bizFromRow(data));
+        void publishAutomationEvent("listing_approved", bizFromRow(data));
         return mapBusiness(data);
       }
       if (tbId && tbAction === "reject" && method === "POST") {
         const { data, error } = await supabase.from("businesses").update({ status: "rejected" }).eq("id", Number(tbId)).select(BUSINESS_SELECT).single();
         throwSb(error);
-        void notifyHighLevel("listing_rejected", bizFromRow(data));
+        void publishAutomationEvent("listing_rejected", bizFromRow(data));
         return mapBusiness(data);
       }
       if (tbId && tbAction === "verify" && method === "POST") {

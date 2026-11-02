@@ -59,7 +59,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PageTransitionLoader } from "@/components/layout/PageTransitionLoader";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SeoManager } from "@/components/SeoManager";
-import { AdManager } from "@/components/monetization/AdManager";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -189,15 +189,16 @@ function EmailReminderBanner() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   if (!isAuthenticated || dismissed) return null;
-  const needsConfirm = (supabaseUser as any)?.user_metadata?.email_confirmed === false;
+  const needsConfirm = !(supabaseUser as any)?.email_confirmed_at;
   if (!needsConfirm) return null;
   const email = (supabaseUser as any)?.email;
-  const name = (supabaseUser as any)?.user_metadata?.full_name;
   const send = async () => {
     if (!email) return;
     setSending(true);
     try {
-      await supabase.functions.invoke("send-verify-email", { body: { email, name } });
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}verify-email`;
+      const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectTo } });
+      if (error) throw error;
       setSent(true);
     } catch { /* ignore */ } finally { setSending(false); }
   };
@@ -287,7 +288,9 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      <AdManager />
+      <div className="container mx-auto max-w-5xl px-4" aria-label="Footer advertisement">
+        <AdSlot placement="site-footer" className="mb-5 mt-8" />
+      </div>
       <Footer />
       <BottomNav />
       <AuthModal />

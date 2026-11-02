@@ -9,6 +9,14 @@ const cors = {
 };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
+function getPublishableKey() {
+  try {
+    const reference = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}").default;
+    if (typeof reference === "string") return reference.startsWith("sb_publishable_") ? reference : Deno.env.get(reference) || "";
+  } catch { /* fall through to the legacy platform variable */ }
+  return Deno.env.get("SUPABASE_ANON_KEY") || "";
+}
+
 const roleCopy: Record<string, { label: string; destination: string; intro: string }> = {
   user: { label: "community member", destination: "/welcome", intro: "Save favorites, plan your Puerto Rico days, and share reviews." },
   business_owner: { label: "business owner", destination: "/dashboard", intro: "Manage your listing, photos, reviews, and customer activity." },
@@ -23,7 +31,7 @@ function normalizePhone(value?: string) {
   return digits.length === 10 ? `+1${digits}` : digits.startsWith("1") ? `+${digits}` : `+${digits}`;
 }
 
-async function sendOutreach(person: any, loginUrl: string, role: string) {
+async function sendLegacyHighLevelOutreach(person: any, loginUrl: string, role: string) {
   const token = Deno.env.get("HIGHLEVEL_API_KEY") || "";
   const locationId = Deno.env.get("HIGHLEVEL_LOCATION_ID") || "";
   if (!token || !locationId) return { email: "skipped: HighLevel not configured", sms: "skipped: HighLevel not configured" };
@@ -51,12 +59,61 @@ async function sendOutreach(person: any, loginUrl: string, role: string) {
   return results;
 }
 
+async function sendOutreach(person: any, loginUrl: string, role: string, authHeader: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const anonKey = getPublishableKey();
+  const fallbackEnabled = Deno.env.get("ENABLE_HIGHLEVEL_FALLBACK") !== "false";
+  const copy = roleCopy[role] || roleCopy.user;
+
+  if (supabaseUrl && anonKey) {
+    try {
+      const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/crm-event`, {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          apikey: anonKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "admin.invitation.requested",
+          subject: String(person.email),
+          idempotencyKey: `admin-invite:${person.email}:${role}:${new Date().toISOString().slice(0, 10)}`,
+          payload: {
+            email: person.email,
+            phone: normalizePhone(person.phone),
+            firstName: person.firstName,
+            lastName: person.lastName,
+            loginUrl,
+            role,
+            roleLabel: copy.label,
+            source: "spotlight-admin-invite",
+          },
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 207) throw new Error((data as any).error || `CRM returned ${response.status}`);
+      const deliveries = Array.isArray((data as any).results) ? (data as any).results : [];
+      return {
+        email: person.email ? deliveries.find((item: any) => item.channel === "email")?.status || "processed by Resend" : "skipped: no email",
+        sms: normalizePhone(person.phone) ? deliveries.find((item: any) => item.channel === "sms")?.status || "processed by Twilio" : "skipped: no phone",
+      };
+    } catch (error) {
+      console.warn("First-party CRM outreach failed", error);
+      if (!fallbackEnabled) throw error;
+    }
+  } else if (!fallbackEnabled) {
+    throw new Error("First-party CRM outreach is not configured");
+  }
+
+  return sendLegacyHighLevelOutreach(person, loginUrl, role);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anon = getPublishableKey();
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const authHeader = req.headers.get("Authorization") || "";
     const callerClient = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
@@ -80,7 +137,7 @@ Deno.serve(async (req: Request) => {
         const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email: person.email, options: { redirectTo: `${SITE}/guide` } });
         if (linkError) { results.push({ userId: profile.user_id, status: "failed", reason: linkError.message }); continue; }
         try {
-          const outreach = await sendOutreach({ email: person.email, phone: profile.phone || person.phone, firstName: person.first_name || profile.display_name, lastName: person.last_name }, linkData.properties.action_link, "tour_guide");
+          const outreach = await sendOutreach({ email: person.email, phone: profile.phone || person.phone, firstName: person.first_name || profile.display_name, lastName: person.last_name }, linkData.properties.action_link, "tour_guide", authHeader);
           results.push({ userId: profile.user_id, status: "processed", outreach });
         } catch (error: any) { results.push({ userId: profile.user_id, status: "failed", reason: error.message }); }
       }
@@ -103,7 +160,7 @@ Deno.serve(async (req: Request) => {
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo: `${SITE}${destination}` } });
     if (linkError) throw linkError;
     const loginUrl = linkData.properties.action_link;
-    const outreach = await sendOutreach({ email, phone: body.phone, firstName: body.firstName, lastName: body.lastName }, loginUrl, role);
+    const outreach = await sendOutreach({ email, phone: body.phone, firstName: body.firstName, lastName: body.lastName }, loginUrl, role, authHeader);
     return json({ success: true, userId, role, outreach });
   } catch (error: any) {
     return json({ error: error?.message || "Invite failed" }, 500);

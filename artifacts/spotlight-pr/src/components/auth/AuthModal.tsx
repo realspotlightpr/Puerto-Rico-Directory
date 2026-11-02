@@ -17,6 +17,7 @@ export function AuthModal() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [smsTransactionalConsent, setSmsTransactionalConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -103,7 +104,16 @@ export function AuthModal() {
           options: {
             emailRedirectTo: redirectUrl,
             // email_confirmed:false drives the soft "verify your email" reminder in-app.
-            data: { first_name: firstName, last_name: lastName, full_name: fullName, phone: phone.trim() || undefined, signup_via: "web", email_confirmed: false },
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: fullName,
+              phone: phone.trim() || undefined,
+              signup_via: "web",
+              email_confirmed: false,
+              sms_transactional_consent: !!phone.trim() && smsTransactionalConsent,
+              sms_consent_policy_version: "2026-11-02",
+            },
           },
         });
         if (error) throw error;
@@ -212,7 +222,7 @@ export function AuthModal() {
 
             {mode === "sign-up" && (
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(optional — for text updates &amp; quick login)</span></Label>
+                <Label htmlFor="phone">Phone <span className="text-muted-foreground font-normal">(optional — for quick login)</span></Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -224,6 +234,19 @@ export function AuthModal() {
                     className="pl-9"
                   />
                 </div>
+                {phone.trim() && (
+                  <label className="mt-2 flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={smsTransactionalConsent}
+                      onChange={(event) => setSmsTransactionalConsent(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <span>
+                      Text me essential account and service updates. Message frequency varies; message and data rates may apply. Reply STOP to opt out or HELP for help. Consent is optional and is not a condition of using Spotlight.
+                    </span>
+                  </label>
+                )}
               </div>
             )}
 

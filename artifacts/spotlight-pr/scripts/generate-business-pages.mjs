@@ -7,8 +7,8 @@ const dist=join(root,"dist","public");
 const output=join(dist,"businesses");
 const site="https://spotlightpuertorico.com";
 const supabaseUrl=process.env.VITE_SUPABASE_URL||"https://zswvumzbtikzvwgtpprw.supabase.co";
-const anonKey=process.env.VITE_SUPABASE_ANON_KEY;
-if(!anonKey)throw new Error("VITE_SUPABASE_ANON_KEY is required to generate business SEO pages.");
+const anonKey=process.env.VITE_SUPABASE_PUBLISHABLE_KEY||process.env.VITE_SUPABASE_ANON_KEY;
+if(!anonKey)throw new Error("VITE_SUPABASE_PUBLISHABLE_KEY is required to generate business SEO pages.");
 
 const fields="id,name,slug,description,municipality,address,phone,email,website,logo_url,cover_url,social_links,latitude,longitude,updated_at,status,is_claimed,average_rating,review_count,categories(name)";
 const response=await fetch(`${supabaseUrl}/rest/v1/businesses?select=${encodeURIComponent(fields)}&status=eq.approved&order=name.asc&limit=1000`,{headers:{apikey:anonKey,Authorization:`Bearer ${anonKey}`}});

@@ -13,7 +13,7 @@
   BASE_PATH = "/"
   NODE_VERSION = "20"
   VITE_SUPABASE_URL = "https://zswvumzbtikzvwgtpprw.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpzd3Z1bXpidGlrenZ3Z3RwcHJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyOTkwMDksImV4cCI6MjA5Njg3NTAwOX0.rC8oSs0fiI7_-bS04iRayIoAjn-KWLQ3_u5VuzzeoPI"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_WHsHt8ExIH7st0cf5lKMUQ_iupkXTVM"
 
 # SPA fallback so deep links (e.g. /businesses/<slug>) resolve to the app.
 [[redirects]]

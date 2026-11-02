@@ -1,0 +1,13 @@
+name,slug,currentStatus,currentLogoUrl,currentCoverUrl,action,targetStatus,targetLogoUrl,targetCoverUrl,reason,provenance
+Adorno Bakery,adorno-bakery-kmzzi,approved,,,archive,rejected,,,"No safely reusable, business-specific logo and cover pair was verified.",
+Bermudas,bermudas-4fefg,approved,,,archive,rejected,,,"A logo was found, but no safely usable business-specific cover could be verified.",
+El qioskuito del norte,el-qioskuito-del-norte-7fwav,approved,,,archive,rejected,,,No authoritative public media source could be matched with sufficient confidence.,
+Frozen Ice,frozen-ice-lwk3c,approved,,,archive,rejected,,,The listing is too ambiguous to match to public media without risking the wrong business.,
+GS Contractors LLC,gs-contractors-pr-ndo38,approved,https://gscontractorspr.com/wp-content/uploads/2025/09/thumbnail_LOGO-GS-Contractors-LLC-ORIGINAL-e1757544850925-160x105.png,https://gscontractorspr.com/wp-content/uploads/2026/03/PHOTO-2026-03-03-06-35-02-1024x670.jpg,archive,rejected,https://gscontractorspr.com/wp-content/uploads/2025/09/thumbnail_LOGO-GS-Contractors-LLC-ORIGINAL-e1757544850925-160x105.png,https://gscontractorspr.com/wp-content/uploads/2026/03/PHOTO-2026-03-03-06-35-02-1024x670.jpg,Both current remote media URLs fail DNS/availability validation.,
+Homemade Cookies PR,homemade-cookies-pr-51u2h,approved,,,archive,rejected,,,The listing is too ambiguous to match to public media without risking the wrong business.,
+Infinto,infinto-lacco,approved,,,archive,rejected,,,The business name/identity could not be verified; attaching imagery would risk a false match.,
+JRC Tax & Accounting,jrc-tax-accounting-fstx0,approved,,,archive,rejected,,,"A real logo exists, but available cover candidates were promotional stock-style graphics rather than real business imagery.",
+Multinational,multinational-y65nt,approved,,,archive,rejected,,,"A real logo exists, but the available official cover candidate was generic stock imagery.",
+Oro Norte,oro-norte-xmtgm,approved,,,archive,rejected,,,"The business identity was verified, but no safely reusable logo and real cover pair was found.",
+Pina Colada Stand,pina-colada-stand-kdox6,approved,,,archive,rejected,,,The generic name has multiple possible matches and no authoritative media source.,
+Pito Sandwhich,pito-sandwhich-7qowo,approved,,,archive,rejected,,,No authoritative public media source could be matched with sufficient confidence.,

@@ -1,0 +1,709 @@
+{
+  "generatedAt": "2026-11-01T16:26:19.461Z",
+  "source": "https://spotlightpuertorico.com/sitemap-businesses.xml",
+  "total": 44,
+  "counts": {
+    "keep": 4,
+    "update_logo": 21,
+    "update_both": 7,
+    "archive": 12
+  },
+  "records": [
+    {
+      "name": "Adorno Bakery",
+      "slug": "adorno-bakery-kmzzi",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/adorno-bakery-kmzzi",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "No safely reusable, business-specific logo and cover pair was verified.",
+      "provenance": []
+    },
+    {
+      "name": "Ameila Pizza",
+      "slug": "ameila-pizza-s32n5",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/ameila-pizza-s32n5",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/7967510a-a56f-4e51-99f0-fd19eb2c0c57/1788132969353-exxcaj.jpg",
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/109/cover.jpg",
+      "action": "keep",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/7967510a-a56f-4e51-99f0-fd19eb2c0c57/1788132969353-exxcaj.jpg",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/109/cover.jpg",
+      "reason": "Existing logo and cover are business-specific, reachable, visually verified, and dimensionally acceptable.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/7967510a-a56f-4e51-99f0-fd19eb2c0c57/1788132969353-exxcaj.jpg",
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/109/cover.jpg"
+      ]
+    },
+    {
+      "name": "Anawim Catholic Bookstore",
+      "slug": "anawim-catholic-bookstore-5bm3x",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/anawim-catholic-bookstore-5bm3x",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/anawim-catholic-bookstore-5bm3x/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/anawim-catholic-bookstore-5bm3x/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://www.libreriacatolicaanawim.com/",
+        "https://static.wixstatic.com/media/bbcd0d_c45cb41b29694293885376f549b31f0b~mv2.png/v1/crop/x_0,y_56,w_1600,h_415/fill/w_1200,h_312,al_c,q_90/logo.png",
+        "https://static.wixstatic.com/media/bbcd0d_9b7bdd7e716d4659be853c546c3d4662~mv2.jpg/v1/crop/x_312,y_98,w_3431,h_1619/fill/w_1600,h_755,al_c,q_85/20220930_113602.jpg"
+      ]
+    },
+    {
+      "name": "Arecibo Light House",
+      "slug": "arecibo-light-house-s32xq",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/arecibo-light-house-s32xq",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/arecibo-light-house-s32xq/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/arecibo-light-house-s32xq/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://arecibolighthouse.com/",
+        "https://arecibolighthouse.com/entrada.jpg",
+        "https://arecibolighthouse.com/entrada.jpg"
+      ]
+    },
+    {
+      "name": "Bargain City",
+      "slug": "bargain-city-xbn2h",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/bargain-city-xbn2h",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/95/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/bargain-city-xbn2h/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/95/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/95/cover.jpg"
+      ]
+    },
+    {
+      "name": "Bermudas",
+      "slug": "bermudas-4fefg",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/bermudas-4fefg",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "A logo was found, but no safely usable business-specific cover could be verified.",
+      "provenance": []
+    },
+    {
+      "name": "CMN Window Tint",
+      "slug": "cmn-window-tint-1fj59",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/cmn-window-tint-1fj59",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/94/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/cmn-window-tint-1fj59/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/94/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/94/cover.jpg"
+      ]
+    },
+    {
+      "name": "Colegio Pentecostal Arecibo",
+      "slug": "colegio-pentecostal-arecibo-o3mgf",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/colegio-pentecostal-arecibo-o3mgf",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/colegio-pentecostal-arecibo-o3mgf/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/colegio-pentecostal-arecibo-o3mgf/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://cparecibo.org/",
+        "https://cparecibo.org/wp-content/uploads/2020/11/Colegio-Pentecostal-Arecibo-Logo-300x300.png",
+        "https://cparecibo.org/wp-content/uploads/2020/05/Colegio-Pentecostal-Arecibo-Slider-Website-Entrada.jpg"
+      ]
+    },
+    {
+      "name": "David Sandwiches",
+      "slug": "david-sandwiches-47lry",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/david-sandwiches-47lry",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/103/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/david-sandwiches-47lry/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/103/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/103/cover.jpg"
+      ]
+    },
+    {
+      "name": "El qioskuito del norte",
+      "slug": "el-qioskuito-del-norte-7fwav",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/el-qioskuito-del-norte-7fwav",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "No authoritative public media source could be matched with sufficient confidence.",
+      "provenance": []
+    },
+    {
+      "name": "Enmarcados Alamar",
+      "slug": "enmarcados-alamar-iwa13",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/enmarcados-alamar-iwa13",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/105/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/enmarcados-alamar-iwa13/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/105/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/105/cover.jpg"
+      ]
+    },
+    {
+      "name": "Entremasas pizza and pasta",
+      "slug": "entremasas-pizza-and-pasta-9h3zd",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/entremasas-pizza-and-pasta-9h3zd",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/106/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/entremasas-pizza-and-pasta-9h3zd/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/106/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/106/cover.jpg"
+      ]
+    },
+    {
+      "name": "Foresta Cannabis Collection",
+      "slug": "foresta-cannabis-collection-two16",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/foresta-cannabis-collection-two16",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/97/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/foresta-cannabis-collection-two16/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/97/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/97/cover.jpg"
+      ]
+    },
+    {
+      "name": "Frozen Ice",
+      "slug": "frozen-ice-lwk3c",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/frozen-ice-lwk3c",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "The listing is too ambiguous to match to public media without risking the wrong business.",
+      "provenance": []
+    },
+    {
+      "name": "GS Contractors LLC",
+      "slug": "gs-contractors-pr-ndo38",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/gs-contractors-pr-ndo38",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://gscontractorspr.com/wp-content/uploads/2025/09/thumbnail_LOGO-GS-Contractors-LLC-ORIGINAL-e1757544850925-160x105.png",
+      "currentCoverUrl": "https://gscontractorspr.com/wp-content/uploads/2026/03/PHOTO-2026-03-03-06-35-02-1024x670.jpg",
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": "https://gscontractorspr.com/wp-content/uploads/2025/09/thumbnail_LOGO-GS-Contractors-LLC-ORIGINAL-e1757544850925-160x105.png",
+      "targetCoverUrl": "https://gscontractorspr.com/wp-content/uploads/2026/03/PHOTO-2026-03-03-06-35-02-1024x670.jpg",
+      "reason": "Both current remote media URLs fail DNS/availability validation.",
+      "provenance": []
+    },
+    {
+      "name": "Gyro Express",
+      "slug": "gyro-express-hy7to",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/gyro-express-hy7to",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/98/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/gyro-express-hy7to/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/98/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/98/cover.jpg"
+      ]
+    },
+    {
+      "name": "Healthy Body For Life",
+      "slug": "healthy-body-arecibo",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/healthy-body-arecibo",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-logos/2/logo-1024.png",
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/2/cover.jpg",
+      "action": "keep",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-logos/2/logo-1024.png",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/2/cover.jpg",
+      "reason": "Existing logo and cover are business-specific, reachable, visually verified, and dimensionally acceptable.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-logos/2/logo-1024.png",
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/2/cover.jpg"
+      ]
+    },
+    {
+      "name": "Homemade Cookies PR",
+      "slug": "homemade-cookies-pr-51u2h",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/homemade-cookies-pr-51u2h",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "The listing is too ambiguous to match to public media without risking the wrong business.",
+      "provenance": []
+    },
+    {
+      "name": "Infinto",
+      "slug": "infinto-lacco",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/infinto-lacco",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "The business name/identity could not be verified; attaching imagery would risk a false match.",
+      "provenance": []
+    },
+    {
+      "name": "Josue Refrigeration INC.",
+      "slug": "josue-refrigeration-inc-lvu8m",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/josue-refrigeration-inc-lvu8m",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/86/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/josue-refrigeration-inc-lvu8m/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/86/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/86/cover.jpg"
+      ]
+    },
+    {
+      "name": "JRC Tax & Accounting",
+      "slug": "jrc-tax-accounting-fstx0",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/jrc-tax-accounting-fstx0",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "A real logo exists, but available cover candidates were promotional stock-style graphics rather than real business imagery.",
+      "provenance": []
+    },
+    {
+      "name": "Jungla Grooming",
+      "slug": "jungla-grooming-pidob",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/jungla-grooming-pidob",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/81/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/jungla-grooming-pidob/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/81/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/81/cover.jpg"
+      ]
+    },
+    {
+      "name": "Marullo's Café",
+      "slug": "marullos-cafe-arecibo",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/marullos-cafe-arecibo",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/logo.webp",
+      "currentCoverUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/truck.webp",
+      "action": "keep",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/logo.webp",
+      "targetCoverUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/truck.webp",
+      "reason": "Existing logo and cover are business-specific, reachable, visually verified, and dimensionally acceptable.",
+      "provenance": [
+        "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/logo.webp",
+        "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/marullos-cafe/truck.webp"
+      ]
+    },
+    {
+      "name": "Miramar B.B.Q",
+      "slug": "miramar-bbq-arecibo",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/miramar-bbq-arecibo",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/logo-icon.webp",
+      "currentCoverUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/storefront.webp",
+      "action": "keep",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/logo-icon.webp",
+      "targetCoverUrl": "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/storefront.webp",
+      "reason": "Existing logo and cover are business-specific, reachable, visually verified, and dimensionally acceptable.",
+      "provenance": [
+        "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/logo-icon.webp",
+        "https://raw.githubusercontent.com/realspotlightpr/Puerto-Rico-Directory/master/artifacts/spotlight-pr/public/images/businesses/miramar-bbq/storefront.webp"
+      ]
+    },
+    {
+      "name": "Mitchell Interior Contractors Inc.",
+      "slug": "mitchell-interior-contractors-inc-bey1v",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/mitchell-interior-contractors-inc-bey1v",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/16/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/mitchell-interior-contractors-inc-bey1v/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/16/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/16/cover.jpg"
+      ]
+    },
+    {
+      "name": "Multinational",
+      "slug": "multinational-y65nt",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/multinational-y65nt",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "A real logo exists, but the available official cover candidate was generic stock imagery.",
+      "provenance": []
+    },
+    {
+      "name": "Natural Nurse",
+      "slug": "natural-nurse-swyeo",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/natural-nurse-swyeo",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/natural-nurse-swyeo/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/natural-nurse-swyeo/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://linktr.ee/nursemalaik13",
+        "https://linktr.ee/og/image/nursemalaik13.jpg",
+        "https://linktr.ee/og/image/nursemalaik13.jpg"
+      ]
+    },
+    {
+      "name": "Ocean restaurant",
+      "slug": "ocean-restaurant-8d8ji",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/ocean-restaurant-8d8ji",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/72/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/ocean-restaurant-8d8ji/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/72/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/72/cover.jpg"
+      ]
+    },
+    {
+      "name": "Offshore açaí bar",
+      "slug": "offshore-acai-bar-uvi2t",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/offshore-acai-bar-uvi2t",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/78/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/offshore-acai-bar-uvi2t/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/78/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/78/cover.jpg"
+      ]
+    },
+    {
+      "name": "Oldach - Arecibo",
+      "slug": "oldach-arecibo-a6vox",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/oldach-arecibo-a6vox",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/85/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/oldach-arecibo-a6vox/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/85/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/85/cover.jpg"
+      ]
+    },
+    {
+      "name": "Olympic Travel & Tours",
+      "slug": "olympic-travel-tours-u7iz1",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/olympic-travel-tours-u7iz1",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/90/cover.jpg",
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/olympic-travel-tours-u7iz1/logo-fallback.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/olympic-travel-tours-u7iz1/cover.webp",
+      "reason": "The current business-specific source was visually verified; square and 1600x900 WebP derivatives were prepared to meet display-size requirements.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/90/cover.jpg"
+      ]
+    },
+    {
+      "name": "Oro Norte",
+      "slug": "oro-norte-xmtgm",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/oro-norte-xmtgm",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "The business identity was verified, but no safely reusable logo and real cover pair was found.",
+      "provenance": []
+    },
+    {
+      "name": "Oscar Auto Tint",
+      "slug": "oscar-auto-tint-tzeo3",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/oscar-auto-tint-tzeo3",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/84/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/oscar-auto-tint-tzeo3/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/84/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/84/cover.jpg"
+      ]
+    },
+    {
+      "name": "Pina Colada Stand",
+      "slug": "pina-colada-stand-kdox6",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/pina-colada-stand-kdox6",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "The generic name has multiple possible matches and no authoritative media source.",
+      "provenance": []
+    },
+    {
+      "name": "Pito Sandwhich",
+      "slug": "pito-sandwhich-7qowo",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/pito-sandwhich-7qowo",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "archive",
+      "targetStatus": "rejected",
+      "targetLogoUrl": null,
+      "targetCoverUrl": null,
+      "reason": "No authoritative public media source could be matched with sufficient confidence.",
+      "provenance": []
+    },
+    {
+      "name": "Sabor Frape",
+      "slug": "sabor-frape-g9f19",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/sabor-frape-g9f19",
+      "currentStatus": "approved",
+      "currentLogoUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/7967510a-a56f-4e51-99f0-fd19eb2c0c57/1788133543791-bdll8l.jpg",
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/7967510a-a56f-4e51-99f0-fd19eb2c0c57/1788133543791-bdll8l.jpg",
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/sabor-frape-g9f19/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/sabor-frape-g9f19/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://saborfrappe.com/",
+        "https://saborfrappe.com/brand/logos/sf-icon.png",
+        "https://saborfrappe.com/photos/lifestyle/grass-friends.jpg"
+      ]
+    },
+    {
+      "name": "Simple. Coffee",
+      "slug": "simple-coffee-xiwfh",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/simple-coffee-xiwfh",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/71/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/simple-coffee-xiwfh/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/71/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/71/cover.jpg"
+      ]
+    },
+    {
+      "name": "Skincare Body Aesthetic",
+      "slug": "skincare-body-aesthetic-gwto1",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/skincare-body-aesthetic-gwto1",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/91/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/skincare-body-aesthetic-gwto1/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/91/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/91/cover.jpg"
+      ]
+    },
+    {
+      "name": "Smartphone Solutions And Computer Center",
+      "slug": "smartphone-solutions-and-computer-center-17roi",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/smartphone-solutions-and-computer-center-17roi",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/104/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/smartphone-solutions-and-computer-center-17roi/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/104/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/104/cover.jpg"
+      ]
+    },
+    {
+      "name": "Ta con madras",
+      "slug": "ta-con-madras-xkq98",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/ta-con-madras-xkq98",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/80/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/ta-con-madras-xkq98/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/80/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/80/cover.jpg"
+      ]
+    },
+    {
+      "name": "TLL Auto Shop",
+      "slug": "tll-auto-shop-vf66h",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/tll-auto-shop-vf66h",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/83/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/tll-auto-shop-vf66h/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/83/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/83/cover.jpg"
+      ]
+    },
+    {
+      "name": "Villafane Modern Tax & Accounting",
+      "slug": "villafane-modern-tax-accounting-4k4h7",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/villafane-modern-tax-accounting-4k4h7",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/89/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/villafane-modern-tax-accounting-4k4h7/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/89/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/89/cover.jpg"
+      ]
+    },
+    {
+      "name": "Wah Fun",
+      "slug": "wah-fun-u8a4t",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/wah-fun-u8a4t",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/96/cover.jpg",
+      "action": "update_logo",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/wah-fun-u8a4t/logo-fallback.webp",
+      "targetCoverUrl": "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/96/cover.jpg",
+      "reason": "The current cover is a visually verified business-specific image; a 512px square WebP fallback was derived from that owned listing image.",
+      "provenance": [
+        "https://zswvumzbtikzvwgtpprw.supabase.co/storage/v1/object/public/business-media/business-photos/96/cover.jpg"
+      ]
+    },
+    {
+      "name": "Yanya Curls",
+      "slug": "yanya-curls-ivev6",
+      "publicUrl": "https://spotlightpuertorico.com/businesses/yanya-curls-ivev6",
+      "currentStatus": "approved",
+      "currentLogoUrl": null,
+      "currentCoverUrl": null,
+      "action": "update_both",
+      "targetStatus": "approved",
+      "targetLogoUrl": "https://spotlightpuertorico.com/images/businesses/yanya-curls-ivev6/logo.webp",
+      "targetCoverUrl": "https://spotlightpuertorico.com/images/businesses/yanya-curls-ivev6/cover.webp",
+      "reason": "Verified public, business-specific media pair prepared and visually reviewed.",
+      "provenance": [
+        "https://yanyacurls.com/en/pages/sobre-nosotros",
+        "https://yanyacurls.com/cdn/shop/files/Logo_2_8fb7caab-c7e2-4824-9299-00ab243ab126.png?v=1739471483",
+        "https://yanyacurls.com/cdn/shop/collections/SERVICIOYANYA.jpg?v=1739742856&width=1500"
+      ]
+    }
+  ]
+}
